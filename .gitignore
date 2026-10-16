@@ -14,7 +14,7 @@
 /coverage
 
 # next.js
-/.next
+/.next/
 /out/
 
 # production
@@ -48,6 +48,3 @@ next-env.d.ts
 supabase/.temp/
 supabase/.branches/
 
-# excluded from iCloud sync (symlinked as node_modules / .next)
-*.nosync
-/.deps.nosync/

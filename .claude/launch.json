@@ -4,7 +4,7 @@
     {
       "name": "wein-app",
       "runtimeExecutable": "/bin/sh",
-      "runtimeArgs": ["-c", "cd /Users/timlunau/Desktop/wein-app && export PATH=$HOME/.local/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 && exec node node_modules/next/dist/bin/next dev"],
+      "runtimeArgs": ["-c", "cd /Users/timlunau/Developer/wein-app && export PATH=$HOME/.local/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 && exec node node_modules/next/dist/bin/next dev"],
       "port": 3000
     }
   ]

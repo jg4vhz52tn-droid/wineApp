@@ -229,10 +229,10 @@ Live-Preis + Kauflink, Wunschliste, Preisalarm, Preisverlauf, Kellerwert-Portfol
 - Event-Kurator nur als kurzer Vorschlag, kein Zeitplan.
 - Piraten-Modus als Option des Organisators.
 - Kostenteilung vorhanden, aber im Hintergrund.
-- 2026-10-16: Projektordner `~/Desktop/wein-app`, Code auf GitHub (privates Repo).
+- 2026-10-16: Projektordner `~/Developer/wein-app` (Verknüpfung auf dem Schreibtisch), Code auf GitHub: privates Repo `jg4vhz52tn-droid/wineApp`.
 - 2026-10-16: Supabase direkt in der Cloud (Free-Plan, Region Frankfurt) wie bei Klausurfuchs – kein Docker nötig. Migrationen werden vorher offline mit PGlite getestet (`npm run db:test`).
 - 2026-10-16: Node.js 24 LTS liegt in `~/.local/node` (ohne Homebrew/Admin-Rechte), Supabase-CLI als Datei in `.bin/`.
-- 2026-10-16: Desktop wird per iCloud synchronisiert → `node_modules` und `.next` liegen in `.deps.nosync/` (von iCloud ignoriert) und sind per Symlink eingebunden. Nach `npm ci` muss der Symlink neu gesetzt werden (siehe „Technische Notizen“).
+- 2026-10-16: Projekt bewusst **nicht** auf dem Schreibtisch: Der Schreibtisch wird per iCloud synchronisiert, und bei knappem Speicher lagert iCloud Dateien aus – Build, Git und Dev-Server hängen dann. Gesichert wird über GitHub.
 - 2026-10-16: Next.js 16 mit Cache Components; Datenzugriff aus dem Browser mit `@supabase/supabase-js` (PKCE), Schutz über RLS. Kein `@supabase/ssr`, kein Server-Proxy.
 - 2026-10-16: Login per Magic Link (E-Mail) + „Mit Google anmelden“; Gäste per anonymer Anmeldung über Einladungslink, später upgradebar.
 - 2026-10-16: Logik möglichst in Supabase (DB-Funktionen/Edge Functions), Frontend schlank – hält den Weg zu Capacitor offen.
@@ -247,6 +247,4 @@ Live-Preis + Kauflink, Wunschliste, Preisalarm, Preisverlauf, Kellerwert-Portfol
 - **Datenbank-Test (offline):** `npm run db:test` – spielt alle Migrationen + Seed in eine In-Memory-Datenbank und prüft die Zugriffsregeln (u. a.: Gäste sehen die Glas-Zuordnung erst nach dem Aufdecken).
 - **Migrationen:** `supabase/migrations/`, Seed: `supabase/seed.sql`, Supabase-CLI: `./.bin/supabase`.
 - **Rundenstatus** (`event_wines.status`) ist für Clients nicht direkt änderbar – Öffnen/Aufdecken laufen ab Phase 1 über Datenbank-Funktionen, die gleichzeitig die Punkte berechnen.
-- **Pakete neu installieren** (wegen iCloud):
-  `rm node_modules && npm ci && rm -rf .deps.nosync/node_modules && mv node_modules .deps.nosync/node_modules && ln -s .deps.nosync/node_modules node_modules`
 - **Node im Terminal:** `~/.local/node/bin` steht in `~/.zprofile`; neue Terminal-Fenster finden `node`/`npm` automatisch.
