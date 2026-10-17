@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { NotConfigured } from "@/components/app/not-configured";
 import { PageHeader } from "@/components/app/page-header";
 import { useSession } from "@/components/app/session-provider";
+import { PatchTile } from "@/components/event/patch-gallery";
 import { Avatar } from "@/components/ui/avatar";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Card, Eyebrow } from "@/components/ui/card";
@@ -192,6 +193,8 @@ export function EventList() {
               })}
             </section>
           )}
+
+          <PatchTile />
 
           {!isGuest && past.length === 0 && (
             <Button variant="ghost" onClick={createDemo} loading={creating} block>
