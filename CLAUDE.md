@@ -238,8 +238,8 @@ Live-Preis + Kauflink, Wunschliste, Preisalarm, Preisverlauf, Kellerwert-Portfol
 - 2026-10-16: Logik möglichst in Supabase (DB-Funktionen/Edge Functions), Frontend schlank – hält den Weg zu Capacitor offen.
 - 2026-10-17: **Look A „Dunkel & edel“** gewählt (Hell + Dunkel). Look B entfernt.
 - 2026-10-17: Rate-Bogen mit Strich-Skalen im Stil des iOS-Timers (`TickDial`) und Aromarad (12 Familien × 4 Aromen, `src/config/aromas.ts`); verhüllte Flasche = schwarzes Tuch mit Messingband und Glasnummer; Einladung als Ticket.
-- 2026-10-17: Aufdecken = Tuch wird von unten nach oben/hinten abgezogen (weinrotes Futter an der Kante), darunter die echte Flaschenform (Flöte, Burgunder, Bordeaux, Bocksbeutel; `src/config/bottles.ts`). Unter dem Tuch sehen alle Gläser gleich aus, damit die Form (z. B. Bocksbeutel = Franken) nichts verrät.
-- 2026-10-17: Skalen mit Kommazahlen: Struktur 0–10 in 0,1-Schritten, Bewertung 50–100 in 0,5-Schritten. Haptik in drei Stufen (`src/lib/haptics.ts`): Android über Vibration, iPhone-Browser nur ein einheitliches Klicken (Fünfer/ganze Zahlen als Doppelklick), volle Taptic-Engine erst in der nativen App.
+- 2026-10-17: Aufdecken = schwarzer Samtbeutel mit Messingkordel wird nach oben von der Flasche gezogen und kippt nach hinten weg. Nur zwei Flaschenformen (`src/config/bottles.ts`): Schlegelflasche (Weiß/Rosé) und Burgunder (Rot) – Bocksbeutel/Bordeaux verworfen.
+- 2026-10-17: Skalen mit Kommazahlen: Struktur 0–10 in 0,1-Schritten, Bewertung 50–100 in 0,5-Schritten. Haptik in drei Stufen (`src/lib/haptics.ts`): Android über Vibration bei jedem Strich. iPhone-Safari erlaubt Webseiten nur beim Antippen/Loslassen ein Klicken (kein Klacken während des Wischens) – volle Taptic-Engine erst in der nativen App (Capacitor).
 - 2026-10-17: Einladungs-Ticket mit abreißbarem Abschnitt → Countdown, Gästeliste (nur für Zugesagte), Kalender (.ics), Route, Teilen.
 - Offen: finaler Name, Zeitpunkt Vercel-Deployment, Apple Wallet für Einladungen (braucht Apple Developer Program, 99 $/Jahr).
 

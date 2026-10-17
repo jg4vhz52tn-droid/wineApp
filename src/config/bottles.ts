@@ -1,16 +1,12 @@
-export type BottleShape = "flute" | "burgundy" | "bordeaux" | "bocksbeutel";
+export type BottleShape = "flute" | "burgundy";
 
-/** Which bottle a wine is usually sold in - good enough for the reveal. */
-export function bottleShapeFor({
-  grape,
-  region,
-}: {
-  grape?: string | null;
-  region?: string | null;
-}): BottleShape {
-  const g = (grape ?? "").toLowerCase();
-  if (region === "Franken" && /silvaner|müller|bacchus|riesling/.test(g)) return "bocksbeutel";
-  if (/riesling|gewürztraminer|müller|muskateller|scheurebe/.test(g)) return "flute";
-  if (/burgunder|pinot|chardonnay|silvaner/.test(g)) return "burgundy";
-  return "bordeaux";
+/**
+ * Two classic shapes only: the slim "Schlegelflasche" for whites and rosé,
+ * the burgundy bottle for reds. Guests see the colour in their glass anyway,
+ * so the shape gives nothing away that they don't already know.
+ */
+export function bottleShapeFor(
+  color: "white" | "red" | "rose" | "sparkling" | "sweet" | "orange",
+): BottleShape {
+  return color === "red" ? "burgundy" : "flute";
 }

@@ -5,52 +5,37 @@ export type BottleLabel = { producer: string; name: string; vintage?: string | n
 
 type Geometry = {
   outline: string;
-  capsule: { x: number; width: number };
-  label: { x: number; y: number; width: number; height: number; rx: number };
-  highlight: string;
-  glass: [string, string, string, string, string];
-  shadowRx: number;
+  /** Neck from the lip down to where the shoulder starts. */
+  neck: { x: number; width: number; bottom: number };
+  label: { x: number; y: number; width: number; height: number };
+  /** Sharp highlight down the left side and the soft broad one next to it. */
+  specular: string;
+  sheen: string;
+  rim: string;
+  glass: { dark: string; mid: string; light: string };
 };
 
-// All shapes share a 200x360 canvas with the base at y=354.
+// Both shapes share a 200x360 canvas with the base at y=352.
 export const BOTTLES: Record<BottleShape, Geometry> = {
-  // Slim "Schlegelflasche" - Riesling and other aromatic whites.
+  // Slim "Schlegelflasche" - Riesling and most German whites.
   flute: {
-    outline: "M90 8h20v66c0 26 34 52 34 92v178a10 10 0 0 1-10 10H66a10 10 0 0 1-10-10V166c0-40 34-66 34-92z",
-    capsule: { x: 88, width: 24 },
-    label: { x: 62, y: 206, width: 76, height: 92, rx: 4 },
-    highlight: "M95 30v48c0 22-22 44-26 74v176",
-    glass: ["#101a12", "#2f4430", "#4d6a49", "#22331f", "#0c140d"],
-    shadowRx: 62,
+    outline: "M90 6h20v74c0 30 33 52 33 94v168c0 6-4 10-10 10H67c-6 0-10-4-10-10V174c0-42 33-64 33-94z",
+    neck: { x: 90, width: 20, bottom: 80 },
+    label: { x: 62, y: 214, width: 76, height: 98 },
+    specular: "M94 52c0 34-26 58-29 118v166",
+    sheen: "M80 182v150",
+    rim: "M136 190v146",
+    glass: { dark: "#0a140c", mid: "#24391f", light: "#4f6d43" },
   },
-  // Sloping shoulders - Pinot, Chardonnay.
+  // Sloping shoulders - Pinot Noir, Lemberger and other reds.
   burgundy: {
-    outline:
-      "M88 8h24v80c0 42 36 62 36 112v144a10 10 0 0 1-10 10H62a10 10 0 0 1-10-10V200c0-50 36-70 36-112z",
-    capsule: { x: 86, width: 28 },
-    label: { x: 58, y: 228, width: 84, height: 86, rx: 4 },
-    highlight: "M94 30v56c0 30-24 52-28 96v150",
-    glass: ["#1a170b", "#3d3818", "#5e5728", "#2c2810", "#110f06"],
-    shadowRx: 66,
-  },
-  // High, straight shoulders - Bordeaux-style reds.
-  bordeaux: {
-    outline: "M89 8h22v90c0 18 35 20 35 42v204a10 10 0 0 1-10 10H64a10 10 0 0 1-10-10V140c0-22 35-24 35-42z",
-    capsule: { x: 87, width: 26 },
-    label: { x: 60, y: 196, width: 80, height: 96, rx: 4 },
-    highlight: "M94 30v66c0 14-26 20-26 44v190",
-    glass: ["#0a0f0b", "#1c271d", "#2f402f", "#141c14", "#070a07"],
-    shadowRx: 62,
-  },
-  // Flat, round "Bocksbeutel" on a short foot - Franken.
-  bocksbeutel: {
-    outline:
-      "M90 8h20v106c0 8 6 12 16 16C156 142 178 176 178 218C178 262 156 298 130 314L134 344a10 10 0 0 1-10 10H76a10 10 0 0 1-10-10L70 314C44 298 22 262 22 218C22 176 44 142 74 130c10-4 16-8 16-16z",
-    capsule: { x: 88, width: 24 },
-    label: { x: 56, y: 184, width: 88, height: 74, rx: 10 },
-    highlight: "M95 30v80c0 12-20 22-38 38-14 14-22 40-22 70",
-    glass: ["#0f1a10", "#2c442c", "#4c6c48", "#1f331f", "#0b140b"],
-    shadowRx: 60,
+    outline: "M89 6h22v84c0 44 37 64 37 114v138c0 6-4 10-10 10H62c-6 0-10-4-10-10V204c0-50 37-70 37-114z",
+    neck: { x: 89, width: 22, bottom: 90 },
+    label: { x: 59, y: 236, width: 82, height: 84 },
+    specular: "M93 60c0 40-28 62-31 128v148",
+    sheen: "M76 210v124",
+    rim: "M141 220v116",
+    glass: { dark: "#0f0d06", mid: "#2e2a12", light: "#5a5226" },
   },
 };
 
@@ -59,67 +44,110 @@ export function BottleArt({ shape, label }: { shape: BottleShape; label?: Bottle
   const id = useId();
   const g = BOTTLES[shape];
   const l = g.label;
+  const url = (name: string) => `url(#${id}-${name})`;
+
   return (
     <g>
       <defs>
+        {/* Round glass: dark at both edges, lighter left of centre */}
         <linearGradient id={`${id}-glass`} x1="0" x2="1">
-          {g.glass.map((color, i) => (
-            <stop key={i} offset={[0, 0.28, 0.4, 0.55, 1][i]} stopColor={color} />
-          ))}
+          <stop offset="0" stopColor={g.glass.dark} />
+          <stop offset="0.22" stopColor={g.glass.mid} />
+          <stop offset="0.34" stopColor={g.glass.light} />
+          <stop offset="0.5" stopColor={g.glass.mid} />
+          <stop offset="0.82" stopColor={g.glass.dark} />
+          <stop offset="1" stopColor={g.glass.mid} />
         </linearGradient>
-        <linearGradient id={`${id}-capsule`} x1="0" x2="1">
-          <stop offset="0" stopColor="#7a5a2c" />
-          <stop offset="0.4" stopColor="#e2c48e" />
-          <stop offset="1" stopColor="#6b4c22" />
+        <linearGradient id={`${id}-depth`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#000" stopOpacity="0.15" />
+          <stop offset="0.6" stopColor="#000" stopOpacity="0" />
+          <stop offset="1" stopColor="#000" stopOpacity="0.35" />
+        </linearGradient>
+        <linearGradient id={`${id}-foil`} x1="0" x2="1">
+          <stop offset="0" stopColor="#5e4318" />
+          <stop offset="0.32" stopColor="#e9cf97" />
+          <stop offset="0.5" stopColor="#b48b48" />
+          <stop offset="1" stopColor="#4f3812" />
+        </linearGradient>
+        {/* Paper wrapped around a cylinder */}
+        <linearGradient id={`${id}-paper`} x1="0" x2="1">
+          <stop offset="0" stopColor="#cfc3b2" />
+          <stop offset="0.3" stopColor="#f7f1e8" />
+          <stop offset="0.7" stopColor="#efe7db" />
+          <stop offset="1" stopColor="#c4b7a5" />
         </linearGradient>
         <radialGradient id={`${id}-shadow`}>
-          <stop offset="0" stopColor="#000" stopOpacity="0.45" />
+          <stop offset="0" stopColor="#000" stopOpacity="0.55" />
           <stop offset="1" stopColor="#000" stopOpacity="0" />
         </radialGradient>
+        <clipPath id={`${id}-clip`}>
+          <path d={g.outline} />
+        </clipPath>
       </defs>
 
-      <ellipse cx="100" cy="354" rx={g.shadowRx} ry="6" fill={`url(#${id}-shadow)`} />
-      <path d={g.outline} fill={`url(#${id}-glass)`} />
-      <path
-        d={g.highlight}
-        stroke="#fff"
-        strokeOpacity="0.16"
-        strokeWidth="3"
-        fill="none"
-        strokeLinecap="round"
+      <ellipse cx="100" cy="353" rx="60" ry="6" fill={url("shadow")} />
+
+      <path d={g.outline} fill={url("glass")} />
+      <g clipPath={url("clip")}>
+        <rect x="0" y="0" width="200" height="360" fill={url("depth")} />
+        {/* Glass thickness at the base */}
+        <ellipse cx="100" cy="348" rx="46" ry="7" fill="#000" fillOpacity="0.35" />
+        <g fill="none" strokeLinecap="round">
+          <path d={g.sheen} stroke="#fff" strokeOpacity="0.07" strokeWidth="14" />
+          <path d={g.specular} stroke="#fff" strokeOpacity="0.5" strokeWidth="2" />
+          <path d={g.rim} stroke="#e9c48a" strokeOpacity="0.16" strokeWidth="3" />
+        </g>
+      </g>
+
+      {/* Lip ring and foil capsule */}
+      <rect x={g.neck.x - 1.5} y="36" width={g.neck.width + 3} height="5" rx="2" fill={url("foil")} />
+      <rect x={g.neck.x - 1} y="2" width={g.neck.width + 2} height="36" rx="3" fill={url("foil")} />
+      <g stroke="#000" strokeOpacity="0.18">
+        <line x1={g.neck.x} x2={g.neck.x + g.neck.width} y1="10" y2="10" />
+        <line x1={g.neck.x} x2={g.neck.x + g.neck.width} y1="31" y2="31" />
+      </g>
+      {/* Neck collar label */}
+      <rect
+        x={g.neck.x - 0.5}
+        y={g.neck.bottom - 26}
+        width={g.neck.width + 1}
+        height="11"
+        fill={url("paper")}
       />
-      <rect x={g.capsule.x} y="4" width={g.capsule.width} height="34" rx="3" fill={`url(#${id}-capsule)`} />
 
       {label && (
         <g>
-          <rect x={l.x} y={l.y} width={l.width} height={l.height} rx={l.rx} fill="#f4ede5" />
+          <rect x={l.x + 1} y={l.y + 2} width={l.width} height={l.height} fill="#000" opacity="0.25" />
+          <rect x={l.x} y={l.y} width={l.width} height={l.height} fill={url("paper")} />
           <rect
             x={l.x + 4}
             y={l.y + 4}
             width={l.width - 8}
             height={l.height - 8}
-            rx={Math.max(2, l.rx - 3)}
             fill="none"
-            stroke="#b08a4a"
-            strokeOpacity="0.6"
+            stroke="#a8823f"
+            strokeOpacity="0.55"
           />
           <text
             x="100"
             y={l.y + 22}
             textAnchor="middle"
-            fontSize="7"
-            letterSpacing="1.2"
+            fontSize="6.5"
+            letterSpacing="1.3"
             fill="#6c5660"
             fontFamily="var(--font-sans-face), sans-serif"
           >
             {label.producer.toUpperCase()}
           </text>
-          <foreignObject x={l.x + 6} y={l.y + 28} width={l.width - 12} height={l.height - 44}>
+          <foreignObject x={l.x + 5} y={l.y + 28} width={l.width - 10} height={l.height - 46}>
             <p
+              lang="de"
               style={{
                 fontFamily: "var(--font-serif-face), serif",
-                fontSize: "13px",
-                lineHeight: 1.05,
+                fontSize: "11px",
+                lineHeight: 1.1,
+                hyphens: "auto",
+                overflowWrap: "break-word",
                 color: "#2a1520",
                 textAlign: "center",
                 margin: 0,
@@ -131,9 +159,10 @@ export function BottleArt({ shape, label }: { shape: BottleShape; label?: Bottle
           {label.vintage && (
             <text
               x="100"
-              y={l.y + l.height - 10}
+              y={l.y + l.height - 11}
               textAnchor="middle"
               fontSize="8"
+              letterSpacing="1"
               fill="#6c5660"
               fontFamily="var(--font-sans-face), sans-serif"
             >

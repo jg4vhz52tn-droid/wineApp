@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef } from "react";
 import { cn } from "@/lib/cn";
-import { tick, type Haptic } from "@/lib/haptics";
+import { releaseTick, tick, type Haptic } from "@/lib/haptics";
 
 const TICK = 12; // px between two ticks
 
@@ -177,6 +177,7 @@ export function TickDial({
           aria-valuenow={value}
           aria-valuetext={describe ? `${show(value)} – ${describe(value)}` : show(value)}
           onScroll={onScroll}
+          onTouchEnd={() => releaseTick(levelAt(lastIndex.current ?? selected))}
           onKeyDown={onKeyDown}
           className="flex h-20 snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto overscroll-x-contain outline-none focus-visible:ring-2 focus-visible:ring-accent/60 [&::-webkit-scrollbar]:hidden"
           style={{

@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { useState } from "react";
 import { AROMA_FAMILIES, AROMA_COLOR } from "@/config/aromas";
 import { cn } from "@/lib/cn";
+import { tick } from "@/lib/haptics";
 
 const SEGMENT = 360 / AROMA_FAMILIES.length;
 const INNER = 60;
@@ -38,8 +39,14 @@ export function AromaWheel({ value, onChange }: { value: string[]; onChange: (ar
   const family = AROMA_FAMILIES[focus];
   const picked = new Set(value);
 
-  const toggle = (aroma: string) =>
+  const toggle = (aroma: string) => {
+    tick(picked.has(aroma) ? "minor" : "medium");
     onChange(picked.has(aroma) ? value.filter((a) => a !== aroma) : [...value, aroma]);
+  };
+  const focusFamily = (index: number) => {
+    tick("minor");
+    setFocus(index);
+  };
 
   return (
     <div className="space-y-4">
@@ -69,11 +76,11 @@ export function AromaWheel({ value, onChange }: { value: string[]; onChange: (ar
               className="cursor-pointer outline-none [&:focus-visible>path:first-child]:stroke-accent"
               animate={{ x: dx, y: dy }}
               transition={{ type: "spring", stiffness: 420, damping: 28 }}
-              onClick={() => setFocus(index)}
+              onClick={() => focusFamily(index)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  setFocus(index);
+                  focusFamily(index);
                 }
               }}
             >

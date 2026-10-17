@@ -7,8 +7,9 @@
  * - Android browsers: vibration of different lengths.
  * - iPhone Safari (iOS 18+): the web has no vibration API there. The only
  *   available tick is the one iOS plays when a switch toggles, so we toggle a
- *   hidden switch. It has a single strength - "major" plays it twice so it
- *   still feels different. Elsewhere this silently does nothing.
+ *   hidden switch. It has a single strength ("major" plays it twice), and iOS
+ *   only allows it directly inside a tap/touch-end - never while scrolling.
+ *   That's what `releaseTick` is for. Elsewhere this silently does nothing.
  */
 export type Haptic = "minor" | "medium" | "major";
 
@@ -78,4 +79,12 @@ export function tick(kind: Haptic = "minor") {
     iosTick();
     if (kind === "major") setTimeout(iosTick, 70);
   }
+}
+
+/** Call from a touchend/pointerup handler: the one moment iPhone Safari lets
+ * a web page click. On every other platform the regular ticks already ran. */
+export function releaseTick(kind: Haptic = "minor") {
+  if (typeof window === "undefined" || capacitorHaptics() || "vibrate" in navigator || !isIOS()) return;
+  iosTick();
+  if (kind === "major") setTimeout(iosTick, 70);
 }

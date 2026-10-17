@@ -52,7 +52,7 @@ const SAMPLE_WINES: { id: string; chip: string; bottle: RevealedBottle }[] = [
     id: "silvaner",
     chip: "Silvaner (Pirat)",
     bottle: {
-      shape: "bocksbeutel",
+      shape: "flute",
       label: { producer: "Horst Sauer", name: "Escherndorfer Lump Silvaner", vintage: 2022 },
     },
   },
@@ -68,7 +68,7 @@ const SAMPLE_WINES: { id: string; chip: string; bottle: RevealedBottle }[] = [
     id: "bordeaux",
     chip: "Lemberger",
     bottle: {
-      shape: "bordeaux",
+      shape: "burgundy",
       label: { producer: "Aldinger", name: "Lemberger Fellbacher Lämmler", vintage: 2020 },
     },
   },
@@ -147,7 +147,7 @@ export function Styleguide() {
                 <Pill>{revealed ? "Aufgedeckt" : "Runde läuft"}</Pill>
               </div>
               <div
-                className="flex justify-center overflow-hidden rounded-card py-6"
+                className="flex justify-center rounded-card py-6"
                 style={{
                   background:
                     "radial-gradient(70% 55% at 50% 15%, color-mix(in oklab, var(--accent) 14%, transparent), transparent 70%), var(--surface-2)",
