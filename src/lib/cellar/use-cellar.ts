@@ -1,0 +1,265 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useSession } from "@/components/app/session-provider";
+import { getSupabase } from "@/lib/supabase";
+import { demoCellar } from "./demo";
+import type { CellarData, CellarEvent, CellarWine, NewBottles, Valuation } from "./types";
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+// crypto.randomUUID only exists on https/localhost - the phone in the Wi-Fi uses plain http.
+const uid = () =>
+  Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
+
+type Mode = "loading" | "demo" | "live";
+
+/**
+ * The cellar for the signed-in account (Supabase, protected by RLS), or the
+ * sample cellar when nobody - or only a guest - is signed in. Both offer the
+ * same actions, so the UI doesn't care which one it is.
+ */
+export function useCellar() {
+  const { ready, session, isGuest, configured } = useSession();
+  const [liveData, setLiveData] = useState<CellarData | null>(null);
+  const [demoData, setDemoData] = useState<CellarData>(demoCellar);
+  const [orgId, setOrgId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const live = configured && ready && !!session && !isGuest;
+  const mode: Mode = configured && !ready ? "loading" : live ? (liveData ? "live" : "loading") : "demo";
+  const data = mode === "live" && liveData ? liveData : demoData;
+
+  const apply = useCallback((result: Loaded | null) => {
+    if (!result) return;
+    if ("error" in result) {
+      setError(result.error);
+      return;
+    }
+    setOrgId(result.orgId);
+    setLiveData(result.data);
+    setError(null);
+  }, []);
+
+  const reload = useCallback(async () => {
+    if (session) apply(await loadCellar(session.user.id));
+  }, [session, apply]);
+
+  useEffect(() => {
+    if (!live || !session) return;
+    let active = true;
+    loadCellar(session.user.id).then((result) => active && apply(result));
+    return () => {
+      active = false;
+    };
+  }, [live, session, apply]);
+
+  // --- actions ----------------------------------------------------------------
+
+  async function addBottles(input: NewBottles) {
+    if (mode !== "live") {
+      const id = `local-${uid()}`;
+      setDemoData((d) => ({
+        ...d,
+        items: [...d.items, { id, ...input, grape: null, region: null }],
+        events: [
+          ...d.events,
+          {
+            id: `${id}-p`,
+            itemId: id,
+            kind: "purchase",
+            quantity: input.quantity,
+            unitPrice: input.purchasePrice,
+            date: input.purchasedOn,
+          },
+        ],
+      }));
+      return true;
+    }
+    const supabase = getSupabase();
+    if (!supabase || !orgId) return false;
+    const { error } = await supabase.rpc("add_cellar_bottles", {
+      p_org_id: orgId,
+      p_producer: input.producer,
+      p_name: input.name,
+      p_color: input.color,
+      p_vintage: input.vintage,
+      p_quantity: input.quantity,
+      p_purchase_price: input.purchasePrice,
+      p_purchased_on: input.purchasedOn,
+      p_classification: input.classification,
+      p_drink_from: input.drinkFrom,
+      p_drink_until: input.drinkUntil,
+      p_storage_shelf: input.shelf,
+      p_storage_compartment: input.compartment,
+      p_storage_row: input.row,
+    });
+    if (error) {
+      setError("Die Flaschen konnten nicht gespeichert werden.");
+      return false;
+    }
+    await reload();
+    return true;
+  }
+
+  async function openBottles(itemId: string, count: number, value: number | null) {
+    if (mode !== "live") {
+      setDemoData((d) => ({
+        ...d,
+        items: d.items.map((i) => (i.id === itemId ? { ...i, quantity: i.quantity - count } : i)),
+        events: [
+          ...d.events,
+          {
+            id: uid(),
+            itemId,
+            kind: "consume",
+            quantity: -count,
+            unitPrice: value,
+            date: today(),
+          },
+        ],
+      }));
+      return true;
+    }
+    const supabase = getSupabase();
+    if (!supabase) return false;
+    const { error } = await supabase.rpc("open_cellar_bottle", {
+      p_item_id: itemId,
+      p_count: count,
+      p_value: value,
+    });
+    if (error) {
+      setError("Die Flasche konnte nicht ausgetragen werden.");
+      return false;
+    }
+    await reload();
+    return true;
+  }
+
+  async function setValue(itemId: string, value: number) {
+    if (mode !== "live") {
+      setDemoData((d) => ({
+        ...d,
+        valuations: [...d.valuations, { id: uid(), itemId, value, source: "manual", date: today() }],
+      }));
+      return true;
+    }
+    const supabase = getSupabase();
+    if (!supabase || !orgId) return false;
+    const { error } = await supabase
+      .from("cellar_valuations")
+      .insert({ cellar_item_id: itemId, org_id: orgId, value, source: "manual" });
+    if (error) {
+      setError("Der Wert konnte nicht gespeichert werden.");
+      return false;
+    }
+    await reload();
+    return true;
+  }
+
+  async function loadDemoIntoAccount() {
+    const supabase = getSupabase();
+    if (!supabase || mode !== "live") return false;
+    const { error } = await supabase.rpc("create_demo_cellar");
+    if (error) {
+      setError("Der Beispielkeller konnte nicht angelegt werden (sind die Seed-Daten eingespielt?).");
+      return false;
+    }
+    await reload();
+    return true;
+  }
+
+  return { mode, data, error, addBottles, openBottles, setValue, loadDemoIntoAccount };
+}
+
+type Loaded = { orgId: string | null; data: CellarData } | { error: string };
+
+async function loadCellar(userId: string): Promise<Loaded | null> {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+  const [profile, items, events, valuations] = await Promise.all([
+    supabase.from("profiles").select("personal_org_id").eq("id", userId).maybeSingle(),
+    supabase
+      .from("cellar_items")
+      .select(
+        "id, quantity, purchase_price, purchased_on, drink_from, drink_until, storage_shelf, storage_compartment, storage_row, wine_vintages(vintage, wines(producer, name, color, classification, grape_varieties(name), regions(name)))",
+      )
+      .order("purchased_on"),
+    supabase.from("cellar_events").select("id, cellar_item_id, kind, quantity, unit_price, happened_on"),
+    supabase.from("cellar_valuations").select("id, cellar_item_id, value, source, valued_on"),
+  ]);
+  if (items.error || events.error || valuations.error)
+    return { error: "Der Keller konnte nicht geladen werden." };
+  return {
+    orgId: profile.data?.personal_org_id ?? null,
+    data: {
+      asOf: Date.now(),
+      items: (items.data ?? []).map(mapItem),
+      events: (events.data ?? []).map((e) => ({
+        id: e.id,
+        itemId: e.cellar_item_id,
+        kind: e.kind,
+        quantity: e.quantity,
+        unitPrice: e.unit_price === null ? null : Number(e.unit_price),
+        date: e.happened_on,
+      })),
+      valuations: (valuations.data ?? []).map((v) => ({
+        id: v.id,
+        itemId: v.cellar_item_id,
+        value: Number(v.value),
+        source: v.source,
+        date: v.valued_on,
+      })),
+    },
+  };
+}
+
+type Row = {
+  id: string;
+  quantity: number;
+  purchase_price: number | string | null;
+  purchased_on: string | null;
+  drink_from: number | null;
+  drink_until: number | null;
+  storage_shelf: string | null;
+  storage_compartment: string | null;
+  storage_row: string | null;
+  wine_vintages: unknown;
+};
+
+type JoinedVintage = {
+  vintage: number | null;
+  wines: {
+    producer: string;
+    name: string | null;
+    color: CellarWine["color"];
+    classification: string | null;
+    grape_varieties: { name: string } | null;
+    regions: { name: string } | null;
+  } | null;
+} | null;
+
+function mapItem(row: Row): CellarWine {
+  const v = row.wine_vintages as JoinedVintage;
+  const w = v?.wines;
+  return {
+    id: row.id,
+    producer: w?.producer ?? "Unbekannt",
+    name: w?.name ?? "",
+    vintage: v?.vintage ?? null,
+    color: w?.color ?? "white",
+    grape: w?.grape_varieties?.name ?? null,
+    region: w?.regions?.name ?? null,
+    classification: w?.classification ?? null,
+    quantity: row.quantity,
+    purchasePrice: row.purchase_price === null ? null : Number(row.purchase_price),
+    purchasedOn: row.purchased_on ?? today(),
+    drinkFrom: row.drink_from,
+    drinkUntil: row.drink_until,
+    shelf: row.storage_shelf,
+    compartment: row.storage_compartment,
+    row: row.storage_row,
+  };
+}
+
+export type { CellarEvent, Valuation };

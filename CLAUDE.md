@@ -194,7 +194,7 @@ Projekt-Setup, Designsystem (2 Look-Varianten zur Auswahl), Auth (inkl. Gast-Zug
 Event anlegen, Einladung/Zusagen/Follow-up, Live-Blindverkostung mit Realtime, Rate-Bogen mit Aromarad, Aufdecken-Animation, Punktesystem, Leaderboard auf jedem Handy, Option „Finde den Piraten", Rückblick/Summary, Kostenteilung im Hintergrund, Reihenfolge-Vorschlag per KI.
 → **Ziel: Damit können wir den nächsten echten Lagenabend durchführen.**
 
-**Phase 2 – Weine, Bewertungen & Keller**
+**Phase 2 – Weine, Bewertungen & Keller** — *Keller als Portfolio gebaut 2026-10-17 (vorgezogen, inkl. Kellerwert-Portfolio aus Phase 5). Offen: Etikett-Scan, Sprachnotiz, Tagebuch, Trinkfenster-Push*
 Etikett-Scan, Bewertung + Sprachnotiz, Weintagebuch mit Erinnerungskarte, Keller mit Lagerplatz, Trinkfenster-Ampel, Trinkfenster-Push.
 
 **Phase 3 – KI & Geschmacks-DNA**
@@ -244,6 +244,10 @@ Live-Preis + Kauflink, Wunschliste, Preisalarm, Preisverlauf, Kellerwert-Portfol
 - 2026-10-17: Lernen vor Phase 1 gezogen. Fortschritt/Sammelkarten vorerst nur im Browser (`src/lib/learn-progress.ts`), später in `user_cards`. Lerninhalte in `src/config/learn/` – selbst geschrieben, **von der Weinrunde gegenlesen lassen**.
 - 2026-10-17: Diagrammfarben `--series-1/2` (Messing/Wein) mit dem Farbsehschwäche-Prüfer validiert, für Hell und Dunkel getrennt.
 - 2026-10-17: Lernen um 6 Kapitel erweitert (Weinbereitung, Cuvée, Atlas, Verkosten, Wein & Essen, Servieren). Weinatlas als stilisierte eigene Karte – kein Kartendienst.
+- 2026-10-17: Keller = Portfolio: Kellerwert, Wertverlauf, Gewinner/Verlierer, Aufteilung, Kartei, Trinkreife-Zeitstrahl, Kellerregal, „Was trinke ich heute?“. Historie in `cellar_events` + `cellar_valuations`.
+- 2026-10-17: Wertquelle vorerst **manuell + Schätzung** (`src/lib/cellar/value.ts`, im UI als „geschätzt“ markiert). KI-Recherche/Marktpreis später als weitere `valuation_source`.
+- 2026-10-17: Ohne Anmeldung zeigt der Keller einen Beispielkeller (nicht gespeichert).
+- Später prüfen: **Vivino-Import** über den DSGVO-Datenexport (kein Scraping) – wartet auf eine Beispieldatei. **Wein-Börse**: Stufe 1 „Abzugeben“ in der Runde (ohne Zahlungsabwicklung) als nächster Schritt denkbar; Stufe 2/3 (Marktplatz, Lagerung + digitaler Handel) nur nach Rechtsberatung (Zahlungsdienst, BaFin/Vermögensanlagen, Alkohol, DAC7).
 - Offen: finaler Name, Zeitpunkt Vercel-Deployment, Apple Wallet für Einladungen (braucht Apple Developer Program, 99 $/Jahr).
 
 ## 9. Technische Notizen
@@ -255,5 +259,6 @@ Live-Preis + Kauflink, Wunschliste, Preisalarm, Preisverlauf, Kellerwert-Portfol
 - **Datenbank-Test (offline):** `npm run db:test` – spielt alle Migrationen + Seed in eine In-Memory-Datenbank und prüft die Zugriffsregeln (u. a.: Gäste sehen die Glas-Zuordnung erst nach dem Aufdecken).
 - **Migrationen:** `supabase/migrations/`, Seed: `supabase/seed.sql`, Supabase-CLI: `./.bin/supabase`.
 - **Rundenstatus** (`event_wines.status`) ist für Clients nicht direkt änderbar – Öffnen/Aufdecken laufen ab Phase 1 über Datenbank-Funktionen, die gleichzeitig die Punkte berechnen.
+- **Handy über WLAN (`http://192.168…`) ist kein „sicherer Kontext“:** kein `crypto.randomUUID`, kein Service Worker, eingeschränktes Teilen/Zwischenablage. Für Browser-APIs immer Alternativen vorsehen.
 - **Dev-Server zeigt alte Styles?** Server stoppen, `rm -rf .next/dev .next/cache`, neu starten (Turbopack-Cache hing einmal an `globals.css`).
 - **Node im Terminal:** `~/.local/node/bin` steht in `~/.zprofile`; neue Terminal-Fenster finden `node`/`npm` automatisch.

@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useDragControls } from "motion/react";
 import { useEffect, useId } from "react";
 
 /** Bottom sheet - the main overlay pattern on phones. */
@@ -16,6 +16,7 @@ export function Sheet({
   children: React.ReactNode;
 }) {
   const titleId = useId();
+  const drag = useDragControls();
 
   useEffect(() => {
     if (!open) return;
@@ -41,21 +42,26 @@ export function Sheet({
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            className="relative w-full max-w-lg rounded-t-[1.75rem] border border-b-0 border-border bg-surface px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+            className="relative flex max-h-[90dvh] w-full max-w-lg flex-col rounded-t-[1.75rem] border border-b-0 border-border bg-surface pb-[max(1.25rem,env(safe-area-inset-bottom))]"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 32, stiffness: 340 }}
             drag="y"
+            dragControls={drag}
+            dragListener={false}
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={{ top: 0, bottom: 0.6 }}
             onDragEnd={(_, info) => (info.offset.y > 100 || info.velocity.y > 500) && onClose()}
           >
-            <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-border" aria-hidden />
-            <h2 id={titleId} className="mb-4 text-2xl">
-              {title}
-            </h2>
-            {children}
+            {/* Only the grab area drags, so sliders and scrolling inside keep working */}
+            <div className="shrink-0 touch-none px-5 pt-3" onPointerDown={(event) => drag.start(event)}>
+              <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-border" aria-hidden />
+              <h2 id={titleId} className="mb-4 text-2xl">
+                {title}
+              </h2>
+            </div>
+            <div className="min-h-0 overflow-y-auto overscroll-contain px-5">{children}</div>
           </motion.div>
         </div>
       )}

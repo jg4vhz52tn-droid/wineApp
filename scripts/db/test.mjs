@@ -266,5 +266,47 @@ await as({ id: guestA.id, anonymous: false }, async (tx) => {
   check("upgraded guest keeps their guesses", guesses.length === 1, `${guesses.length}`);
 });
 
+// --- cellar ------------------------------------------------------------------
+
+console.log("\nCellar");
+const hostOrg = (await db.query("select personal_org_id from public.profiles where id = $1", [host.id])).rows[0]
+  .personal_org_id;
+
+await as(host, async (tx) => {
+  const [{ n }] = await rows(tx, "select public.create_demo_cellar() as n");
+  check("demo cellar is created for the account", n === 10, `${n}`);
+  const items = await rows(tx, "select * from public.cellar_items");
+  const events = await rows(tx, "select * from public.cellar_events");
+  const values = await rows(tx, "select * from public.cellar_valuations");
+  check("owner sees their bottles, events and values", items.length === 10 && events.length === 10 && values.length === 20);
+
+  const [{ id }] = await rows(
+    tx,
+    "select public.add_cellar_bottles($1, 'Weingut Test', 'Probe-Riesling', 'white', 2023::smallint, 3, 19.5) as id",
+    [hostOrg],
+  );
+  const [item] = await rows(tx, "select quantity from public.cellar_items where id = $1", [id]);
+  check("adding bottles creates item and purchase event", item?.quantity === 3);
+  const [{ left }] = await rows(tx, "select public.open_cellar_bottle($1, 1, 22) as left", [id]);
+  check("opening a bottle counts down", left === 2, `${left}`);
+  const error = await fails(tx.query("select public.open_cellar_bottle($1, 5)", [id]));
+  check("cannot open more bottles than there are", error !== null, error ?? "succeeded");
+});
+
+await as(stranger, async (tx) => {
+  const items = await rows(tx, "select * from public.cellar_items");
+  const values = await rows(tx, "select * from public.cellar_valuations");
+  check("others see nothing of your cellar", items.length === 0 && values.length === 0);
+  const error = await fails(
+    tx.query("select public.add_cellar_bottles($1, 'X', 'Y', 'white', 2020::smallint, 1)", [hostOrg]),
+  );
+  check("others cannot add to your cellar", error !== null, error ?? "succeeded");
+});
+
+await as(guestB, async (tx) => {
+  const error = await fails(tx.query("select public.create_demo_cellar()"));
+  check("guests have no cellar", error !== null, error ?? "succeeded");
+});
+
 console.log(`\n${passes} passed, ${failures} failed`);
 process.exit(failures ? 1 : 0);
