@@ -8,6 +8,7 @@ import { InvitationTicket } from "@/components/event/invitation-ticket";
 import { CostsPanel } from "@/components/event/costs-panel";
 import { EventForm } from "@/components/event/event-form";
 import { GlassList } from "@/components/event/glass-list";
+import { PatchCapsule, PatchCrest, PatchSticker, SAMPLE_PHOTO } from "@/components/event/patch-designs";
 import { GuestPanel } from "@/components/event/guest-panel";
 import { GuessForm } from "@/components/live/guess-form";
 import { Leaderboard } from "@/components/live/leaderboard";
@@ -265,6 +266,37 @@ export function Styleguide() {
             </Button>
           </Section>
         </div>
+      </div>
+
+      <h2 id="patch-entwuerfe" className="mt-16 mb-2 text-4xl">
+        Abend-Patch · drei Entwürfe
+      </h2>
+      <p className="mb-6 text-muted">Oben mit Foto, unten ohne Foto und mit langem Titel.</p>
+      <div className="grid grid-cols-1 gap-10 sm:grid-cols-3">
+        {(
+          [
+            ["A · Wappen", PatchCrest],
+            ["B · Sticker", PatchSticker],
+            ["C · Kapsel", PatchCapsule],
+          ] as const
+        ).map(([name, Patch]) => (
+          <Section key={name} title={name}>
+            <Patch
+              title="Riesling vom Schiefer"
+              startsAt="2026-11-14T18:00:00Z"
+              winner="Jonas"
+              photoUrl={SAMPLE_PHOTO}
+              className="mx-auto w-full max-w-64"
+            />
+            <Patch
+              title="Spätburgunder vom Gutswein bis GG"
+              startsAt="2027-02-06T18:00:00Z"
+              winner="Sophie"
+              photoUrl={null}
+              className="mx-auto w-full max-w-44"
+            />
+          </Section>
+        ))}
       </div>
 
       <h2 className="mt-16 mb-6 text-4xl">Lagenabend · mit Beispieldaten</h2>
