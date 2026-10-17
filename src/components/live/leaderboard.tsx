@@ -35,7 +35,7 @@ export function Leaderboard({
             <span className="w-6 text-center font-display text-xl">{row.rank}</span>
             <Avatar name={row.participant.name} className="size-9" />
             <span className="min-w-0 flex-1 truncate font-medium">
-              {row.participant.id === me ? `${row.participant.name} (du)` : row.participant.name}
+              {row.participant.id === me ? "Du" : row.participant.name}
             </span>
             {row.delta > 0 && (
               <span

@@ -77,7 +77,7 @@ export function GlassList({
                 exit={{ opacity: 0, height: 0 }}
                 className="flex items-center gap-3 rounded-control border border-border bg-surface p-3"
               >
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-curtain font-display text-xl text-accent">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-curtain font-display text-xl text-[#d1ad72]">
                   {glass.number}
                 </span>
                 <button
@@ -85,7 +85,9 @@ export function GlassList({
                   className="min-w-0 flex-1 text-left"
                   onClick={() => glass.status !== "revealed" && setDraft({ number: glass.number, secret })}
                 >
-                  <span className="block truncate font-medium">{wineTitle(secret?.wine)}</span>
+                  <span className="line-clamp-2 block leading-snug font-medium">
+                    {wineTitle(secret?.wine)}
+                  </span>
                   <span className="block truncate text-sm text-muted">
                     {wineDetails(secret?.wine, catalog) || "Antippen, um einen Wein zuzuordnen"}
                   </span>
@@ -179,15 +181,23 @@ export function GlassList({
                 })}
               </ol>
             )}
-            <p className="text-xs text-muted">Nur ein Vorschlag – du kannst danach alles frei ändern.</p>
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="ghost" onClick={() => setSuggestion(null)}>
-                Verwerfen
+            {suggestion.changed ? (
+              <>
+                <p className="text-xs text-muted">Nur ein Vorschlag – du kannst danach alles frei ändern.</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="ghost" onClick={() => setSuggestion(null)}>
+                    Verwerfen
+                  </Button>
+                  <Button onClick={applySuggestion} loading={busy}>
+                    Übernehmen
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <Button variant="ghost" block onClick={() => setSuggestion(null)}>
+                Alles klar
               </Button>
-              <Button onClick={applySuggestion} loading={busy} disabled={!suggestion.changed}>
-                Übernehmen
-              </Button>
-            </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

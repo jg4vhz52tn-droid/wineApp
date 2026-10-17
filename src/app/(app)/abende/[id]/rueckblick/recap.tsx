@@ -55,7 +55,15 @@ export function Recap() {
   );
 }
 
-function RecapContent({ data, catalog, meId }: { data: EventData; catalog: Catalog | null; meId?: string }) {
+export function RecapContent({
+  data,
+  catalog,
+  meId,
+}: {
+  data: EventData;
+  catalog: Catalog | null;
+  meId?: string;
+}) {
   const board = leaderboard(data);
   const ranking = wineRanking(data);
   const favorite = ranking[0];

@@ -5,6 +5,16 @@ import { useState } from "react";
 import { useAppearance } from "@/components/app/appearance-provider";
 import { InviteDetails } from "@/components/event/invite-details";
 import { InvitationTicket } from "@/components/event/invitation-ticket";
+import { CostsPanel } from "@/components/event/costs-panel";
+import { EventForm } from "@/components/event/event-form";
+import { GlassList } from "@/components/event/glass-list";
+import { GuestPanel } from "@/components/event/guest-panel";
+import { GuessForm } from "@/components/live/guess-form";
+import { Leaderboard } from "@/components/live/leaderboard";
+import { RevealResult } from "@/components/live/reveal-result";
+import { RecapContent } from "@/app/(app)/abende/[id]/rueckblick/recap";
+import { leaderboard, ownGuess } from "@/lib/events/derive";
+import { DEMO_CATALOG, DEMO_EVENT } from "@/lib/events/demo";
 import { AromaWheel } from "@/components/tasting/aroma-wheel";
 import { CountUp } from "@/components/tasting/count-up";
 import { VeiledBottle, type RevealedBottle } from "@/components/tasting/veiled-bottle";
@@ -253,6 +263,74 @@ export function Styleguide() {
             <Button variant="secondary" onClick={() => setSheet(true)}>
               Bottom-Sheet öffnen
             </Button>
+          </Section>
+        </div>
+      </div>
+
+      <h2 className="mt-16 mb-6 text-4xl">Lagenabend · mit Beispieldaten</h2>
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
+        <Section title="Screen · Abend planen">
+          <Phone>
+            <EventForm organizerName="Tim" submitLabel="Abend anlegen" onSubmit={async () => {}} />
+          </Phone>
+        </Section>
+        <Section title="Screen · Gläser & Gäste (Gastgeber)">
+          <Phone>
+            <GlassList
+              data={{
+                ...DEMO_EVENT,
+                glasses: DEMO_EVENT.glasses.map((g) => ({ ...g, status: "pending" as const })),
+              }}
+              catalog={DEMO_CATALOG}
+              onChange={async () => {}}
+            />
+            <GuestPanel data={DEMO_EVENT} onChange={async () => {}} />
+          </Phone>
+        </Section>
+        <Section title="Screen · Nach dem Aufdecken (Jonas)">
+          <Phone>
+            <RevealResult
+              secret={DEMO_EVENT.secrets[2]}
+              guess={ownGuess(DEMO_EVENT, "gl3", "p-jonas")}
+              score={DEMO_EVENT.scores.find((s) => s.glassId === "gl3" && s.participantId === "p-jonas")}
+              catalog={DEMO_CATALOG}
+              pirateMode
+            />
+            <Leaderboard rows={leaderboard(DEMO_EVENT, "gl3")} me="p-jonas" />
+          </Phone>
+        </Section>
+        <Section title="Screen · Rückblick">
+          <Phone>
+            <RecapContent
+              data={{ ...DEMO_EVENT, event: { ...DEMO_EVENT.event, status: "finished" } }}
+              catalog={DEMO_CATALOG}
+              meId="p-matti"
+            />
+          </Phone>
+        </Section>
+        <div className="space-y-12">
+          <Section title="Screen · Rate-Bogen live">
+            <Phone>
+              <GuessForm
+                eventId="demo"
+                glass={DEMO_EVENT.glasses[3]}
+                participantId="p-jonas"
+                existing={undefined}
+                catalog={DEMO_CATALOG}
+                pirateMode
+                onSubmitted={async () => {}}
+              />
+            </Phone>
+          </Section>
+          <Section title="Screen · Kostenteilung">
+            <Phone>
+              <CostsPanel
+                data={DEMO_EVENT}
+                myParticipantId="p-matti"
+                isOrganizer={false}
+                onChange={async () => {}}
+              />
+            </Phone>
           </Section>
         </div>
       </div>

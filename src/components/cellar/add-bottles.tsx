@@ -152,6 +152,7 @@ export function AddBottlesSheet({
 
         <TickDial
           label="Jahrgang"
+          format={String}
           value={vintage}
           onChange={setVintage}
           min={1900}

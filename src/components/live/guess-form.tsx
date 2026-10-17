@@ -178,6 +178,7 @@ export function GuessForm({
         )}
         <TickDial
           label="Jahrgang"
+          format={String}
           value={vintage ?? YEAR - 3}
           onChange={(v) => {
             setVintage(v);
@@ -190,7 +191,7 @@ export function GuessForm({
           describe={() => (vintage === null ? "Wischen zum Schätzen" : "dein Tipp")}
         />
         <TickDial
-          label="Preis pro Flasche"
+          label="Preis pro Flasche in €"
           value={price ?? 25}
           onChange={(v) => {
             setPrice(v);
@@ -201,7 +202,7 @@ export function GuessForm({
           step={1}
           majorEvery={10}
           mediumEvery={5}
-          format={(v) => `${v} €`}
+          format={String}
           describe={() => (price === null ? "Wischen zum Schätzen" : "dein Tipp")}
         />
       </section>

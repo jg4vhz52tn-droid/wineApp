@@ -158,13 +158,14 @@ export function suggestOrder(glasses: Glass[], secrets: Secret[]): OrderSuggesti
   }
   if (classes.size > 1) parts.push("vom Gutswein hoch zu den großen Lagen");
   if (vintages.size > 1) parts.push("jung vor alt");
-  let reason = parts.length
-    ? `Von leicht nach kräftig: ${parts.join(", ")} – so überdeckt kein Wein den nächsten.`
-    : "Die Weine sind sich sehr ähnlich – die Reihenfolge kann bleiben, wie sie ist.";
-  if (pirateMoved) reason += " Den Piraten habe ich unauffällig in die Mitte gesetzt.";
-
   const order = sorted.map((g) => g.id);
   const changed = order.some((id, i) => id !== glasses[i]?.id);
+  let reason = parts.length
+    ? `Von leicht nach kräftig: ${parts.join(", ")} – so überdeckt kein Wein den nächsten.`
+    : "Die Weine sind sich sehr ähnlich.";
+  if (!changed) reason += " Deine Reihenfolge passt schon so.";
+  else if (pirateMoved) reason += " Den Piraten habe ich unauffällig in die Mitte gesetzt.";
+
   return { order, reason, changed };
 }
 

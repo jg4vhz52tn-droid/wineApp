@@ -190,7 +190,7 @@ Row Level Security sauber setzen: Gäste sehen die Wein-Zuordnung eines Glases e
 **Phase 0 – Fundament** — *gebaut 2026-10-16; offen: Supabase-Cloud-Projekt verbinden, Google-Login einrichten*
 Projekt-Setup, Designsystem (2 Look-Varianten zur Auswahl), Auth (inkl. Gast-Zugang per Link), Datenmodell, PWA-Grundgerüst, Navigation.
 
-**Phase 1 – Lagenabend + Blindverkostung (MVP, Kern)**
+**Phase 1 – Lagenabend + Blindverkostung (MVP, Kern)** — *gebaut 2026-10-17: Abend planen (mit Ticket-Vorschau), Gläser + Reihenfolge-Vorschlag, Gästeliste mit QR/Teilen/Erinnerung, Live-Verkostung (Einschenken → Rate-Bogen → Aufdecken → Punkte → Leaderboard), Sammelkarten beim Aufdecken, Rückblick, Kostenteilung. Offen: Test an einem echten Abend, Sprachnotiz, Rückblick als Bild*
 Event anlegen, Einladung/Zusagen/Follow-up, Live-Blindverkostung mit Realtime, Rate-Bogen mit Aromarad, Aufdecken-Animation, Punktesystem, Leaderboard auf jedem Handy, Option „Finde den Piraten", Rückblick/Summary, Kostenteilung im Hintergrund, Reihenfolge-Vorschlag per KI.
 → **Ziel: Damit können wir den nächsten echten Lagenabend durchführen.**
 
@@ -252,6 +252,11 @@ Live-Preis + Kauflink, Wunschliste, Preisalarm, Preisverlauf, Kellerwert-Portfol
 - Später prüfen: **Vivino-Import** über den DSGVO-Datenexport (kein Scraping) – wartet auf eine Beispieldatei. **Wein-Börse**: Stufe 1 „Abzugeben“ in der Runde (ohne Zahlungsabwicklung) als nächster Schritt denkbar; Stufe 2/3 (Marktplatz, Lagerung + digitaler Handel) nur nach Rechtsberatung (Zahlungsdienst, BaFin/Vermögensanlagen, Alkohol, DAC7).
 - 2026-10-17: Keller mit **frei benennbaren Regalen** (`cellar_racks`, eigene Fächer/Reihen), Jahrgänge ab 1900, **Trinkfenster-Vorschlag** nach Rebsorte/Qualitätsstufe/Jahrgang (`src/lib/cellar/drink-window.ts`).
 - 2026-10-17: Deployment: App auf Vercel (https://wine-app-tan.vercel.app), Website auf GitHub Pages (https://jg4vhz52tn-droid.github.io/wineApp/), Repo dafür öffentlich. Migrationen per GitHub Action nach erfolgreichen DB-Tests (Repo-Secrets `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`; Seed am 2026-10-17 einmalig eingespielt – nie erneut mit „Beispieldaten einspielen“ starten).
+- 2026-10-17: Phase 1 optisch und im Ablauf an der Website (`docs/abende.html`) ausgerichtet. Öffnen/Schließen/Aufdecken und die Punkte laufen als Datenbank-Funktionen (`open_glass`, `close_glass`, `reveal_glass`, `compute_glass_scores`); niemand kann Punkte selbst schreiben oder die Lösung vorher lesen.
+- 2026-10-17: Struktur-Punkte: volle Punkte bei Treffer, 0 ab 3 Skalenpunkten Abstand; ohne Referenz zählt der Gruppenschnitt (ab 2 Tipps). Aromen ohne Referenz: was mindestens die Hälfte der Runde (min. 2) gewählt hat. Tannin zählt nur bei Rotwein. Bewertung in halben Punkten.
+- 2026-10-17: „Schlag mir eine Reihenfolge vor“ vorerst **nach Regeln** (Schaumwein → Weiß → Rosé → Rot → Süß, Gutswein → GG, jung → alt, Pirat nie zuerst/zuletzt) – ohne KI, ohne Kosten. Claude-API erst in Phase 3.
+- 2026-10-17: Erinnerung und Follow-up über das Teilen-Menü des Handys (z. B. WhatsApp-Gruppe), kein E-Mail-/Push-Dienst. Live-Updates über Supabase Realtime (Free-Plan) + alle 4 s Abgleich als Rückfall.
+- 2026-10-17: QR-Code mit `qrcode-generator` (MIT, ohne Abhängigkeiten).
 - Offen: finaler Name, Apple Wallet für Einladungen (braucht Apple Developer Program, 99 $/Jahr).
 
 ## 9. Technische Notizen

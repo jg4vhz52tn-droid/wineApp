@@ -55,7 +55,7 @@ export function RevealResult({
     Preis: secret?.price ? euro(secret.price) : null,
     Lage: siteName(catalog, wine?.siteId ?? null),
     Region: regionName(catalog, wine?.regionId ?? null),
-    Pirat: secret?.isPirate ? "ja" : "nein",
+    Pirat: secret?.isPirate ? "das war der Pirat" : null,
   };
 
   return (
@@ -70,10 +70,10 @@ export function RevealResult({
             transition={{ delay: 0.9 + i * 0.07 }}
           >
             <span className="w-20 shrink-0 text-muted">{label}</span>
-            <span className="min-w-0 flex-1 truncate">
-              {yours}
-              {truth[label] && truth[label] !== yours && (
-                <span className="text-muted"> · richtig: {truth[label]}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate">{yours}</span>
+              {!points && truth[label] && truth[label] !== yours && (
+                <span className="block truncate text-xs text-muted">richtig: {truth[label]}</span>
               )}
             </span>
             <span
