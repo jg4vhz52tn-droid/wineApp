@@ -7,7 +7,7 @@
 window.Screens = (() => {
   const { ICON, veiledBottle, reduced } = Site;
 
-  const TAB_OF = { abende: "abende", raten: "abende", aufdecken: "abende", keller: "keller", lernen: "lernen", profil: "profil" };
+  const TAB_OF = { abende: "abende", raten: "abende", aufdecken: "abende", keller: "keller", boerse: "keller", lernen: "lernen", profil: "profil" };
 
   const ticks = (val, n = 41) => {
     let s = "";
@@ -79,6 +79,17 @@ window.Screens = (() => {
         ${["Schiefer", "Kellerkind", "Feine Nase"].map((t, i) => `<div style="flex:1;aspect-ratio:3/4;border-radius:10px;padding:6px;display:flex;align-items:flex-end;font-family:var(--serif);font-size:13px;line-height:1.1;color:#f4ede5;background:linear-gradient(160deg,${["#3b3a44", "#4a1428", "#5d6b3f"][i]},#120a0e);border:1px solid color-mix(in srgb,#d1ad72 50%,transparent)">${t}</div>`).join("")}
         <div style="flex:1;aspect-ratio:3/4;border-radius:10px;border:1px dashed var(--border-strong);display:grid;place-items:center;color:var(--muted);font-size:18px">?</div>
       </div>`,
+    boerse: `
+      <div class="ap-row"><div><div class="ap-sub">Depot · 14 Flaschen im Lager</div><div class="ap-h">Wein-Börse</div></div><span class="ap-chip" style="color:var(--success);border-color:currentColor">● offen</span></div>
+      <div class="ap-card" data-call="1" style="background:linear-gradient(150deg,var(--curtain),var(--surface) 70%)"><div class="ap-k">Depotwert</div>
+        <div class="ap-row"><span style="font-family:var(--serif);font-size:30px;line-height:1.1" class="num">4.820 €</span><span class="up" style="font-size:11px">▲ 612 €</span></div>
+        <svg viewBox="0 0 200 44" style="width:100%;height:40px;margin-top:4px" preserveAspectRatio="none"><defs><linearGradient id="bxG" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--success)" stop-opacity=".35"/><stop offset="1" stop-color="var(--success)" stop-opacity="0"/></linearGradient></defs><path d="M0 36 C20 34 30 30 45 31 S70 26 85 24 S110 25 125 18 S160 14 175 10 S195 6 200 5 V44 H0Z" fill="url(#bxG)"/><path d="M0 36 C20 34 30 30 45 31 S70 26 85 24 S110 25 125 18 S160 14 175 10 S195 6 200 5" fill="none" stroke="var(--success)" stroke-width="2"/></svg></div>
+      <div class="ap-k">Markt</div>
+      <div class="ap-card" style="padding:4px 12px" data-call="2">
+        ${[["Riesling GG Schieferkopf", "2019 · Mosel", "62,00 €", "+4,2 %", "M0 14 L10 12 L20 13 L30 9 L40 8 L50 5 L60 4"], ["Spätburgunder GG", "2015 · Baden", "91,50 €", "+1,8 %", "M0 12 L10 13 L20 10 L30 11 L40 8 L50 8 L60 6"], ["Lemberger GG", "2018 · Württ.", "47,20 €", "−0,6 %", "M0 6 L10 7 L20 5 L30 8 L40 9 L50 8 L60 10"]].map(([n, s2, p, d, path]) =>
+          `<div class="ap-row" style="padding:7px 0;border-bottom:1px solid var(--border)"><div style="min-width:0"><div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n}</div><div class="ap-sub">${s2}</div></div><svg viewBox="0 0 60 18" style="width:44px;height:16px;flex:none" aria-hidden="true"><path d="${path}" fill="none" stroke="${d.startsWith("+") ? "var(--success)" : "var(--danger)"}" stroke-width="1.6"/></svg><div style="text-align:right;flex:none"><div class="num" style="font-weight:600">${p}</div><div class="${d.startsWith("+") ? "up" : "down"}" style="font-size:10px">${d}</div></div></div>`).join("")}
+      </div>
+      <div class="ap-row" data-call="3" style="gap:6px"><button class="ap-btn" style="flex:1;background:var(--success);color:#0e1a12">Kaufen</button><button class="ap-btn" style="flex:1;background:var(--surface-2);color:var(--fg);border:1px solid var(--border)">Verkaufen</button></div>`,
     profil: `
       <div class="ap-row"><div><div class="ap-sub">Seit Oktober 2026</div><div class="ap-h">Profil</div></div><span style="width:40px;height:40px;border-radius:50%;background:var(--wine);color:var(--wine-fg);display:grid;place-items:center;font-weight:600">T</span></div>
       <div class="ap-card" data-call="1"><div class="ap-row"><span class="ap-k">Geschmacks-DNA</span><span class="ap-chip">bald</span></div>

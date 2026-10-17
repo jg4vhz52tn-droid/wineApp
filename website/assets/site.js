@@ -13,7 +13,7 @@ window.Site = (() => {
     { href: "abende.html", label: "Abende", note: "Planen & blind verkosten" },
     { href: "keller.html", label: "Keller", note: "Dein Weinportfolio" },
     { href: "lernen.html", label: "Lernen", note: "12 Kapitel zum Anfassen" },
-    { href: "boerse.html", label: "Wein-Börse", note: "Unsere Vision", vision: true },
+    { href: "boerse.html", label: "Wein-Börse", note: "In Arbeit", vision: true },
   ];
 
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -105,7 +105,7 @@ window.Site = (() => {
             <div><a class="brand" href="index.html">${ICON.glass}<span data-app-name></span></a>
               <p>Wein gemeinsam erleben – nicht nur sammeln. Ein privates Projekt für unsere Weinrunde.</p></div>
             <nav aria-label="Die App">${PAGES.slice(0, 5).map(p => `<a href="${p.href}">${p.label}</a>`).join("")}</nav>
-            <nav aria-label="Vision"><a href="boerse.html">Wein-Börse (Vision)</a><a href="keller.html#beispielkeller">Beispielkeller</a><a href="lernen.html#kapitel">So sieht ein Kapitel aus</a></nav>
+            <nav aria-label="Mehr"><a href="boerse.html">Wein-Börse (in Arbeit)</a><a href="keller.html#beispielkeller">Beispielkeller</a><a href="lernen.html#kapitel">So sieht ein Kapitel aus</a></nav>
           </div>
           <div class="fine"><span>© ${new Date().getFullYear()} · <span data-app-name></span> (Arbeitsname) · alle Beispieldaten erfunden</span><span>Bitte verantwortungsvoll genießen. Ab 18.</span></div>
         </div>`;

@@ -41,6 +41,45 @@
   .chap b { font-weight: 500; line-height: 1.25; }
   .chap p { font-size: .76rem; color: var(--muted); line-height: 1.4; }
   .chap .foot { margin-top: auto; display: flex; justify-content: space-between; font-size: .7rem; color: var(--muted); }
+  button.chap { text-align: left; color: var(--fg); font: inherit; width: 100%; }
+  .chap .foot { gap: 8px; flex-wrap: wrap; }
+  .c-head { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 14px; align-items: center; padding-right: 48px; }
+  .c-head .ic { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+  .c-head .ic svg { width: 24px; height: 24px; }
+  .c-head h3 { font-size: 1.9rem; line-height: 1.05; }
+  .c-box { padding: 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--border); }
+  .c-box .chips { margin: 8px 0; }
+  .mini-art { width: 100%; max-width: 320px; height: auto; display: block; margin: 8px auto; }
+  .proc { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; font-size: .8rem; }
+  .proc li { padding: 4px 10px; border-radius: 99px; background: var(--surface-2); }
+  .proc li:not(:last-child)::after { content: " →"; color: var(--accent); }
+  .atlas-info { min-height: 92px; padding: 12px 14px; border-radius: 14px; background: var(--surface-2); }
+  .glass-stage { display: grid; place-items: center; height: 190px; }
+  .glass-stage svg { height: 180px; transform-origin: 50% 85%; }
+  .glass-stage svg.swirl #wineFill { animation: swirl 1.2s ease-in-out infinite; transform-origin: 60px 60px; }
+  @keyframes swirl { 25% { transform: skewX(8deg); } 75% { transform: skewX(-8deg); } }
+  .glass-stage svg.sniff { animation: sniff 1.4s ease-in-out infinite; }
+  @keyframes sniff { 50% { transform: translateY(-10px) scale(1.04); } }
+  .pair-out { min-height: 110px; margin-top: 8px; }
+  .serve { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 16px; align-items: center; margin-top: 10px; }
+  .thermo { width: 22px; height: 150px; margin: 0 auto; border-radius: 99px; border: 2px solid var(--border-strong); position: relative; overflow: hidden; background: var(--surface-2); }
+  .thermo i { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(0deg, #3f6f93, #d9557f); transition: height .6s cubic-bezier(.3,.8,.2,1); }
+  .store-meter { margin-top: 14px; padding: 14px; border-radius: 14px; background: var(--surface-2); }
+  .store-meter .tr { height: 10px; border-radius: 99px; background: var(--surface-3); overflow: hidden; margin-top: 6px; }
+  .store-meter .tr i { display: block; height: 100%; transition: width .5s, background .5s; }
+  .tips { margin-top: 10px; display: grid; gap: 4px; font-size: .84rem; color: var(--muted); }
+  .tips li::before { content: "· "; color: var(--accent); }
+  .label-demo { display: grid; place-items: center; padding: 10px 0; }
+  .lbl-card { position: relative; width: 240px; padding: 26px 22px 20px; background: #f4ede5; color: #2a1520; border-radius: 6px; text-align: center; box-shadow: 0 12px 30px -12px rgb(0 0 0 / .6); font-family: var(--sans); }
+  .l-prod { font-size: .62rem; letter-spacing: .2em; text-transform: uppercase; color: #7d5a22; }
+  .l-name { font-family: var(--serif); font-size: 2rem; line-height: 1; margin: 12px 0 6px; }
+  .l-grape { font-size: .9rem; } .l-grape span { font-style: italic; color: #6e1733; }
+  .l-year { font-family: var(--serif); font-size: 1.4rem; margin: 8px 0 12px; }
+  .l-fine { font-size: .56rem; color: #6c5660; line-height: 1.5; }
+  .hs { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; border: 0; background: var(--wine); color: #fff; font: 600 .74rem var(--sans); box-shadow: 0 0 0 4px rgb(140 37 71 / .25); animation: hsPulse 2s infinite; }
+  .hs.on { background: #d1ad72; color: #1a0f12; animation: none; }
+  @keyframes hsPulse { 50% { box-shadow: 0 0 0 9px rgb(140 37 71 / 0); } }
+  .lbl-out { min-height: 80px; padding: 12px 14px; border-radius: 14px; background: var(--surface-2); margin-top: 6px; }
   .chap.demo { border-color: var(--accent); background: linear-gradient(160deg, var(--accent-soft), var(--surface) 60%); }
 
   /* Kapitel-Player */
@@ -286,6 +325,12 @@
   </section>
 </main>
 
+<div class="sheet" id="chapSheet" role="dialog" aria-modal="true" aria-labelledby="cTitle" aria-hidden="true">
+  <div class="grab"></div>
+  <button class="icon-btn sheet-close" type="button" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  <div id="cBody"></div>
+</div>
+
 <footer id="site-footer"></footer>
 <script src="assets/site.js"></script>
 <script>
@@ -347,8 +392,171 @@
 
   // Kapitel-Kacheln
   $("#chapters").innerHTML = MODULES.map(([t, d, min, motif, card], i) =>
-    `<a class="card chap fade${i === 1 ? " demo" : ""}" href="${i === 1 ? "#kapitel" : "#album"}"><span class="top2"><span class="no">${String(i + 1).padStart(2, "0")}</span><span class="ic">${icon(motif)}</span></span><span><b>${t}</b><p style="margin-top:4px">${d}</p></span><span class="foot"><span>${min} Min</span><span>${i === 1 ? "Hier ausprobieren ↓" : "✦ " + card}</span></span></a>`).join("");
+    `<button type="button" class="card chap fade${i === 1 ? " demo" : ""}" data-chap="${i}"><span class="top2"><span class="no">${String(i + 1).padStart(2, "0")}</span><span class="ic">${icon(motif)}</span></span><span><b>${t}</b><p style="margin-top:4px">${d}</p></span><span class="foot"><span>${min} Min · ✦ ${card}</span><span style="color:var(--accent)">${i === 1 ? "Ganzes Kapitel ↓" : "Ausschnitt →"}</span></span></button>`).join("");
   $$("#chapters .fade").forEach(el => el.classList.add("in"));
+  /* ---------- Ausschnitt für jedes Kapitel ---------- */
+  const chapSheet = Site.sheet("chapSheet");
+  const ON_PAGE = { 1: "#kapitel", 2: "#grapeRadar", 3: "#cuveeRadar", 5: "#wheel", 11: "#faults" };
+  const seg = (name, items, on = 0) => `<div class="chips" data-group="${name}" role="group">${items.map((t, i) => `<button type="button" class="chip" aria-pressed="${i === on}" data-i="${i}">${t}</button>`).join("")}</div>`;
+  const onPick = (root, name, fn) => root.querySelector(`[data-group="${name}"]`).addEventListener("click", e => {
+    const b = e.target.closest("[data-i]"); if (!b) return;
+    $$("[data-i]", b.parentElement).forEach(x => x.setAttribute("aria-pressed", x === b)); fn(+b.dataset.i);
+  });
+  const done = i => setTimeout(() => unlock(i), 400);
+
+  const MINI = {
+    0: { // Vom Weinberg ins Glas
+      html: `<p class="muted">Schieb durch das Weinjahr – und schau, was mit den Trauben passiert.</p>
+        <svg viewBox="0 0 300 170" class="mini-art" id="vine" aria-hidden="true"></svg>
+        <label class="field-lbl" for="month"><span class="muted">Monat</span><b id="monthOut"></b></label><input type="range" id="month" min="0" max="7" value="0">
+        <p id="monthTxt" style="font-size:.92rem;min-height:3em"></p>
+        <div class="k" style="margin-top:12px">Im Keller: Weiß oder Rot?</div>${seg("color", ["Weißwein", "Rotwein"])}<ol class="proc" id="proc"></ol>`,
+      init(r) {
+        const M = [["März", "Der Rebschnitt ist fertig, der Saft steigt – die Rebe „blutet“.", 0, 0], ["April", "Austrieb: Die ersten Blätter kommen.", 1, 0], ["Juni", "Blüte – unscheinbar, aber entscheidend für die Menge.", 2, 0], ["Juli", "Kleine, harte, grüne Beeren.", 3, 1], ["August", "Die Reife beginnt: Beeren werden weich und färben sich.", 3, 2], ["September", "Lese! Zucker und Säure stehen im besten Verhältnis.", 3, 3], ["Oktober", "Im Keller gärt der Most: Hefe macht aus Zucker Alkohol.", 3, 4], ["Winter", "Ausbau in Tank oder Fass, dann Abfüllung.", 2, 4]];
+        const draw = () => {
+          const [m, t, leaves, ripe] = M[+r.querySelector("#month").value];
+          r.querySelector("#monthOut").textContent = m; r.querySelector("#monthTxt").textContent = t;
+          const g = ["#9fbf6a", "#b7c46a", "#a3567a", "#5a1f3a", "#5a1f3a"][ripe];
+          const lv = Array.from({ length: leaves * 2 }, (_, k) => `<ellipse cx="${110 + (k % 2 ? 50 : -10) + k * 6}" cy="${50 + (k % 3) * 14}" rx="16" ry="9" fill="#7fa06a" transform="rotate(${k % 2 ? 25 : -25} ${110 + k * 6} ${50 + (k % 3) * 14})"/>`).join("");
+          const grapes = ripe || leaves >= 3 ? [[150, 78], [142, 90], [158, 90], [150, 102], [136, 102], [164, 102], [150, 114], [143, 126], [157, 126], [150, 138]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="${7 + Math.min(ripe, 3)}" fill="${g}"/>`).join("") : "";
+          r.querySelector("#vine").innerHTML = `<path d="M150 170 C148 130 156 100 150 60 M150 70 C120 60 100 64 80 60 M150 64 C180 54 200 58 222 50" stroke="#6b4b3a" stroke-width="5" fill="none" stroke-linecap="round"/>${lv}${grapes}${ripe === 4 ? '<text x="230" y="140" font-size="26">🍷</text>' : ""}`;
+          if (+r.querySelector("#month").value === 7) done(0);
+        };
+        r.querySelector("#month").addEventListener("input", draw); Site.syncRange(r.querySelector("#month")); r.querySelector("#month").addEventListener("input", () => Site.syncRange(r.querySelector("#month"))); draw();
+        const P = [["Lese", "Pressen", "Most klärt sich", "Gärung", "Ausbau"], ["Lese", "Entrappen & Maischen", "Gärung auf den Schalen – sie geben Farbe & Tannin", "Pressen", "Ausbau im Fass"]];
+        const pr = i => (r.querySelector("#proc").innerHTML = P[i].map(s2 => `<li>${s2}</li>`).join(""));
+        onPick(r, "color", i => { pr(i); if (i === 1) done(0); }); pr(0);
+      },
+    },
+    4: { // Weinatlas
+      html: `<p class="muted">Unsere eigene, stilisierte Karte der 13 deutschen Anbaugebiete. Tippe ein Gebiet an.</p>
+        <svg viewBox="0 0 300 340" class="mini-art atlas" id="atlas" role="group" aria-label="Anbaugebiete"></svg><div id="atlasInfo" class="atlas-info" aria-live="polite"></div>`,
+      init(r) {
+        const R = [["Ahr", 70, 120, "Spätburgunder", "Schiefer & Grauwacke", "Eines der nördlichsten Rotweingebiete – steile, warme Felshänge."], ["Mosel", 40, 165, "Riesling", "Schiefer", "Steillagen über dem Fluss, filigrane Rieslinge mit viel Säure."], ["Mittelrhein", 82, 145, "Riesling", "Schiefer", "Burgen, Felsen, kleine Terrassen."], ["Nahe", 78, 190, "Riesling", "Sehr vielfältig: Vulkan, Schiefer, Sandstein", "Auf kleinem Raum die meisten Böden."], ["Rheingau", 108, 172, "Riesling, Spätburgunder", "Löss, Lehm, Quarzit", "Südhänge am Rhein – klassische Riesling-Heimat."], ["Rheinhessen", 112, 200, "Silvaner, Riesling", "Kalk & Löss", "Sanfte Hügel, viele junge Winzer."], ["Pfalz", 102, 240, "Riesling, Burgunder", "Buntsandstein, Kalk", "Warm und mild – fast mediterran."], ["Hess. Bergstraße", 140, 218, "Riesling", "Granit & Löss", "Klein, früher Frühling."], ["Franken", 185, 205, "Silvaner", "Muschelkalk, Keuper", "Silvaner im Bocksbeutel."], ["Württemberg", 162, 262, "Lemberger, Trollinger", "Keuper", "Rotweinland am Neckar."], ["Baden", 112, 295, "Spät- & Grauburgunder", "Vulkan (Kaiserstuhl), Löss", "Das wärmste Gebiet – Burgunder-Land."], ["Saale-Unstrut", 205, 105, "Weißburgunder, Müller-Thurgau", "Muschelkalk", "Weit im Norden, an Terrassenhängen."], ["Sachsen", 236, 132, "Riesling, Müller-Thurgau", "Granit & Syenit", "Elbtal bei Dresden – klein und fein."]];
+        const svg = r.querySelector("#atlas");
+        svg.innerHTML = `<path d="M60 40 C110 10 200 20 250 50 C290 80 285 150 260 190 C240 230 220 270 190 300 C160 330 110 335 80 315 C45 290 25 240 20 190 C15 130 20 70 60 40Z" fill="var(--surface-2)" stroke="var(--border-strong)"/>
+          <path d="M120 320 C110 270 115 230 108 200 C100 170 95 150 80 120 C70 95 75 70 80 40" stroke="#3f6f93" stroke-width="2.5" fill="none" opacity=".6"/>
+          ${R.map(([n, x, y], i) => `<g data-r="${i}" tabindex="0" role="button" aria-label="${n}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="16" fill="transparent"/><circle class="pin" cx="${x}" cy="${y}" r="6" fill="var(--accent)" stroke="var(--bg)" stroke-width="2"/><text x="${x + 10}" y="${y + 4}" font-size="9.5" fill="var(--muted)" font-family="Inter">${n}</text></g>`).join("")}`;
+        const seen = new Set();
+        const pick = i => {
+          const [n, , , g, b, t] = R[i];
+          $$("[data-r] .pin", svg).forEach((c, k) => c.setAttribute("r", k === i ? 9 : 6));
+          r.querySelector("#atlasInfo").innerHTML = `<b style="font-family:var(--serif);font-weight:400;font-size:1.4rem">${n}</b><p class="muted" style="font-size:.88rem">${t}</p><div class="chips" style="margin-top:8px"><span class="chip">🍇 ${g}</span><span class="chip">⛰ ${b}</span></div>`;
+          seen.add(i); if (seen.size === 3) done(4);
+        };
+        svg.addEventListener("click", e => { const g = e.target.closest("[data-r]"); if (g) pick(+g.dataset.r); });
+        svg.addEventListener("keydown", e => { const g = e.target.closest("[data-r]"); if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pick(+g.dataset.r); } });
+        pick(1);
+      },
+    },
+    6: { // Verkosten
+      html: `<p class="muted">Vier Schritte – in dieser Reihenfolge. Tippe dich durch.</p>${seg("step", ["1 Sehen", "2 Schwenken", "3 Riechen", "4 Schmecken"])}
+        <div class="glass-stage"><svg viewBox="0 0 120 180" id="tglass" aria-hidden="true"><path d="M30 10 h60 l-6 60 a24 24 0 0 1-48 0z" fill="none" stroke="var(--fg)" stroke-opacity=".5" stroke-width="2"/><path id="wineFill" d="M33 40 h54 l-3 30 a24 24 0 0 1-48 0z" fill="#e6d27a" opacity=".85"/><path d="M60 94 v60 M40 160 h40" stroke="var(--fg)" stroke-opacity=".5" stroke-width="2"/></svg></div>
+        <p id="tasteTxt" style="font-size:.92rem;min-height:4.5em"></p>`,
+      init(r) {
+        const T = ["<b>Sehen:</b> Glas schräg vor ein weißes Blatt halten. Hell und grünlich heißt meist jung, goldgelb eher reif oder süß.", "<b>Schwenken:</b> Ein paar Kreise – Luft öffnet die Aromen. Die „Kirchenfenster“ am Glas zeigen Alkohol und Zucker.", "<b>Riechen:</b> Erst kurz, dann tief. Frucht? Blüten? Stein? Holz? Das Aromarad hilft beim Benennen.", "<b>Schmecken:</b> Einen Schluck im Mund bewegen: Süße, Säure, Körper, Gerbstoff – und wie lange der Abgang bleibt."];
+        const g = r.querySelector("#tglass");
+        const set = i => {
+          r.querySelector("#tasteTxt").innerHTML = T[i];
+          g.style.transition = "transform .8s"; g.style.transform = i === 0 ? "rotate(-30deg)" : "none";
+          g.classList.toggle("swirl", i === 1); g.classList.toggle("sniff", i === 2);
+          if (i === 3) done(6);
+        };
+        onPick(r, "step", set); set(0);
+      },
+    },
+    7: { // Wein & Essen
+      html: `<p class="muted">Was kommt auf den Tisch?</p>${seg("dish", ["Sushi", "Spargel", "Lammkeule", "Käseplatte", "Thai-Curry", "Apfelstrudel"], -1)}<div id="pairOut" class="pair-out" aria-live="polite"><p class="muted">Wähle ein Gericht.</p></div>`,
+      init(r) {
+        const D = [["Riesling Kabinett", "Säure & ein Hauch Süße passen zu Reis, Fisch und Sojasoße.", "Säure zu Fisch"], ["Silvaner oder Weißburgunder", "Zurückhaltend, leicht erdig – überdeckt das feine Spargelaroma nicht.", "Zartes zu Zartem"], ["Lemberger oder Spätburgunder GG", "Tannin bindet sich an Fett und Eiweiß – das Fleisch wird zarter im Mund.", "Tannin zu Fett"], ["Riesling Spätlese", "Süße und Säure gegen Salz und Würze – oft besser als Rotwein.", "Süß zu Salzig"], ["Riesling feinherb", "Restsüße mildert die Schärfe, wenig Alkohol facht sie nicht an.", "Süße zur Schärfe"], ["Riesling Auslese", "Der Wein sollte süßer sein als das Dessert.", "Süßer als das Dessert"]];
+        const n = new Set();
+        onPick(r, "dish", i => {
+          const [w, why, rule] = D[i];
+          r.querySelector("#pairOut").innerHTML = `<span class="chip" style="background:var(--accent);border-color:var(--accent);color:var(--accent-fg)">Regel: ${rule}</span><b style="display:block;font-family:var(--serif);font-weight:400;font-size:1.5rem;margin-top:10px">${w}</b><p class="muted" style="font-size:.9rem">${why}</p>`;
+          n.add(i); if (n.size === 2) done(7);
+        });
+      },
+    },
+    8: { // Richtig servieren
+      html: `<p class="muted">Welcher Wein wird serviert?</p>${seg("type", ["Sekt", "Leichter Weißer", "Kräftiger Weißer", "Rosé", "Leichter Roter", "Kräftiger Roter", "Süßwein"])}
+        <div class="serve"><div class="thermo" aria-hidden="true"><i id="thermoFill"></i></div><div><b id="serveTemp" style="font-family:var(--serif);font-weight:400;font-size:2.4rem;line-height:1"></b><p id="serveTxt" style="font-size:.9rem;margin-top:6px"></p><div class="chips" id="serveChips" style="margin-top:8px"></div></div></div>`,
+      init(r) {
+        const S = [[7, "6–8 °C", "Schmale Flöte oder ein Weißweinglas – im Weißweinglas duftet guter Sekt mehr.", "Nicht dekantieren"], [9, "8–10 °C", "Kleines Weißweinglas, damit er kühl bleibt.", "Nicht dekantieren"], [11, "10–12 °C", "Größeres, bauchiges Glas – die Aromen brauchen Platz.", "Bei jungen GGs: kurz belüften"], [9, "8–10 °C", "Weißweinglas.", "Nicht dekantieren"], [15, "14–16 °C", "Burgunderglas mit großem Kelch.", "Selten nötig"], [17, "16–18 °C", "Großes Rotweinglas – „Zimmertemperatur“ ist meist zu warm.", "Junge Weine dekantieren, alte vorsichtig wegen Depot"], [9, "8–10 °C", "Kleines Glas, kleine Menge.", "Nicht dekantieren"]];
+        onPick(r, "type", i => {
+          const [t, txt, glass, dec] = S[i];
+          r.querySelector("#thermoFill").style.height = (t - 4) / 16 * 100 + "%";
+          r.querySelector("#serveTemp").textContent = txt; r.querySelector("#serveTxt").textContent = glass;
+          r.querySelector("#serveChips").innerHTML = `<span class="chip">${dec}</span>`;
+          if (i === 5) done(8);
+        });
+        r.querySelector('[data-group="type"] [data-i="0"]').click();
+      },
+    },
+    9: { // Richtig lagern
+      html: `<p class="muted">Stell den Lagerort ein – wie geht es den Flaschen?</p>
+        <label class="field-lbl" for="lT"><span class="muted">Temperatur</span><b id="lTOut"></b></label><input type="range" id="lT" min="4" max="26" value="20">
+        <label class="field-lbl" for="lH"><span class="muted">Luftfeuchte</span><b id="lHOut"></b></label><input type="range" id="lH" min="30" max="90" value="45">
+        <div class="k" style="margin-top:8px">Licht</div>${seg("light", ["Dunkel", "Tageslicht"], 1)}
+        <div class="k" style="margin-top:8px">Flasche</div>${seg("pos", ["Liegend", "Stehend"], 1)}
+        <div class="store-meter"><div class="field-lbl"><span>Zustand im Keller</span><b id="lScore"></b></div><div class="tr"><i id="lBar"></i></div><ul id="lTips" class="tips"></ul></div>`,
+      init(r) {
+        const st = { light: 1, pos: 1 };
+        const calc = () => {
+          const t = +r.querySelector("#lT").value, h = +r.querySelector("#lH").value;
+          r.querySelector("#lTOut").textContent = t + " °C"; r.querySelector("#lHOut").textContent = h + " %";
+          const tips = []; let s = 100;
+          if (t < 8) { s -= 20; tips.push("Zu kalt – der Wein reift kaum."); } else if (t > 15) { s -= Math.min(40, (t - 15) * 6); tips.push("Zu warm – der Wein altert zu schnell. Ideal: 10–14 °C."); }
+          if (h < 55) { s -= 20; tips.push("Zu trocken – Korken können austrocknen."); } else if (h > 85) { s -= 10; tips.push("Sehr feucht – Etiketten können schimmeln."); }
+          if (st.light) { s -= 25; tips.push("Licht schadet – vor allem Weißwein in hellen Flaschen."); }
+          if (st.pos) { s -= 15; tips.push("Mit Korken: liegend lagern, damit er feucht bleibt."); }
+          s = Math.max(0, s);
+          r.querySelector("#lScore").textContent = s + " %"; r.querySelector("#lBar").style.width = s + "%";
+          r.querySelector("#lBar").style.background = s > 80 ? "var(--success)" : s > 50 ? "var(--warning)" : "var(--danger)";
+          r.querySelector("#lTips").innerHTML = (tips.length ? tips : ["Perfekt: kühl, dunkel, ruhig, liegend. ✓"]).map(x => `<li>${x}</li>`).join("");
+          ["#lT", "#lH"].forEach(id => Site.syncRange(r.querySelector(id)));
+          if (s >= 95) done(9);
+        };
+        ["#lT", "#lH"].forEach(id => r.querySelector(id).addEventListener("input", calc));
+        onPick(r, "light", i => { st.light = i; calc(); }); onPick(r, "pos", i => { st.pos = i; calc(); }); calc();
+      },
+    },
+    10: { // Etikett lesen
+      html: `<p class="muted">Tippe auf die nummerierten Stellen des Etiketts.</p>
+        <div class="label-demo"><div class="lbl-card">
+          <button type="button" class="hs" data-h="0" style="top:8%;left:50%">1</button><div class="l-prod">Weingut Steinbach</div>
+          <button type="button" class="hs" data-h="1" style="top:30%;left:84%">2</button><div class="l-name">Schieferkopf</div>
+          <div class="l-grape">Riesling <span>Kabinett</span></div><button type="button" class="hs" data-h="2" style="top:50%;left:86%">3</button>
+          <div class="l-year">2021</div><button type="button" class="hs" data-h="3" style="top:64%;left:16%">4</button>
+          <div class="l-fine">Mosel · Prädikatswein · feinherb<br>A.P.Nr. 2 576 041 012 22 · 8,5 % vol</div><button type="button" class="hs" data-h="4" style="top:88%;left:50%">5</button>
+        </div></div><div id="lblOut" class="lbl-out" aria-live="polite"><p class="muted">Noch nichts angetippt.</p></div>`,
+      init(r) {
+        const H = [["Weingut", "Wer den Wein gemacht hat – oft der wichtigste Hinweis auf die Qualität."], ["Lage", "Der Weinberg, aus dem die Trauben stammen. Je enger die Herkunft, desto ausdrucksstärker meist der Wein."], ["Rebsorte & Prädikat", "„Kabinett“ beschreibt die Reife der Trauben bei der Lese – nicht zwingend die Süße. Ob trocken oder süß, steht extra."], ["Jahrgang", "Das Jahr der Lese. Wichtig für das Trinkfenster."], ["Kleingedrucktes", "Anbaugebiet, Qualitätsstufe, Geschmack (feinherb = leicht süß), amtliche Prüfnummer und Alkohol. Wenig Alkohol deutet oft auf Restsüße."]];
+        const seen = new Set();
+        r.querySelector(".label-demo").addEventListener("click", e => {
+          const b = e.target.closest("[data-h]"); if (!b) return;
+          $$(".hs", r).forEach(x => x.classList.toggle("on", x === b));
+          const [t, d] = H[+b.dataset.h];
+          r.querySelector("#lblOut").innerHTML = `<b style="font-weight:500">${t}</b><p class="muted" style="font-size:.9rem;margin-top:4px">${d}</p>`;
+          seen.add(b.dataset.h); if (seen.size === 5) done(10);
+        });
+      },
+    },
+  };
+
+  function openChap(i) {
+    const [t, d, min, motif, card] = MODULES[i];
+    const mini = MINI[i];
+    $("#cBody").innerHTML = `
+      <div class="c-head"><span class="ic">${icon(motif)}</span><div><span class="k">Kapitel ${i + 1} · ${min} Min</span><h3 id="cTitle">${t}</h3></div></div>
+      <p style="margin:6px 0 14px">${d}</p>
+      <div class="c-box">${mini ? `<span class="eyebrow">Ausschnitt</span><div style="margin-top:10px" id="miniRoot">${mini.html}</div>` : `<span class="eyebrow">Auf dieser Seite</span><p style="margin-top:10px">Dieses Kapitel kannst du hier auf der Seite ausprobieren.</p><button type="button" class="btn btn-primary btn-sm" id="goTool" style="margin-top:12px">Zum Ausprobieren ↓</button>`}</div>
+      <p class="muted" style="font-size:.8rem;margin-top:14px">In der App: kurze Story-Karten, die Interaktion, ein Mini-Quiz – und am Ende die Sammelkarte <b style="color:var(--fg);font-weight:500">✦ ${card}</b>${mini ? " (schaltest du hier mit dem Ausschnitt frei)" : ""}.</p>`;
+    if (mini) mini.init($("#miniRoot"));
+    else $("#goTool").addEventListener("click", () => { chapSheet.close(); const el = $(ON_PAGE[i]); (el.closest(".card") || el).scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" }); });
+    chapSheet.open();
+  }
+  $("#chapters").addEventListener("click", e => { const b = e.target.closest("[data-chap]"); if (b) openChap(+b.dataset.chap); });
+
 
   /* ---------- Kapitel-Player: Boden-Explorer ---------- */
   const SOILS = [
