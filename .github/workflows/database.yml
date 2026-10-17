@@ -1,0 +1,77 @@
+# Keeps the Supabase database in step with the code:
+# on every push to main that touches the database, run the offline DB tests
+# (migrations + access rules in PGlite) and only if they pass, apply new
+# migrations to the live project.
+#
+# Needs two repository secrets (Settings → Secrets and variables → Actions):
+#   SUPABASE_ACCESS_TOKEN  personal access token from supabase.com/dashboard/account/tokens
+#   SUPABASE_DB_PASSWORD   the database password of the project
+#
+# "Run workflow" by hand with "Beispieldaten einspielen" to load seed.sql
+# once into a fresh project. Never run that twice - it would insert duplicates.
+
+name: Datenbank
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/seed.sql"
+      - "scripts/db/**"
+      - ".github/workflows/database.yml"
+  workflow_dispatch:
+    inputs:
+      include_seed:
+        description: "Beispieldaten einspielen (nur einmal für ein neues Projekt!)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: database
+  cancel-in-progress: false
+
+env:
+  SUPABASE_PROJECT_REF: kacjkjjjjkeskjdebjrl
+
+jobs:
+  test:
+    name: Datenbank-Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run db:test
+
+  migrate:
+    name: Migrationen übertragen
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - name: Geheimnisse fehlen noch
+        if: env.SUPABASE_ACCESS_TOKEN == '' || env.SUPABASE_DB_PASSWORD == ''
+        run: echo "::warning::SUPABASE_ACCESS_TOKEN oder SUPABASE_DB_PASSWORD fehlt – Migrationen wurden NICHT übertragen."
+      - uses: actions/checkout@v4
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_DB_PASSWORD != ''
+      - uses: supabase/setup-cli@v1
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_DB_PASSWORD != ''
+        with:
+          version: 2.109.1
+      - name: Projekt verknüpfen
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_DB_PASSWORD != ''
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+      - name: Migrationen übertragen
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_DB_PASSWORD != ''
+        run: |
+          if [ "${{ inputs.include_seed }}" = "true" ]; then
+            supabase db push --password "$SUPABASE_DB_PASSWORD" --include-seed --yes
+          else
+            supabase db push --password "$SUPABASE_DB_PASSWORD" --yes
+          fi

@@ -219,6 +219,7 @@ Live-Preis + Kauflink, Wunschliste, Preisalarm, Preisverlauf, Kellerwert-Portfol
 - API-Keys und Secrets nie im Code, sondern in `.env` (mit `.env.example`).
 - Mobile-first testen (kleine Bildschirme zuerst).
 - Seed-Daten mit ein paar realistischen Weinen (z. B. deutsche Rieslinge aus verschiedenen Lagen), damit man sofort etwas sieht.
+- **Live gehen:** Nach jeder abgeschlossenen Änderung Tests + Build laufen lassen, dann committen und auf `main` pushen. Vercel (App) und GitHub Pages (Website, Ordner `docs/`) veröffentlichen das automatisch; Datenbank-Migrationen überträgt die GitHub Action `Datenbank` (`.github/workflows/database.yml`) nach grünen Tests. Neue Migrationen müssen **abwärtskompatibel** sein (App und Datenbank gehen kurz nacheinander live).
 - Diese Datei aktuell halten: erledigte Phasen abhaken, getroffene Entscheidungen unter „Entscheidungslog" notieren.
 
 ## 8. Entscheidungslog
@@ -250,6 +251,7 @@ Live-Preis + Kauflink, Wunschliste, Preisalarm, Preisverlauf, Kellerwert-Portfol
 - 2026-10-17: Vorstellungs-Website in `docs/` (6 Seiten, reines HTML, kein Build; Name zentral in `docs/assets/site.js`; GitHub Pages aus `main` → `/docs`). Wein-Börse dort auf Tims Wunsch als „in Arbeit“ und als Asset-Handel dargestellt (Depot, Kurse, Gewinnrechner), nur mit kurzem Hinweis „Beispiel, kein Angebot, Preise können fallen“. **Vor einer Veröffentlichung rechtlich prüfen lassen.**
 - Später prüfen: **Vivino-Import** über den DSGVO-Datenexport (kein Scraping) – wartet auf eine Beispieldatei. **Wein-Börse**: Stufe 1 „Abzugeben“ in der Runde (ohne Zahlungsabwicklung) als nächster Schritt denkbar; Stufe 2/3 (Marktplatz, Lagerung + digitaler Handel) nur nach Rechtsberatung (Zahlungsdienst, BaFin/Vermögensanlagen, Alkohol, DAC7).
 - 2026-10-17: Keller mit **frei benennbaren Regalen** (`cellar_racks`, eigene Fächer/Reihen), Jahrgänge ab 1900, **Trinkfenster-Vorschlag** nach Rebsorte/Qualitätsstufe/Jahrgang (`src/lib/cellar/drink-window.ts`).
+- 2026-10-17: Deployment: App auf Vercel (https://wine-app-tan.vercel.app), Website auf GitHub Pages (https://jg4vhz52tn-droid.github.io/wineApp/), Repo dafür öffentlich. Migrationen per GitHub Action nach erfolgreichen DB-Tests.
 - Offen: finaler Name, Apple Wallet für Einladungen (braucht Apple Developer Program, 99 $/Jahr).
 
 ## 9. Technische Notizen
