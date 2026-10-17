@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Instrument_Serif, Inter } from "next/font/google";
+import { Instrument_Serif, Inter } from "next/font/google";
 import { AppearanceProvider } from "@/components/app/appearance-provider";
 import { ServiceWorker } from "@/components/app/service-worker";
 import { SessionProvider } from "@/components/app/session-provider";
@@ -7,11 +7,9 @@ import { APP_DESCRIPTION, APP_NAME } from "@/config/app";
 import { appearanceScript } from "@/lib/appearance";
 import "./globals.css";
 
-// Look A: elegant serif headlines + clear sans body.
-const serifA = Instrument_Serif({ variable: "--font-serif-a", subsets: ["latin"], weight: "400" });
-const sansA = Inter({ variable: "--font-sans-a", subsets: ["latin"] });
-// Look B: one modern grotesk for everything.
-const sansB = Geist({ variable: "--font-sans-b", subsets: ["latin"] });
+// Elegant serif headlines + clear sans body.
+const serif = Instrument_Serif({ variable: "--font-serif-face", subsets: ["latin"], weight: "400" });
+const sans = Inter({ variable: "--font-sans-face", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: { default: APP_NAME, template: `%s · ${APP_NAME}` },
@@ -32,10 +30,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="de"
-      data-look="a"
       data-theme="dark"
       suppressHydrationWarning
-      className={`${serifA.variable} ${sansA.variable} ${sansB.variable} h-full`}
+      className={`${serif.variable} ${sans.variable} h-full`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: appearanceScript }} />

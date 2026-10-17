@@ -172,7 +172,7 @@ begin
   returning id into v_event_id;
 
   insert into public.event_participants (event_id, display_name, rsvp)
-  values (v_event_id, 'Anna', 'yes'), (v_event_id, 'Jonas', 'yes'), (v_event_id, 'Mira', 'pending');
+  values (v_event_id, 'Jonas', 'yes'), (v_event_id, 'Matti', 'yes'), (v_event_id, 'Sophie', 'pending');
 
   for v_wine in
     select v.id as vintage_id, w.name, g.name as grape

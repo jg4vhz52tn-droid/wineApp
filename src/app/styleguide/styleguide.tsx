@@ -3,19 +3,21 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useAppearance } from "@/components/app/appearance-provider";
-import { Bottle } from "@/components/tasting/bottle";
+import { InvitationTicket } from "@/components/event/invitation-ticket";
+import { AromaWheel } from "@/components/tasting/aroma-wheel";
 import { CountUp } from "@/components/tasting/count-up";
-import { Curtain } from "@/components/tasting/curtain";
+import { VeiledBottle } from "@/components/tasting/veiled-bottle";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, Eyebrow } from "@/components/ui/card";
+import { Eyebrow } from "@/components/ui/card";
 import { Chip, Pill } from "@/components/ui/chip";
 import { TextField } from "@/components/ui/field";
-import { CalendarIcon, PinIcon } from "@/components/ui/icons";
 import { Segmented } from "@/components/ui/segmented";
 import { Sheet } from "@/components/ui/sheet";
-import { Slider } from "@/components/ui/slider";
-import { LOOK_LABELS, type Look, type ThemePreference } from "@/lib/appearance";
+import { TickDial } from "@/components/ui/tick-dial";
+import { STRUCTURE_SCALES, describeRating, describeStructure, type StructureKey } from "@/config/tasting";
+import type { ThemePreference } from "@/lib/appearance";
+import { cn } from "@/lib/cn";
 
 const SWATCHES = [
   ["bg", "Hintergrund"],
@@ -23,38 +25,29 @@ const SWATCHES = [
   ["surface-2", "Fläche 2"],
   ["fg", "Text"],
   ["muted", "Text leise"],
-  ["accent", "Akzent"],
+  ["accent", "Messing"],
   ["wine", "Wein"],
-  ["curtain", "Vorhang"],
+  ["curtain", "Samt"],
 ] as const;
 
-const AROMAS = ["Pfirsich", "Zitrus", "Grüner Apfel", "Schiefer", "Honig", "Petrol", "Kräuter", "Aprikose"];
-
 const LEADERBOARD = [
-  { name: "Anna", points: 412 },
-  { name: "Tim", points: 388 },
-  { name: "Jonas", points: 351 },
-  { name: "Mira", points: 290 },
+  { name: "Tim", points: 412 },
+  { name: "Jonas", points: 388 },
+  { name: "Matti", points: 351 },
+  { name: "Sophie", points: 290 },
+  { name: "Ben", points: 254 },
 ];
 
+const SAMPLE_LABEL = { producer: "Egon Müller", name: "Scharzhofberger Riesling", vintage: 2021 };
+
 export function Styleguide() {
-  const { look, theme, setLook, setTheme } = useAppearance();
+  const { theme, setTheme } = useAppearance();
   const [sheet, setSheet] = useState(false);
   const [revealed, setRevealed] = useState(false);
 
   return (
     <main className="mx-auto w-full max-w-5xl px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-16">
-      {/* Sticky switcher so both looks can be compared on the phone. */}
-      <div className="sticky top-0 z-30 -mx-5 mb-8 space-y-2 border-b border-border bg-bg/90 px-5 py-3 backdrop-blur-xl">
-        <Segmented<Look>
-          label="Look"
-          value={look}
-          onChange={setLook}
-          options={[
-            { value: "a", label: LOOK_LABELS.a },
-            { value: "b", label: LOOK_LABELS.b },
-          ]}
-        />
+      <div className="sticky top-0 z-30 -mx-5 mb-8 border-b border-border bg-bg/90 px-5 py-3 backdrop-blur-xl">
         <Segmented<ThemePreference>
           label="Hell oder dunkel"
           value={theme}
@@ -71,15 +64,95 @@ export function Styleguide() {
         <Eyebrow>Designsystem</Eyebrow>
         <h1 className="text-5xl leading-[1.02] sm:text-6xl">Premium-Weinbar trifft Produktdesign.</h1>
         <p className="max-w-xl text-muted">
-          Zwei Looks zur Auswahl – jeweils hell und dunkel. Unten siehst du Bausteine und drei echte Screens.{" "}
+          Dunkel &amp; edel, in Hell und Dunkel. Unten siehst du Bausteine und die wichtigsten Screens.{" "}
           <Link href="/abende" className="text-accent underline-offset-4 hover:underline">
             Zur App
           </Link>
         </p>
       </header>
 
-      <div className="grid gap-12 lg:grid-cols-[1fr_1fr]">
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
         <div className="space-y-12">
+          <Section title="Screen · Einladung">
+            <InvitationTicket
+              organizerName="Tim"
+              title="Riesling quer durch die Lagen"
+              theme="Große Rieslinge von Saar bis Pfalz – und ein Pirat"
+              startsAt="2026-10-23T17:00:00Z"
+              location="Bei uns im Wohnzimmer"
+              isBlind
+              confirmed={7}
+              limit={12}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <Button size="lg">Ich bin dabei</Button>
+              <Button size="lg" variant="secondary">
+                Leider nicht
+              </Button>
+            </div>
+          </Section>
+
+          <Section title="Screen · Glas 3, verhüllt & aufgedeckt">
+            <Phone>
+              <div className="flex items-center justify-between">
+                <Eyebrow>Glas 3 von 8</Eyebrow>
+                <Pill>{revealed ? "Aufgedeckt" : "Runde läuft"}</Pill>
+              </div>
+              <div
+                className="flex justify-center overflow-hidden rounded-card py-6"
+                style={{
+                  background:
+                    "radial-gradient(70% 55% at 50% 15%, color-mix(in oklab, var(--accent) 14%, transparent), transparent 70%), var(--surface-2)",
+                }}
+              >
+                <VeiledBottle revealed={revealed} glass={3} label={SAMPLE_LABEL} className="h-80" />
+              </div>
+              <div className="flex items-center justify-between rounded-control bg-surface-2 px-4 py-3">
+                <span className="text-sm text-muted">Deine Punkte</span>
+                <span className="font-display text-3xl">
+                  <CountUp value={revealed ? 87 : 0} />
+                </span>
+              </div>
+              <Button
+                block
+                size="lg"
+                variant={revealed ? "secondary" : "primary"}
+                onClick={() => setRevealed(!revealed)}
+              >
+                {revealed ? "Wieder verhüllen" : "Aufdecken"}
+              </Button>
+            </Phone>
+          </Section>
+
+          <Section title="Screen · Zwischenstand">
+            <Phone>
+              <h2 className="text-3xl">Zwischenstand</h2>
+              <ol className="space-y-2">
+                {LEADERBOARD.map((row, index) => (
+                  <li
+                    key={row.name}
+                    className="flex items-center gap-3 rounded-control bg-surface-2 px-3 py-2.5 first:bg-accent first:text-accent-fg"
+                  >
+                    <span className="w-5 text-center font-display text-xl">{index + 1}</span>
+                    <Avatar name={row.name} className="size-9" />
+                    <span className="flex-1 font-medium">{row.name}</span>
+                    <span className="font-display text-2xl">
+                      <CountUp value={row.points} />
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </Phone>
+          </Section>
+        </div>
+
+        <div className="space-y-12">
+          <Section title="Screen · Rate-Bogen">
+            <Phone>
+              <RatingSheetPreview />
+            </Phone>
+          </Section>
+
           <Section title="Farben">
             <div className="grid grid-cols-4 gap-3">
               {SWATCHES.map(([token, label]) => (
@@ -101,7 +174,7 @@ export function Styleguide() {
             <p className="text-sm text-muted">Leiser Text für Zusatzinfos und Hinweise.</p>
           </Section>
 
-          <Section title="Buttons & Chips">
+          <Section title="Buttons & Eingaben">
             <div className="flex flex-wrap gap-3">
               <Button>Aufdecken</Button>
               <Button variant="wine">Ich bin dabei</Button>
@@ -113,111 +186,11 @@ export function Styleguide() {
               <Chip selected>Riesling</Chip>
               <Chip>Silvaner</Chip>
               <Chip>Grauburgunder</Chip>
-              <Pill>Pirat an Bord</Pill>
             </div>
-          </Section>
-
-          <Section title="Eingaben">
             <TextField label="Dein Name" placeholder="So sehen dich die anderen" />
             <Button variant="secondary" onClick={() => setSheet(true)}>
               Bottom-Sheet öffnen
             </Button>
-          </Section>
-        </div>
-
-        <div className="space-y-12">
-          <Section title="Screen · Einladung">
-            <Phone>
-              <Eyebrow>Tim lädt ein</Eyebrow>
-              <h2 className="text-4xl leading-[1.02]">Riesling quer durch die Lagen</h2>
-              <p className="text-muted">Große Rieslinge von Saar bis Pfalz – und ein Pirat</p>
-              <div className="flex gap-2">
-                <Pill>Blindverkostung</Pill>
-                <Pill>7 Zusagen von 12</Pill>
-              </div>
-              <Card className="space-y-2 p-4 text-sm">
-                <p className="flex items-center gap-3">
-                  <CalendarIcon className="text-accent" /> Freitag, 23. Oktober, 19:00 Uhr
-                </p>
-                <p className="flex items-center gap-3">
-                  <PinIcon className="text-accent" /> Bei uns im Wohnzimmer
-                </p>
-              </Card>
-              <div className="grid grid-cols-2 gap-3">
-                <Button size="lg">Ich bin dabei</Button>
-                <Button size="lg" variant="secondary">
-                  Leider nicht
-                </Button>
-              </div>
-            </Phone>
-          </Section>
-
-          <Section title="Screen · Glas 3, verhüllt & aufgedeckt">
-            <Phone>
-              <div className="flex items-center justify-between">
-                <Eyebrow>Glas 3 von 8</Eyebrow>
-                <Pill>{revealed ? "Aufgedeckt" : "Runde läuft"}</Pill>
-              </div>
-              <Curtain revealed={revealed}>
-                <div className="flex h-72 items-end justify-center bg-surface-2 pt-6">
-                  <Bottle
-                    className="h-64 w-24"
-                    label={
-                      <>
-                        <span className="text-[0.55rem] tracking-widest text-muted uppercase">
-                          Egon Müller
-                        </span>
-                        <span className="font-display text-[0.8rem] leading-tight text-fg">
-                          Scharzhofberg
-                        </span>
-                        <span className="text-[0.55rem] text-muted">2021</span>
-                      </>
-                    }
-                  />
-                </div>
-              </Curtain>
-              <div className="flex items-center justify-between rounded-control bg-surface-2 px-4 py-3">
-                <span className="text-sm text-muted">Deine Punkte</span>
-                <span className="font-display text-3xl">
-                  <CountUp value={revealed ? 87 : 0} />
-                </span>
-              </div>
-              <Button
-                block
-                size="lg"
-                variant={revealed ? "secondary" : "primary"}
-                onClick={() => setRevealed(!revealed)}
-              >
-                {revealed ? "Wieder verhüllen" : "Aufdecken"}
-              </Button>
-            </Phone>
-          </Section>
-
-          <Section title="Screen · Rate-Bogen">
-            <Phone>
-              <RatingSheetPreview />
-            </Phone>
-          </Section>
-
-          <Section title="Screen · Leaderboard">
-            <Phone>
-              <h2 className="text-3xl">Zwischenstand</h2>
-              <ol className="space-y-2">
-                {LEADERBOARD.map((row, index) => (
-                  <li
-                    key={row.name}
-                    className="flex items-center gap-3 rounded-control bg-surface-2 px-3 py-2.5 first:bg-accent first:text-accent-fg"
-                  >
-                    <span className="w-5 text-center font-display text-xl">{index + 1}</span>
-                    <Avatar name={row.name} className="size-9" />
-                    <span className="flex-1 font-medium">{row.name}</span>
-                    <span className="font-display text-2xl">
-                      <CountUp value={row.points} />
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            </Phone>
           </Section>
         </div>
       </div>
@@ -235,54 +208,71 @@ export function Styleguide() {
   );
 }
 
+const DIMENSIONS: StructureKey[] = ["sweetness", "acidity", "body", "finish"];
+
 function RatingSheetPreview() {
-  const [structure, setStructure] = useState({ sweetness: 3, acidity: 8, body: 4 });
+  const [structure, setStructure] = useState<Record<StructureKey, number>>({
+    sweetness: 2,
+    acidity: 8,
+    body: 4,
+    finish: 7,
+    tannin: 0,
+  });
+  const [active, setActive] = useState<StructureKey>("acidity");
   const [aromas, setAromas] = useState<string[]>(["Pfirsich", "Schiefer"]);
   const [rating, setRating] = useState(91);
-  const toggle = (aroma: string) =>
-    setAromas((current) =>
-      current.includes(aroma) ? current.filter((a) => a !== aroma) : [...current, aroma],
-    );
 
   return (
     <>
       <h2 className="text-3xl">Was schmeckst du?</h2>
-      <Slider
-        label="Süße"
-        value={structure.sweetness}
-        onChange={(sweetness) => setStructure({ ...structure, sweetness })}
-        ends={["knochentrocken", "edelsüß"]}
-      />
-      <Slider
-        label="Säure"
-        value={structure.acidity}
-        onChange={(acidity) => setStructure({ ...structure, acidity })}
-        ends={["mild", "rassig"]}
-      />
-      <Slider
-        label="Körper"
-        value={structure.body}
-        onChange={(body) => setStructure({ ...structure, body })}
-        ends={["leicht", "wuchtig"]}
-      />
-      <div className="space-y-2">
-        <p className="text-sm font-medium">Aromen</p>
-        <div className="flex flex-wrap gap-2">
-          {AROMAS.map((aroma) => (
-            <Chip key={aroma} selected={aromas.includes(aroma)} onClick={() => toggle(aroma)}>
-              {aroma}
-            </Chip>
-          ))}
-        </div>
+
+      <div role="tablist" aria-label="Struktur" className="grid grid-cols-4 gap-1.5">
+        {DIMENSIONS.map((key) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={active === key}
+            onClick={() => setActive(key)}
+            className={cn(
+              "flex h-14 flex-col items-center justify-center rounded-control text-xs font-medium transition",
+              active === key ? "bg-accent text-accent-fg" : "bg-surface-2 text-muted",
+            )}
+          >
+            {STRUCTURE_SCALES[key].label}
+            <span className="font-display text-lg leading-none">{structure[key]}</span>
+          </button>
+        ))}
       </div>
-      <Slider
-        label="Deine Bewertung"
-        value={rating}
-        onChange={setRating}
-        min={50}
-        max={100}
-        ends={["50", "100"]}
+
+      <TickDial
+        key={active}
+        label={STRUCTURE_SCALES[active].label}
+        value={structure[active]}
+        onChange={(value) => setStructure((current) => ({ ...current, [active]: value }))}
+        min={0}
+        max={10}
+        labelEvery={1}
+        minorTicks={4}
+        describe={(value) => describeStructure(active, value)}
       />
+
+      <div className="space-y-3 pt-2">
+        <h3 className="text-2xl">Aromen</h3>
+        <AromaWheel value={aromas} onChange={setAromas} />
+      </div>
+
+      <div className="space-y-3 pt-2">
+        <h3 className="text-2xl">Deine Bewertung</h3>
+        <TickDial
+          label="Punkte"
+          value={rating}
+          onChange={setRating}
+          min={50}
+          max={100}
+          describe={describeRating}
+        />
+      </div>
     </>
   );
 }

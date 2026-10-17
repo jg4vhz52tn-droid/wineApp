@@ -9,12 +9,12 @@ import { Button, buttonClasses } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Segmented } from "@/components/ui/segmented";
-import { LOOK_LABELS, type Look, type ThemePreference } from "@/lib/appearance";
+import type { ThemePreference } from "@/lib/appearance";
 import { getSupabase } from "@/lib/supabase";
 
 export function Profile() {
   const { session, isGuest, ready } = useSession();
-  const { look, theme, setLook, setTheme } = useAppearance();
+  const { theme, setTheme } = useAppearance();
   const [name, setName] = useState("");
 
   useEffect(() => {
@@ -53,18 +53,6 @@ export function Profile() {
 
         <Card className="space-y-4">
           <h2 className="text-xl">Darstellung</h2>
-          <div className="space-y-2">
-            <p className="text-sm text-muted">Look</p>
-            <Segmented<Look>
-              label="Look"
-              value={look}
-              onChange={setLook}
-              options={[
-                { value: "a", label: LOOK_LABELS.a },
-                { value: "b", label: LOOK_LABELS.b },
-              ]}
-            />
-          </div>
           <div className="space-y-2">
             <p className="text-sm text-muted">Hell oder dunkel</p>
             <Segmented<ThemePreference>

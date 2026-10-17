@@ -1,21 +1,18 @@
 @import "tailwindcss";
 
 /*
- * Design tokens.
- *
- * Two looks (data-look on <html>), each in light and dark (data-theme):
- *   A "edel"    - deep aubergine, warm off-white, brass accents, serif headlines
- *   B "klar"    - lots of white space, chalk/stone tones, one strong wine red
+ * Design tokens - "dunkel & edel": deep aubergine, warm off-white,
+ * brass accents, serif headlines. Light and dark via data-theme on <html>.
  *
  * Components only use the semantic tokens below (bg, surface, fg, accent ...),
- * never raw colours, so switching look or theme is just an attribute change.
- * The inline script in layout.tsx sets both attributes before first paint.
+ * never raw colours, so switching theme is just an attribute change.
+ * The inline script in layout.tsx sets data-theme before first paint.
  */
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root,
-[data-look="a"][data-theme="dark"] {
+[data-theme="dark"] {
   --bg: #140b10;
   --surface: #1f1219;
   --surface-2: #2b1a23;
@@ -32,14 +29,14 @@
   --curtain: #4a1428;
   --radius-card: 1.25rem;
   --radius-control: 0.875rem;
-  --font-display: var(--font-serif-a);
-  --font-body: var(--font-sans-a);
+  --font-display: var(--font-serif-face);
+  --font-body: var(--font-sans-face);
   --display-weight: 400;
   --display-tracking: -0.01em;
   color-scheme: dark;
 }
 
-[data-look="a"][data-theme="light"] {
+[data-theme="light"] {
   --bg: #f7f1ea;
   --surface: #fffaf4;
   --surface-2: #efe5da;
@@ -57,50 +54,8 @@
   color-scheme: light;
 }
 
-[data-look="b"] {
-  --radius-card: 1rem;
-  --radius-control: 0.75rem;
-  --font-display: var(--font-sans-b);
-  --font-body: var(--font-sans-b);
-  --display-weight: 600;
-  --display-tracking: -0.03em;
-}
 
-[data-look="b"][data-theme="light"] {
-  --bg: #faf9f7;
-  --surface: #ffffff;
-  --surface-2: #f0ede8;
-  --fg: #1c1a19;
-  --muted: #67625d;
-  --border: #e4dfd8;
-  --accent: #a8102f;
-  --accent-fg: #ffffff;
-  --wine: #a8102f;
-  --wine-fg: #ffffff;
-  --success: #227044;
-  --warning: #8f5f00;
-  --danger: #b3261e;
-  --curtain: #7d0c24;
-  color-scheme: light;
-}
 
-[data-look="b"][data-theme="dark"] {
-  --bg: #121110;
-  --surface: #1c1b1a;
-  --surface-2: #272524;
-  --fg: #f5f3f0;
-  --muted: #a29c96;
-  --border: #33302d;
-  --accent: #f0587a;
-  --accent-fg: #1a0a0e;
-  --wine: #c8284d;
-  --wine-fg: #ffffff;
-  --success: #6cc08e;
-  --warning: #e0b04f;
-  --danger: #f08080;
-  --curtain: #6d0d22;
-  color-scheme: dark;
-}
 
 @theme inline {
   --color-bg: var(--bg);

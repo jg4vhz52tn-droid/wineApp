@@ -187,7 +187,7 @@ Row Level Security sauber setzen: Gäste sehen die Wein-Zuordnung eines Glases e
 
 ## 6. Umsetzungsphasen
 
-**Phase 0 – Fundament** — *gebaut 2026-10-16; offen: Supabase-Cloud-Projekt verbinden, Google-Login einrichten, Look A/B wählen*
+**Phase 0 – Fundament** — *gebaut 2026-10-16; offen: Supabase-Cloud-Projekt verbinden, Google-Login einrichten*
 Projekt-Setup, Designsystem (2 Look-Varianten zur Auswahl), Auth (inkl. Gast-Zugang per Link), Datenmodell, PWA-Grundgerüst, Navigation.
 
 **Phase 1 – Lagenabend + Blindverkostung (MVP, Kern)**
@@ -236,14 +236,16 @@ Live-Preis + Kauflink, Wunschliste, Preisalarm, Preisverlauf, Kellerwert-Portfol
 - 2026-10-16: Next.js 16 mit Cache Components; Datenzugriff aus dem Browser mit `@supabase/supabase-js` (PKCE), Schutz über RLS. Kein `@supabase/ssr`, kein Server-Proxy.
 - 2026-10-16: Login per Magic Link (E-Mail) + „Mit Google anmelden“; Gäste per anonymer Anmeldung über Einladungslink, später upgradebar.
 - 2026-10-16: Logik möglichst in Supabase (DB-Funktionen/Edge Functions), Frontend schlank – hält den Weg zu Capacitor offen.
-- Offen: finaler Name, Look-Variante A oder B, Zeitpunkt Vercel-Deployment.
+- 2026-10-17: **Look A „Dunkel & edel“** gewählt (Hell + Dunkel). Look B entfernt.
+- 2026-10-17: Rate-Bogen mit Strich-Skalen im Stil des iOS-Timers (`TickDial`) und Aromarad (12 Familien × 4 Aromen, `src/config/aromas.ts`); verhüllte Flasche = schwarzes Tuch mit Messingband und Glasnummer; Einladung als Ticket.
+- Offen: finaler Name, Zeitpunkt Vercel-Deployment, Apple Wallet für Einladungen (braucht Apple Developer Program, 99 $/Jahr).
 
 ## 9. Technische Notizen
 
 @AGENTS.md
 
 - **Starten:** `npm run dev` → http://localhost:3000 · am Handy im selben WLAN: `npm run dev:phone`
-- **Styleguide:** `/styleguide` (Look A/B, Hell/Dunkel umschalten)
+- **Styleguide:** `/styleguide` (Hell/Dunkel umschalten, alle Bausteine und Screens)
 - **Datenbank-Test (offline):** `npm run db:test` – spielt alle Migrationen + Seed in eine In-Memory-Datenbank und prüft die Zugriffsregeln (u. a.: Gäste sehen die Glas-Zuordnung erst nach dem Aufdecken).
 - **Migrationen:** `supabase/migrations/`, Seed: `supabase/seed.sql`, Supabase-CLI: `./.bin/supabase`.
 - **Rundenstatus** (`event_wines.status`) ist für Clients nicht direkt änderbar – Öffnen/Aufdecken laufen ab Phase 1 über Datenbank-Funktionen, die gleichzeitig die Punkte berechnen.

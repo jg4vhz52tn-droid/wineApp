@@ -7,11 +7,9 @@ import { useEffect, useState } from "react";
 import { NotConfigured } from "@/components/app/not-configured";
 import { useSession } from "@/components/app/session-provider";
 import { Button } from "@/components/ui/button";
-import { Card, Eyebrow } from "@/components/ui/card";
-import { Pill } from "@/components/ui/chip";
+import { Card } from "@/components/ui/card";
 import { TextField } from "@/components/ui/field";
-import { CalendarIcon, PinIcon } from "@/components/ui/icons";
-import { formatEventDate } from "@/lib/format";
+import { InvitationTicket } from "@/components/event/invitation-ticket";
 import { getSupabase } from "@/lib/supabase";
 
 type Preview = {
@@ -135,29 +133,19 @@ export function Invitation() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
     >
-      <header className="space-y-3 pt-6">
-        <Eyebrow>{preview.organizer_name ? `${preview.organizer_name} lädt ein` : "Einladung"}</Eyebrow>
-        <h1 className="text-[2.75rem] leading-[1.02]">{preview.title}</h1>
-        {preview.theme && <p className="text-lg text-muted">{preview.theme}</p>}
-        <div className="flex flex-wrap gap-2 pt-1">
-          {preview.is_blind && <Pill>Blindverkostung</Pill>}
-          <Pill>
-            {preview.confirmed_count} {preview.confirmed_count === 1 ? "Zusage" : "Zusagen"}
-            {preview.participant_limit ? ` von ${preview.participant_limit}` : ""}
-          </Pill>
-        </div>
-      </header>
-
-      <Card className="space-y-3">
-        <p className="flex items-center gap-3">
-          <CalendarIcon className="shrink-0 text-accent" /> {formatEventDate(preview.starts_at)}
-        </p>
-        {preview.location && (
-          <p className="flex items-center gap-3">
-            <PinIcon className="shrink-0 text-accent" /> {preview.location}
-          </p>
-        )}
-      </Card>
+      <div className="pt-4">
+        <InvitationTicket
+          asPageTitle
+          organizerName={preview.organizer_name}
+          title={preview.title}
+          theme={preview.theme}
+          startsAt={preview.starts_at}
+          location={preview.location}
+          isBlind={preview.is_blind}
+          confirmed={preview.confirmed_count}
+          limit={preview.participant_limit}
+        />
+      </div>
 
       {preview.invitation_text && (
         <section className="space-y-2">
