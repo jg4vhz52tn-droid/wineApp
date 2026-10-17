@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { LabelExplorer } from "@/components/learn/label-explorer";
 import { ModuleHeader } from "@/components/learn/module-header";
 import { StoryModule } from "@/components/learn/story-module";
 import { STORIES } from "@/config/learn/stories";
@@ -9,7 +10,9 @@ export default function EtikettPage() {
   return (
     <div className="space-y-8">
       <ModuleHeader id="etikett">Was die Begriffe auf dem Etikett bedeuten – und was nicht.</ModuleHeader>
-      <StoryModule id="etikett" story={STORIES.etikett} />
+      <StoryModule id="etikett" story={STORIES.etikett}>
+        <LabelExplorer />
+      </StoryModule>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Chip, Pill } from "@/components/ui/chip";
+import { Segmented } from "@/components/ui/segmented";
 import { SOILS, type Soil, type SoilId } from "@/config/learn/soils";
 import { tick } from "@/lib/haptics";
 
@@ -45,6 +46,7 @@ function rootPaths(soil: Soil) {
 export function SoilExplorer() {
   const [soilId, setSoilId] = useState<SoilId>("schiefer");
   const [rain, setRain] = useState(0);
+  const [night, setNight] = useState(false);
   const reduce = useReducedMotion();
   const soil = SOILS.find((s) => s.id === soilId)!;
   const roots = rootPaths(soil);
@@ -68,6 +70,19 @@ export function SoilExplorer() {
         ))}
       </div>
 
+      <Segmented<"tag" | "nacht">
+        label="Tageszeit"
+        value={night ? "nacht" : "tag"}
+        onChange={(v) => {
+          tick("minor");
+          setNight(v === "nacht");
+        }}
+        options={[
+          { value: "tag", label: "Tag" },
+          { value: "nacht", label: "Nacht" },
+        ]}
+      />
+
       <div className="relative overflow-hidden rounded-card border border-border bg-surface-2/50">
         <svg
           viewBox={`0 0 340 ${BOTTOM}`}
@@ -77,16 +92,45 @@ export function SoilExplorer() {
         >
           <SoilPatterns />
 
-          {/* Sun and its warmth */}
-          <motion.circle
-            cx="296"
-            cy="38"
-            r="30"
-            fill={HEAT}
-            animate={reduce ? undefined : { opacity: [0.12, 0.25, 0.12] }}
-            transition={{ duration: 3, repeat: Infinity }}
+          {/* Night sky */}
+          <motion.rect
+            x="0"
+            y="0"
+            width="340"
+            height={GROUND}
+            fill="#141a2e"
+            initial={false}
+            animate={{ opacity: night ? 0.92 : 0 }}
+            transition={{ duration: 0.8 }}
           />
-          <circle cx="296" cy="38" r="15" fill={HEAT} />
+          {night ? (
+            <g>
+              <circle cx="296" cy="38" r="13" fill="#ece6d2" />
+              <circle cx="302" cy="33" r="11" fill="#141a2e" />
+              {[
+                [40, 22],
+                [92, 14],
+                [236, 26],
+                [262, 64],
+                [70, 60],
+              ].map(([cx, cy]) => (
+                <circle key={`${cx}`} cx={cx} cy={cy} r="1.2" fill="#ece6d2" />
+              ))}
+            </g>
+          ) : (
+            <g>
+              {/* Sun and its warmth */}
+              <motion.circle
+                cx="296"
+                cy="38"
+                r="30"
+                fill={HEAT}
+                animate={reduce ? undefined : { opacity: [0.12, 0.25, 0.12] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              />
+              <circle cx="296" cy="38" r="15" fill={HEAT} />
+            </g>
+          )}
 
           {/* Vine */}
           <g stroke="#5a3f2a" strokeLinecap="round" fill="none">
@@ -199,6 +243,24 @@ export function SoilExplorer() {
             ))}
           </g>
 
+          {/* At night the ground gives its stored warmth back to the vine */}
+          {night &&
+            [130, 170, 210].map((x, i) => (
+              <motion.path
+                key={x}
+                d={`M${x} ${GROUND}c-6-8 6-14 0-22s6-14 0-22`}
+                fill="none"
+                stroke={HEAT}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                initial={{ opacity: 0, y: 0 }}
+                animate={
+                  reduce ? { opacity: soil.heat / 10 } : { opacity: [0, soil.heat / 10, 0], y: [0, -14, -26] }
+                }
+                transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.6, ease: "easeOut" }}
+              />
+            ))}
+
           {/* Rain: drops sink as deep as the soil lets them */}
           {rain > 0 &&
             Array.from({ length: 18 }, (_, i) => {
@@ -241,6 +303,16 @@ export function SoilExplorer() {
           <Meter label="Nährstoffe" value={soil.nutrients} color={FOOD} />
         </div>
         <p className="leading-relaxed">{soil.whatHappens}</p>
+        {night && (
+          <p className="rounded-control border border-border px-4 py-3 text-sm leading-relaxed">
+            <strong>Nachts:</strong>{" "}
+            {soil.heat >= 8
+              ? "Die Steine geben die gespeicherte Wärme an die Reben ab – das schützt in kühlen Nächten und hilft den Trauben beim Reifen."
+              : soil.heat >= 6
+                ? "Der Boden gibt etwas Wärme ab, kühlt aber über Nacht spürbar aus."
+                : "Der Boden kühlt schnell aus. Kühle Nächte bewahren Säure und Frische in den Trauben."}
+          </p>
+        )}
         <div className="rounded-control bg-surface-2/70 p-4">
           <p className="mb-1 text-xs font-medium tracking-[0.14em] text-accent uppercase">So schmeckt’s</p>
           <p className="leading-relaxed">{soil.taste}</p>

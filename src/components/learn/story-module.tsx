@@ -6,15 +6,25 @@ import type { Story } from "@/config/learn/stories";
 import { Quiz } from "./quiz";
 import { StoryCards } from "./story-cards";
 
-export function StoryModule({ id, story }: { id: ModuleId; story: Story }) {
-  const quiz = useRef<HTMLDivElement>(null);
+/** Story cards, then an optional interactive part, then the quiz. */
+export function StoryModule({
+  id,
+  story,
+  children,
+}: {
+  id: ModuleId;
+  story: Story;
+  children?: React.ReactNode;
+}) {
+  const next = useRef<HTMLDivElement>(null);
   return (
     <div className="space-y-8">
       <StoryCards
         cards={story.cards}
-        onFinish={() => quiz.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+        onFinish={() => next.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
       />
-      <div ref={quiz}>
+      <div ref={next} className="scroll-mt-6 space-y-8">
+        {children}
         <Quiz moduleId={id} quiz={story.quiz} />
       </div>
     </div>

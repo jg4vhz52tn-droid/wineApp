@@ -200,7 +200,7 @@ Etikett-Scan, Bewertung + Sprachnotiz, Weintagebuch mit Erinnerungskarte, Keller
 **Phase 3 – KI & Geschmacks-DNA**
 Geschmacks-DNA, KI-Sommelier, Weinbegleitung, Weinkarten-Scan, Geschenkfinder.
 
-**Phase 4 – Lernen & Gamification** — *Teil 1 gebaut 2026-10-17 (vorgezogen): Boden-Explorer, Rebsorten-Vergleich, Aromen, Lagern, Etikett, Weinfehler, Sammelkarten. Offen: Cuvée-Baukasten, Weinatlas, Badges/Level, Liga, Statistik*
+**Phase 4 – Lernen & Gamification** — *Lernen gebaut 2026-10-17 (vorgezogen): 12 Kapitel – Weinbereitung, Boden, Rebsorten, Cuvée-Baukasten, Weinatlas, Aromen, Verkosten, Wein & Essen, Servieren, Lagern, Etikett, Weinfehler – mit Spielen/Interaktionen und Sammelkarten. Offen: Badges/Level, Saison-Liga, Verkostungs-Statistik (brauchen Abend-Daten)*
 Lernmodule (Boden, Rebsorten, Cuvée-Baukasten, Aromarad, Atlas, Lagerung, Wein finden, Weinfehler), Sammelkarten-Album, Badges/Level, Saison-Liga, Verkostungs-Statistik.
 
 **Phase 5 – Preise & Markt**
@@ -243,6 +243,7 @@ Live-Preis + Kauflink, Wunschliste, Preisalarm, Preisverlauf, Kellerwert-Portfol
 - 2026-10-17: Einladungs-Ticket mit abreißbarem Abschnitt → Countdown, Gästeliste (nur für Zugesagte), Kalender (.ics), Route, Teilen.
 - 2026-10-17: Lernen vor Phase 1 gezogen. Fortschritt/Sammelkarten vorerst nur im Browser (`src/lib/learn-progress.ts`), später in `user_cards`. Lerninhalte in `src/config/learn/` – selbst geschrieben, **von der Weinrunde gegenlesen lassen**.
 - 2026-10-17: Diagrammfarben `--series-1/2` (Messing/Wein) mit dem Farbsehschwäche-Prüfer validiert, für Hell und Dunkel getrennt.
+- 2026-10-17: Lernen um 6 Kapitel erweitert (Weinbereitung, Cuvée, Atlas, Verkosten, Wein & Essen, Servieren). Weinatlas als stilisierte eigene Karte – kein Kartendienst.
 - Offen: finaler Name, Zeitpunkt Vercel-Deployment, Apple Wallet für Einladungen (braucht Apple Developer Program, 99 $/Jahr).
 
 ## 9. Technische Notizen

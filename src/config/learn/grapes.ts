@@ -122,3 +122,62 @@ export const GRAPE_QUIZ = {
   explanation:
     "Richtig: Spätburgunder (Pinot Noir) ist dünnschalig – daher die helle Farbe, das feine Tannin und die Anfälligkeit für Fäulnis.",
 };
+
+// "Welche Rebsorte bin ich?" - hints go from vague to obvious.
+export const GRAPE_GAME = [
+  {
+    prompt: "Welche Rebsorte bin ich?",
+    hints: [
+      "Ich reife spät und vertrage Kälte gut.",
+      "Meine Säure lässt mich jahrzehntelang reifen.",
+      "Gereift rieche ich manchmal nach Petrol.",
+    ],
+    options: ["Silvaner", "Riesling", "Chardonnay", "Müller-Thurgau"],
+    answer: 1,
+    explain: "Riesling – spät reifend, säurestark und mit der typischen Petrolnote im Alter.",
+  },
+  {
+    prompt: "Welche Rebsorte bin ich?",
+    hints: [
+      "Meine Schale ist dünn, meine Farbe eher hell.",
+      "Ich bin heikel im Weinberg, aber elegant im Glas.",
+      "Ich rieche nach Kirsche, Himbeere und Waldboden.",
+    ],
+    options: ["Lemberger", "Spätburgunder", "Dornfelder", "Trollinger"],
+    answer: 1,
+    explain: "Spätburgunder (Pinot Noir) – dünnschalig, wenig Tannin, viel Finesse.",
+  },
+  {
+    prompt: "Welche Rebsorte bin ich?",
+    hints: [
+      "In Franken bin ich zu Hause, gern im Bocksbeutel.",
+      "Ich bin leise und zeige lieber den Boden als die Frucht.",
+      "Spargel mit Hollandaise ist mein Lieblingsgericht.",
+    ],
+    options: ["Silvaner", "Grauburgunder", "Riesling", "Sauvignon Blanc"],
+    answer: 0,
+    explain: "Silvaner – zurückhaltend, erdig-kräuterig, ein Klassiker zum Spargel.",
+  },
+  {
+    prompt: "Welche Rebsorte bin ich?",
+    hints: [
+      "Ich bin aromatisch laut.",
+      "Kühl rieche ich nach Gras und Stachelbeere, warm nach Passionsfrucht.",
+      "Loire und Neuseeland sind meine berühmtesten Heimaten.",
+    ],
+    options: ["Grüner Veltliner", "Weißburgunder", "Sauvignon Blanc", "Riesling"],
+    answer: 2,
+    explain: "Sauvignon Blanc – intensiv, grün-grasig bis tropisch.",
+  },
+  {
+    prompt: "Welche Rebsorte bin ich?",
+    hints: [
+      "Ich bringe kräftige, dunkle Farbe ins Glas.",
+      "Säure und Tannin habe ich reichlich.",
+      "In Österreich heiße ich Blaufränkisch.",
+    ],
+    options: ["Spätburgunder", "Lemberger", "Merlot", "Trollinger"],
+    answer: 1,
+    explain: "Lemberger – würzig, dunkelfruchtig, mit frischer Säure.",
+  },
+];

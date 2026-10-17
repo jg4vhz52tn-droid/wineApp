@@ -35,14 +35,16 @@ export function RadarChart({ axes, series }: { axes: string[]; series: RadarSeri
 
   return (
     <div className="space-y-3">
-      <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm" aria-label="Legende">
-        {series.map((s) => (
-          <li key={s.name} className="flex items-center gap-2">
-            <span aria-hidden className="size-3 rounded-full" style={{ background: s.color }} />
-            {s.name}
-          </li>
-        ))}
-      </ul>
+      {series.length > 1 && (
+        <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm" aria-label="Legende">
+          {series.map((s) => (
+            <li key={s.name} className="flex items-center gap-2">
+              <span aria-hidden className="size-3 rounded-full" style={{ background: s.color }} />
+              {s.name}
+            </li>
+          ))}
+        </ul>
+      )}
 
       <svg
         viewBox={`0 0 ${SIZE} ${SIZE}`}

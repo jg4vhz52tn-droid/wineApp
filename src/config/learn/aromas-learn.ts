@@ -63,3 +63,22 @@ export const AROMA_QUIZ = {
   explanation:
     "Genau – sie entsteht über die Jahre in der Flasche und gehört zu den Tertiäraromen. Viele lieben sie, manche nicht: eine Stilfrage, kein Fehler.",
 };
+
+const LAYER_OPTIONS = ["Primär – Traube", "Sekundär – Keller", "Tertiär – Zeit"];
+
+// Sorter: which layer does this aroma come from?
+export const AROMA_SORT = [
+  ["Pfirsich", 0, "Steinobst kommt aus der Traube – typisch für Riesling."],
+  ["Brioche", 1, "Brotige Noten entstehen beim Lagern auf der Hefe."],
+  ["Honig", 2, "Honig ist ein klassisches Reifearoma."],
+  ["Holunder", 0, "Blütenaromen stammen aus der Traube."],
+  ["Vanille", 1, "Vanille kommt aus dem (neuen) Holzfass – also aus dem Keller."],
+  ["Leder", 2, "Leder und Waldboden zeigen gereifte Rotweine."],
+  ["Butter", 1, "Butter entsteht beim biologischen Säureabbau."],
+  ["Stachelbeere", 0, "Grüne Frucht – typisch Sauvignon Blanc, direkt aus der Traube."],
+].map(([aroma, answer, explain]) => ({
+  prompt: `Woher kommt „${aroma}“?`,
+  options: LAYER_OPTIONS,
+  answer: answer as number,
+  explain: explain as string,
+}));

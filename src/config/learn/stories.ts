@@ -141,3 +141,38 @@ export const STORIES: Record<"lagern" | "etikett" | "weinfehler", Story> = {
     },
   },
 };
+
+// Fehler-Detektiv: short cases.
+export const FAULT_CASES = [
+  {
+    prompt:
+      "Frisch geöffnet, der Riesling riecht nach faulen Eiern. Nach zehn Minuten in der Karaffe ist es fast weg.",
+    options: ["Korkton", "Böckser", "Oxidation", "Hitzeschaden"],
+    answer: 1,
+    explain: "Ein Böckser (Reduktion) verfliegt oft mit Luft – kein Grund, die Flasche zurückzugeben.",
+  },
+  {
+    prompt: "Muffig, nasser Keller, die Frucht ist wie weggeblasen – und es wird mit Luft eher schlimmer.",
+    options: ["Korkton", "Böckser", "Weinstein", "Drüber"],
+    answer: 0,
+    explain: "Klassischer Korkton (TCA). Der verfliegt nicht – Flasche zurück, neue her.",
+  },
+  {
+    prompt: "Ein Weißwein von 2009: goldbraun, riecht nach Nüssen und Sherry, schmeckt flach.",
+    options: ["Korkton", "Oxidiert / drüber", "Böckser", "Alles in Ordnung"],
+    answer: 1,
+    explain: "Zu viel Luft über die Jahre – oxidiert und über den Höhepunkt hinaus.",
+  },
+  {
+    prompt: "Am Korken kleben kleine, glitzernde Kristalle. Der Wein riecht und schmeckt einwandfrei.",
+    options: ["Korkton", "Glassplitter", "Weinstein – harmlos", "Oxidation"],
+    answer: 2,
+    explain: "Weinstein: ausgefallene Weinsäure-Kristalle. Harmlos, eher ein Zeichen für wenig Behandlung.",
+  },
+  {
+    prompt: "Die Flasche lag den Sommer im Auto. Jetzt schmeckt sie marmeladig, der Korken steht etwas hoch.",
+    options: ["Hitzeschaden", "Böckser", "Korkton", "Weinstein"],
+    answer: 0,
+    explain: "Hitze „kocht“ den Wein: schwere, marmeladige Noten, oft gedrückter Korken.",
+  },
+];
