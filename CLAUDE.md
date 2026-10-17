@@ -231,7 +231,7 @@ Live-Preis + Kauflink, Wunschliste, Preisalarm, Preisverlauf, Kellerwert-Portfol
 - Piraten-Modus als Option des Organisators.
 - Kostenteilung vorhanden, aber im Hintergrund.
 - 2026-10-16: Projektordner `~/Developer/wein-app` (Verknüpfung auf dem Schreibtisch), Code auf GitHub: privates Repo `jg4vhz52tn-droid/wineApp`.
-- 2026-10-16: Supabase direkt in der Cloud (Free-Plan, Region Frankfurt) wie bei Klausurfuchs – kein Docker nötig. Migrationen werden vorher offline mit PGlite getestet (`npm run db:test`).
+- 2026-10-16: Supabase direkt in der Cloud (Free-Plan, Region West-EU Irland – geplant war Frankfurt, ebenfalls EU) wie bei Klausurfuchs – kein Docker nötig. Migrationen werden vorher offline mit PGlite getestet (`npm run db:test`).
 - 2026-10-16: Node.js 24 LTS liegt in `~/.local/node` (ohne Homebrew/Admin-Rechte), Supabase-CLI als Datei in `.bin/`.
 - 2026-10-16: Projekt bewusst **nicht** auf dem Schreibtisch: Der Schreibtisch wird per iCloud synchronisiert, und bei knappem Speicher lagert iCloud Dateien aus – Build, Git und Dev-Server hängen dann. Gesichert wird über GitHub.
 - 2026-10-16: Next.js 16 mit Cache Components; Datenzugriff aus dem Browser mit `@supabase/supabase-js` (PKCE), Schutz über RLS. Kein `@supabase/ssr`, kein Server-Proxy.
@@ -251,7 +251,7 @@ Live-Preis + Kauflink, Wunschliste, Preisalarm, Preisverlauf, Kellerwert-Portfol
 - 2026-10-17: Vorstellungs-Website in `docs/` (6 Seiten, reines HTML, kein Build; Name zentral in `docs/assets/site.js`; GitHub Pages aus `main` → `/docs`). Wein-Börse dort auf Tims Wunsch als „in Arbeit“ und als Asset-Handel dargestellt (Depot, Kurse, Gewinnrechner), nur mit kurzem Hinweis „Beispiel, kein Angebot, Preise können fallen“. **Vor einer Veröffentlichung rechtlich prüfen lassen.**
 - Später prüfen: **Vivino-Import** über den DSGVO-Datenexport (kein Scraping) – wartet auf eine Beispieldatei. **Wein-Börse**: Stufe 1 „Abzugeben“ in der Runde (ohne Zahlungsabwicklung) als nächster Schritt denkbar; Stufe 2/3 (Marktplatz, Lagerung + digitaler Handel) nur nach Rechtsberatung (Zahlungsdienst, BaFin/Vermögensanlagen, Alkohol, DAC7).
 - 2026-10-17: Keller mit **frei benennbaren Regalen** (`cellar_racks`, eigene Fächer/Reihen), Jahrgänge ab 1900, **Trinkfenster-Vorschlag** nach Rebsorte/Qualitätsstufe/Jahrgang (`src/lib/cellar/drink-window.ts`).
-- 2026-10-17: Deployment: App auf Vercel (https://wine-app-tan.vercel.app), Website auf GitHub Pages (https://jg4vhz52tn-droid.github.io/wineApp/), Repo dafür öffentlich. Migrationen per GitHub Action nach erfolgreichen DB-Tests.
+- 2026-10-17: Deployment: App auf Vercel (https://wine-app-tan.vercel.app), Website auf GitHub Pages (https://jg4vhz52tn-droid.github.io/wineApp/), Repo dafür öffentlich. Migrationen per GitHub Action nach erfolgreichen DB-Tests (Repo-Secrets `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`; Seed am 2026-10-17 einmalig eingespielt – nie erneut mit „Beispieldaten einspielen“ starten).
 - Offen: finaler Name, Apple Wallet für Einladungen (braucht Apple Developer Program, 99 $/Jahr).
 
 ## 9. Technische Notizen

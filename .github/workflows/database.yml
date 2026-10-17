@@ -39,8 +39,8 @@ jobs:
     name: Datenbank-Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -58,7 +58,7 @@ jobs:
       - name: Geheimnisse fehlen noch
         if: env.SUPABASE_ACCESS_TOKEN == '' || env.SUPABASE_DB_PASSWORD == ''
         run: echo "::warning::SUPABASE_ACCESS_TOKEN oder SUPABASE_DB_PASSWORD fehlt – Migrationen wurden NICHT übertragen."
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_DB_PASSWORD != ''
       - uses: supabase/setup-cli@v1
         if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_DB_PASSWORD != ''
