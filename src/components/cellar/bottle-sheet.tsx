@@ -124,7 +124,7 @@ function Content({
               ? `${item.drinkFrom ?? "?"} – ${item.drinkUntil ?? "?"}`
               : "offen"}
           </p>
-          <p className="text-sm text-muted">{location(item)}</p>
+          <p className="text-sm text-muted">{location(item, data.racks)}</p>
           <p className="font-display text-3xl tabular-nums">× {item.quantity}</p>
         </div>
       </div>

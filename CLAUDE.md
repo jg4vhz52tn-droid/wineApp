@@ -249,7 +249,8 @@ Live-Preis + Kauflink, Wunschliste, Preisalarm, Preisverlauf, Kellerwert-Portfol
 - 2026-10-17: Ohne Anmeldung zeigt der Keller einen Beispielkeller (nicht gespeichert).
 - 2026-10-17: Vorstellungs-Website in `docs/` (6 Seiten, reines HTML, kein Build; Name zentral in `docs/assets/site.js`; GitHub Pages aus `main` → `/docs`). Wein-Börse dort auf Tims Wunsch als „in Arbeit“ und als Asset-Handel dargestellt (Depot, Kurse, Gewinnrechner), nur mit kurzem Hinweis „Beispiel, kein Angebot, Preise können fallen“. **Vor einer Veröffentlichung rechtlich prüfen lassen.**
 - Später prüfen: **Vivino-Import** über den DSGVO-Datenexport (kein Scraping) – wartet auf eine Beispieldatei. **Wein-Börse**: Stufe 1 „Abzugeben“ in der Runde (ohne Zahlungsabwicklung) als nächster Schritt denkbar; Stufe 2/3 (Marktplatz, Lagerung + digitaler Handel) nur nach Rechtsberatung (Zahlungsdienst, BaFin/Vermögensanlagen, Alkohol, DAC7).
-- Offen: finaler Name, Zeitpunkt Vercel-Deployment, Apple Wallet für Einladungen (braucht Apple Developer Program, 99 $/Jahr).
+- 2026-10-17: Keller mit **frei benennbaren Regalen** (`cellar_racks`, eigene Fächer/Reihen), Jahrgänge ab 1900, **Trinkfenster-Vorschlag** nach Rebsorte/Qualitätsstufe/Jahrgang (`src/lib/cellar/drink-window.ts`).
+- Offen: finaler Name, Apple Wallet für Einladungen (braucht Apple Developer Program, 99 $/Jahr).
 
 ## 9. Technische Notizen
 

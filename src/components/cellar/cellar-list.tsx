@@ -5,7 +5,7 @@ import { Bottle } from "@/components/tasting/bottle";
 import { Chip } from "@/components/ui/chip";
 import { Segmented } from "@/components/ui/segmented";
 import { bottleShapeFor } from "@/config/bottles";
-import type { CellarData, CellarWine } from "@/lib/cellar/types";
+import type { CellarData, CellarWine, Rack } from "@/lib/cellar/types";
 import {
   drinkStatus,
   euro,
@@ -28,9 +28,9 @@ const STATUS_FILTERS: { value: DrinkStatus | "all"; label: string }[] = [
   { value: "wait", label: "Noch warten" },
 ];
 
-export function location(item: CellarWine) {
+export function location(item: CellarWine, racks: Rack[]) {
   const parts = [
-    item.shelf && `Regal ${item.shelf}`,
+    item.rackId && racks.find((r) => r.id === item.rackId)?.name,
     item.compartment && `Fach ${item.compartment}`,
     item.row && `Reihe ${item.row}`,
   ].filter(Boolean);
@@ -117,7 +117,7 @@ export function CellarList({
                     {item.name || item.producer}
                   </span>
                   <span className="block truncate text-xs text-muted">
-                    {item.producer} · {item.vintage ?? "o. J."} · {location(item)}
+                    {item.producer} · {item.vintage ?? "o. J."} · {location(item, data.racks)}
                   </span>
                   <DrinkBadge status={drinkStatus(item)} />
                 </span>

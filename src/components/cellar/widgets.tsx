@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, Eyebrow } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
@@ -11,6 +11,7 @@ import { drinkStatus, DRINK_STATUS_LABEL, euro, valueAt, type DrinkStatus } from
 import { cn } from "@/lib/cn";
 import { tick } from "@/lib/haptics";
 import { DrinkBadge } from "./drink-badge";
+import { RackEditor } from "./rack-editor";
 
 const YEAR = new Date().getFullYear();
 const ORDER: DrinkStatus[] = ["ready", "urgent", "wait"];
@@ -77,132 +78,181 @@ export function DrinkTimeline({ data, onOpen }: { data: CellarData; onOpen: (ite
   );
 }
 
-/** The rack as a grid: shelves × compartments × rows. Tap a slot to see what's in it. */
-export function ShelfGrid({ data, onOpen }: { data: CellarData; onOpen: (item: CellarWine) => void }) {
-  const placed = data.items.filter((i) => i.quantity > 0 && i.shelf);
-  const shelves = [...new Set(placed.map((i) => i.shelf!))].sort();
-  const [shelf, setShelf] = useState<string | null>(shelves[0] ?? null);
+/** Each named rack as a grid of compartments × rows. Tap a slot to see what's in it. */
+export function ShelfGrid({
+  data,
+  onOpen,
+  onAddRack,
+  onUpdateRack,
+}: {
+  data: CellarData;
+  onOpen: (item: CellarWine) => void;
+  onAddRack: (name: string, compartments: number, rows: number) => Promise<string | null>;
+  onUpdateRack: (
+    id: string,
+    changes: { name: string; compartments: number; rows: number },
+  ) => Promise<boolean>;
+}) {
+  const [rackId, setRackId] = useState<string | null>(null);
   const [slot, setSlot] = useState<string | null>(null);
-  if (!shelves.length) {
-    return (
-      <section className="space-y-3">
-        <h2 className="text-2xl">Kellerregal</h2>
-        <p className="rounded-card border border-dashed border-border p-6 text-center text-sm text-muted">
-          Gib beim Einlagern Regal, Fach und Reihe an – dann siehst du hier, wo welche Flasche liegt.
-        </p>
-      </section>
-    );
-  }
-  const current = shelf ?? shelves[0];
-  const onShelf = placed.filter((i) => i.shelf === current);
-  const compartments = Math.max(2, ...onShelf.map((i) => Number(i.compartment) || 1));
-  const rowsCount = Math.max(2, ...onShelf.map((i) => Number(i.row) || 1));
+  const [editing, setEditing] = useState<"new" | "edit" | null>(null);
+  const racks = data.racks;
+  const rack = racks.find((r) => r.id === rackId) ?? racks[0] ?? null;
+  const inRack = rack ? data.items.filter((i) => i.quantity > 0 && i.rackId === rack.id) : [];
+  const unplaced = data.items.filter((i) => i.quantity > 0 && !i.rackId).reduce((s, i) => s + i.quantity, 0);
   const slotItems = (c: number, r: number) =>
-    onShelf.filter((i) => Number(i.compartment) === c && Number(i.row) === r);
-  const selected = slot ? onShelf.filter((i) => `${i.compartment}-${i.row}` === slot) : [];
+    inRack.filter((i) => Number(i.compartment) === c && Number(i.row) === r);
+  const selected = slot ? inRack.filter((i) => `${i.compartment}-${i.row}` === slot) : [];
+  const loose = inRack.filter((i) => !i.compartment || !i.row);
 
   return (
     <section className="space-y-3">
       <h2 className="text-2xl">Kellerregal</h2>
-      <div className="flex gap-2">
-        {shelves.map((s) => (
+      <div className="-mx-5 flex [scrollbar-width:none] gap-2 overflow-x-auto px-5 pb-1">
+        {racks.map((r) => (
           <Chip
-            key={s}
-            selected={s === current}
+            key={r.id}
+            selected={r.id === rack?.id}
+            className="shrink-0"
             onClick={() => {
               tick("minor");
-              setShelf(s);
+              setRackId(r.id);
               setSlot(null);
+              setEditing(null);
             }}
           >
-            Regal {s}
+            {r.name}
           </Chip>
         ))}
+        <Chip className="shrink-0 border-dashed" onClick={() => setEditing("new")}>
+          + Regal
+        </Chip>
       </div>
-      <Card className="space-y-3">
-        <div
-          className="grid gap-2"
-          style={{ gridTemplateColumns: `2.5rem repeat(${compartments}, minmax(0, 1fr))` }}
-        >
-          <span />
-          {Array.from({ length: compartments }, (_, c) => (
-            <span key={c} className="text-center text-xs text-muted">
-              Fach {c + 1}
-            </span>
-          ))}
-          {Array.from({ length: rowsCount }, (_, r) => (
-            <Row key={r}>
-              <span className="flex items-center text-xs text-muted">Reihe {r + 1}</span>
-              {Array.from({ length: compartments }, (_, c) => {
-                const items = slotItems(c + 1, r + 1);
-                const bottles = items.reduce((s, i) => s + i.quantity, 0);
-                const key = `${c + 1}-${r + 1}`;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    disabled={!bottles}
-                    aria-label={`Fach ${c + 1}, Reihe ${r + 1}: ${bottles} Flaschen`}
-                    aria-pressed={slot === key}
-                    onClick={() => {
-                      tick("minor");
-                      setSlot(slot === key ? null : key);
-                    }}
-                    className={cn(
-                      "flex aspect-square flex-wrap content-center items-center justify-center gap-0.5 rounded-control border p-1 transition",
-                      slot === key ? "border-accent bg-accent/10" : "border-border bg-surface-2/50",
-                      !bottles && "opacity-40",
-                    )}
-                  >
-                    {Array.from({ length: Math.min(bottles, 12) }, (_, b) => (
-                      <span
-                        key={b}
-                        className={cn(
-                          "size-2.5 rounded-full",
-                          items[0]?.color === "red" ? "bg-wine" : "bg-[#c9b26a]",
-                        )}
-                        aria-hidden
-                      />
-                    ))}
-                  </button>
-                );
-              })}
-            </Row>
-          ))}
-        </div>
-        <AnimatePresence mode="wait">
-          {selected.length > 0 && (
-            <motion.ul
-              key={slot}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="space-y-1 border-t border-border pt-3"
+
+      {editing && (
+        <RackEditor
+          key={editing === "edit" ? rack?.id : "new"}
+          rack={editing === "edit" ? (rack ?? undefined) : undefined}
+          onCancel={() => setEditing(null)}
+          onSave={async (values) => {
+            if (editing === "edit" && rack) {
+              if (await onUpdateRack(rack.id, values)) setEditing(null);
+            } else {
+              const id = await onAddRack(values.name, values.compartments, values.rows);
+              if (id) {
+                tick("medium");
+                setRackId(id);
+                setEditing(null);
+              }
+            }
+          }}
+        />
+      )}
+
+      {!rack ? (
+        <p className="rounded-card border border-dashed border-border p-6 text-center text-sm text-muted">
+          Leg dein erstes Regal an – z. B. „Keller“ oder „Weinkühlschrank“ – und gib beim Einlagern Fach und
+          Reihe an.
+        </p>
+      ) : (
+        <Card className="space-y-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="truncate font-display text-xl">{rack.name}</p>
+            <button type="button" onClick={() => setEditing("edit")} className="shrink-0 text-sm text-accent">
+              Bearbeiten
+            </button>
+          </div>
+          <div className="-mx-1 overflow-x-auto px-1 pb-1">
+            <div
+              className="grid gap-1.5"
+              style={{ gridTemplateColumns: `1.75rem repeat(${rack.compartments}, minmax(2.75rem, 1fr))` }}
             >
-              {selected.map((i) => (
-                <li key={i.id}>
-                  <button
-                    type="button"
-                    onClick={() => onOpen(i)}
-                    className="flex w-full justify-between gap-3 py-1 text-left text-sm"
-                  >
-                    <span className="truncate">
-                      {i.name || i.producer} <span className="text-muted">{i.vintage}</span>
-                    </span>
-                    <span className="shrink-0 tabular-nums">× {i.quantity}</span>
-                  </button>
-                </li>
+              <span className="text-[0.65rem] text-muted" aria-hidden>
+                R/F
+              </span>
+              {Array.from({ length: rack.compartments }, (_, c) => (
+                <span key={c} className="text-center text-xs text-muted">
+                  {c + 1}
+                </span>
               ))}
-            </motion.ul>
-          )}
-        </AnimatePresence>
-      </Card>
+              {Array.from({ length: rack.rows }, (_, r) => (
+                <Fragment key={r}>
+                  <span className="flex items-center text-xs text-muted">{r + 1}</span>
+                  {Array.from({ length: rack.compartments }, (_, c) => {
+                    const items = slotItems(c + 1, r + 1);
+                    const bottles = items.reduce((s, i) => s + i.quantity, 0);
+                    const key = `${c + 1}-${r + 1}`;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        disabled={!bottles}
+                        aria-label={`Fach ${c + 1}, Reihe ${r + 1}: ${bottles} Flaschen`}
+                        aria-pressed={slot === key}
+                        onClick={() => {
+                          tick("minor");
+                          setSlot(slot === key ? null : key);
+                        }}
+                        className={cn(
+                          "flex aspect-square flex-wrap content-center items-center justify-center gap-0.5 rounded-control border p-1 transition",
+                          slot === key ? "border-accent bg-accent/10" : "border-border bg-surface-2/50",
+                          !bottles && "opacity-40",
+                        )}
+                      >
+                        {Array.from({ length: Math.min(bottles, 9) }, (_, b) => (
+                          <span
+                            key={b}
+                            className={cn(
+                              "size-2 rounded-full",
+                              items[0]?.color === "red" ? "bg-wine" : "bg-[#c9b26a]",
+                            )}
+                            aria-hidden
+                          />
+                        ))}
+                      </button>
+                    );
+                  })}
+                </Fragment>
+              ))}
+            </div>
+          </div>
+          <p className="text-xs text-muted">Spalten = Fächer, Zeilen = Reihen</p>
+          <AnimatePresence mode="wait">
+            {(selected.length > 0 || (slot === null && loose.length > 0)) && (
+              <motion.ul
+                key={slot ?? "loose"}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="space-y-1 border-t border-border pt-3"
+              >
+                {slot === null && <li className="text-xs text-muted">Ohne Fach in diesem Regal:</li>}
+                {(slot ? selected : loose).map((i) => (
+                  <li key={i.id}>
+                    <button
+                      type="button"
+                      onClick={() => onOpen(i)}
+                      className="flex w-full justify-between gap-3 py-1 text-left text-sm"
+                    >
+                      <span className="truncate">
+                        {i.name || i.producer} <span className="text-muted">{i.vintage}</span>
+                      </span>
+                      <span className="shrink-0 tabular-nums">× {i.quantity}</span>
+                    </button>
+                  </li>
+                ))}
+              </motion.ul>
+            )}
+          </AnimatePresence>
+        </Card>
+      )}
+      {unplaced > 0 && (
+        <p className="text-xs text-muted">
+          {unplaced} {unplaced === 1 ? "Flasche hat" : "Flaschen haben"} noch keinen Lagerplatz.
+        </p>
+      )}
     </section>
   );
-}
-
-function Row({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
 }
 
 type Occasion = "alltag" | "besonders" | "muss-weg";

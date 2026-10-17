@@ -14,10 +14,13 @@ export type CellarWine = {
   purchasedOn: string; // yyyy-mm-dd
   drinkFrom: number | null;
   drinkUntil: number | null;
-  shelf: string | null;
+  rackId: string | null;
   compartment: string | null;
   row: string | null;
 };
+
+/** A named storage place ("Keller · Regal links", "Weinkühlschrank") with a grid. */
+export type Rack = { id: string; name: string; compartments: number; rows: number };
 
 export type CellarEvent = {
   id: string;
@@ -40,6 +43,7 @@ export type CellarData = {
   items: CellarWine[];
   events: CellarEvent[];
   valuations: Valuation[];
+  racks: Rack[];
   /** When the data was loaded - "today" for charts. */
   asOf: number;
 };
@@ -54,8 +58,9 @@ export type NewBottles = {
   purchasedOn: string;
   drinkFrom: number | null;
   drinkUntil: number | null;
-  shelf: string | null;
+  rackId: string | null;
   compartment: string | null;
   row: string | null;
   classification: string | null;
+  grape: string | null;
 };

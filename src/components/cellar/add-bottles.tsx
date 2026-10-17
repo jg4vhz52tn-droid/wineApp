@@ -6,8 +6,11 @@ import { Chip } from "@/components/ui/chip";
 import { TextField } from "@/components/ui/field";
 import { Sheet } from "@/components/ui/sheet";
 import { TickDial } from "@/components/ui/tick-dial";
-import type { NewBottles, WineColor } from "@/lib/cellar/types";
+import { suggestDrinkWindow } from "@/lib/cellar/drink-window";
+import type { NewBottles, Rack, WineColor } from "@/lib/cellar/types";
+import { cn } from "@/lib/cn";
 import { tick } from "@/lib/haptics";
+import { RackEditor } from "./rack-editor";
 
 const YEAR = new Date().getFullYear();
 const COLORS: { value: WineColor; label: string }[] = [
@@ -17,39 +20,58 @@ const COLORS: { value: WineColor; label: string }[] = [
   { value: "sparkling", label: "Schaumwein" },
   { value: "sweet", label: "Süßwein" },
 ];
+const GRAPES = [
+  "Riesling",
+  "Silvaner",
+  "Grauburgunder",
+  "Weißburgunder",
+  "Chardonnay",
+  "Müller-Thurgau",
+  "Sauvignon Blanc",
+  "Spätburgunder",
+  "Lemberger",
+];
 const CLASSES = ["Gutswein", "Ortswein", "Erste Lage", "GG", "Kabinett", "Spätlese", "Auslese"];
-const WINDOWS: { label: string; from: number | null; until: number | null }[] = [
+const PRESETS: { label: string; from: number | null; until: number | null }[] = [
   { label: "Jetzt – 3 Jahre", from: YEAR, until: YEAR + 3 },
   { label: "In 2 – 10 Jahren", from: YEAR + 2, until: YEAR + 10 },
   { label: "In 5 – 20 Jahren", from: YEAR + 5, until: YEAR + 20 },
   { label: "Weiß ich nicht", from: null, until: null },
 ];
-const SHELVES = ["A", "B", "C", "D", "E", "F"];
-const SLOTS = ["1", "2", "3", "4", "5", "6"];
 
 export function AddBottlesSheet({
   open,
+  racks,
   onClose,
   onSave,
+  onAddRack,
 }: {
   open: boolean;
+  racks: Rack[];
   onClose: () => void;
   onSave: (input: NewBottles) => Promise<boolean>;
+  onAddRack: (name: string, compartments: number, rows: number) => Promise<string | null>;
 }) {
   const [producer, setProducer] = useState("");
   const [name, setName] = useState("");
   const [color, setColor] = useState<WineColor>("white");
+  const [grape, setGrape] = useState<string | null>(null);
   const [classification, setClassification] = useState<string | null>(null);
   const [vintage, setVintage] = useState(YEAR - 2);
   const [quantity, setQuantity] = useState(6);
   const [price, setPrice] = useState("");
   const [purchasedOn, setPurchasedOn] = useState(() => new Date().toISOString().slice(0, 10));
-  const [windowIndex, setWindowIndex] = useState(1);
-  const [shelf, setShelf] = useState<string | null>(null);
+  // -1 = the suggestion, 0..n = a preset
+  const [windowChoice, setWindowChoice] = useState(-1);
+  const [rackId, setRackId] = useState<string | null>(null);
+  const [newRack, setNewRack] = useState(false);
   const [compartment, setCompartment] = useState<string | null>(null);
   const [row, setRow] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const suggestion = suggestDrinkWindow({ color, grape, classification, vintage });
+  const chosen = windowChoice === -1 ? suggestion : PRESETS[windowChoice];
+  const rack = racks.find((r) => r.id === rackId) ?? null;
   const parsedPrice = price.trim() ? Number(price.replace(",", ".")) : null;
   const valid =
     producer.trim().length > 0 && (parsedPrice === null || (!Number.isNaN(parsedPrice) && parsedPrice >= 0));
@@ -57,20 +79,20 @@ export function AddBottlesSheet({
   async function save() {
     if (!valid) return;
     setBusy(true);
-    const w = WINDOWS[windowIndex];
     const ok = await onSave({
       producer: producer.trim(),
       name: name.trim(),
       color,
+      grape,
       vintage,
       quantity,
       purchasePrice: parsedPrice,
       purchasedOn,
-      drinkFrom: w.from,
-      drinkUntil: w.until,
-      shelf,
-      compartment,
-      row,
+      drinkFrom: chosen.from,
+      drinkUntil: chosen.until,
+      rackId,
+      compartment: rack ? compartment : null,
+      row: rack ? row : null,
       classification,
     });
     setBusy(false);
@@ -79,6 +101,7 @@ export function AddBottlesSheet({
       setProducer("");
       setName("");
       setPrice("");
+      setWindowChoice(-1);
       onClose();
     }
   }
@@ -107,6 +130,14 @@ export function AddBottlesSheet({
           ))}
         </Group>
 
+        <Group label="Rebsorte">
+          {GRAPES.map((g) => (
+            <Chip key={g} selected={grape === g} onClick={() => setGrape(grape === g ? null : g)}>
+              {g}
+            </Chip>
+          ))}
+        </Group>
+
         <Group label="Qualitätsstufe (optional)">
           {CLASSES.map((c) => (
             <Chip
@@ -123,7 +154,7 @@ export function AddBottlesSheet({
           label="Jahrgang"
           value={vintage}
           onChange={setVintage}
-          min={1980}
+          min={1900}
           max={YEAR}
           step={1}
           majorEvery={5}
@@ -160,19 +191,75 @@ export function AddBottlesSheet({
           />
         </div>
 
-        <Group label="Trinkfenster">
-          {WINDOWS.map((w, i) => (
-            <Chip key={w.label} selected={windowIndex === i} onClick={() => setWindowIndex(i)}>
-              {w.label}
-            </Chip>
-          ))}
-        </Group>
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Trinkfenster</p>
+          <button
+            type="button"
+            aria-pressed={windowChoice === -1}
+            onClick={() => setWindowChoice(-1)}
+            className={cn(
+              "w-full rounded-control border p-4 text-left transition",
+              windowChoice === -1 ? "border-accent bg-accent/10" : "border-border bg-surface",
+            )}
+          >
+            <span className="block text-xs font-medium tracking-[0.14em] text-accent uppercase">
+              Vorschlag
+            </span>
+            <span className="mt-1 block font-display text-2xl tabular-nums" aria-live="polite">
+              {suggestion.from} – {suggestion.until}
+            </span>
+            <span className="block text-sm text-muted">{suggestion.reason}</span>
+          </button>
+          <div className="flex flex-wrap gap-2">
+            {PRESETS.map((w, i) => (
+              <Chip key={w.label} selected={windowChoice === i} onClick={() => setWindowChoice(i)}>
+                {w.label}
+              </Chip>
+            ))}
+          </div>
+        </div>
 
         <div className="space-y-3">
           <p className="text-sm font-medium">Lagerplatz (optional)</p>
-          <Slots label="Regal" values={SHELVES} value={shelf} onChange={setShelf} />
-          <Slots label="Fach" values={SLOTS} value={compartment} onChange={setCompartment} />
-          <Slots label="Reihe" values={SLOTS} value={row} onChange={setRow} />
+          <div className="flex flex-wrap gap-2">
+            {racks.map((r) => (
+              <Chip
+                key={r.id}
+                selected={rackId === r.id}
+                onClick={() => {
+                  setRackId(rackId === r.id ? null : r.id);
+                  setCompartment(null);
+                  setRow(null);
+                }}
+              >
+                {r.name}
+              </Chip>
+            ))}
+            {!newRack && (
+              <Chip onClick={() => setNewRack(true)} className="border-dashed">
+                + Neues Regal
+              </Chip>
+            )}
+          </div>
+          {newRack && (
+            <RackEditor
+              onCancel={() => setNewRack(false)}
+              onSave={async ({ name: rackName, compartments, rows }) => {
+                const id = await onAddRack(rackName, compartments, rows);
+                if (id) {
+                  tick("medium");
+                  setRackId(id);
+                  setNewRack(false);
+                }
+              }}
+            />
+          )}
+          {rack && (
+            <>
+              <Slots label="Fach" count={rack.compartments} value={compartment} onChange={setCompartment} />
+              <Slots label="Reihe" count={rack.rows} value={row} onChange={setRow} />
+            </>
+          )}
         </div>
 
         <Button block size="lg" onClick={save} loading={busy} disabled={!valid}>
@@ -218,20 +305,24 @@ export function StepButton({
 
 function Slots({
   label,
-  values,
+  count,
   value,
   onChange,
 }: {
   label: string;
-  values: string[];
+  count: number;
   value: string | null;
   onChange: (v: string | null) => void;
 }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="w-12 text-xs text-muted">{label}</span>
-      <div className="flex flex-1 gap-1.5" role="radiogroup" aria-label={label}>
-        {values.map((v) => (
+      <span className="w-12 shrink-0 text-xs text-muted">{label}</span>
+      <div
+        className="flex flex-1 [scrollbar-width:none] gap-1.5 overflow-x-auto"
+        role="radiogroup"
+        aria-label={label}
+      >
+        {Array.from({ length: count }, (_, i) => String(i + 1)).map((v) => (
           <button
             key={v}
             type="button"
@@ -241,9 +332,10 @@ function Slots({
               tick("minor");
               onChange(value === v ? null : v);
             }}
-            className={`h-10 flex-1 rounded-control text-sm font-medium transition ${
-              value === v ? "bg-accent text-accent-fg" : "bg-surface-2 text-fg"
-            }`}
+            className={cn(
+              "h-10 min-w-10 flex-1 rounded-control text-sm font-medium transition",
+              value === v ? "bg-accent text-accent-fg" : "bg-surface-2 text-fg",
+            )}
           >
             {v}
           </button>

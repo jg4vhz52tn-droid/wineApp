@@ -213,7 +213,17 @@ function midpoint(from: string) {
 }
 
 export function demoCellar(): CellarData {
-  const data: CellarData = { items: [], events: [], valuations: [], asOf: Date.now() };
+  const data: CellarData = {
+    items: [],
+    events: [],
+    valuations: [],
+    asOf: Date.now(),
+    racks: [
+      { id: "rack-A", name: "Keller · Regal links", compartments: 2, rows: 2 },
+      { id: "rack-B", name: "Keller · Regal rechts", compartments: 2, rows: 2 },
+      { id: "rack-C", name: "Weinkühlschrank", compartments: 2, rows: 2 },
+    ],
+  };
   ROWS.forEach((r, i) => {
     const id = `demo-${i}`;
     const [producer, name, vintage, color, grape, region, classification, qty, price, bought] = r;
@@ -231,7 +241,7 @@ export function demoCellar(): CellarData {
       purchasedOn: bought,
       drinkFrom: r[10],
       drinkUntil: r[11],
-      shelf: r[12],
+      rackId: `rack-${r[12]}`,
       compartment: r[13],
       row: r[14],
     });

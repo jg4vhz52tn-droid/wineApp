@@ -61,7 +61,7 @@ export function useCellar() {
       const id = `local-${uid()}`;
       setDemoData((d) => ({
         ...d,
-        items: [...d.items, { id, ...input, grape: null, region: null }],
+        items: [...d.items, { id, ...input, region: null }],
         events: [
           ...d.events,
           {
@@ -87,10 +87,11 @@ export function useCellar() {
       p_quantity: input.quantity,
       p_purchase_price: input.purchasePrice,
       p_purchased_on: input.purchasedOn,
+      p_grape_name: input.grape,
       p_classification: input.classification,
       p_drink_from: input.drinkFrom,
       p_drink_until: input.drinkUntil,
-      p_storage_shelf: input.shelf,
+      p_rack_id: input.rackId,
       p_storage_compartment: input.compartment,
       p_storage_row: input.row,
     });
@@ -157,6 +158,54 @@ export function useCellar() {
     return true;
   }
 
+  /** Creates a named rack; returns its id. */
+  async function addRack(name: string, compartments: number, rows: number) {
+    const clean = name.trim();
+    if (!clean) return null;
+    if (mode !== "live") {
+      const id = `rack-${uid()}`;
+      setDemoData((d) => ({ ...d, racks: [...d.racks, { id, name: clean, compartments, rows }] }));
+      return id;
+    }
+    const supabase = getSupabase();
+    if (!supabase || !orgId) return null;
+    const { data: rack, error } = await supabase
+      .from("cellar_racks")
+      .insert({ org_id: orgId, name: clean, compartments, rows })
+      .select("id")
+      .single();
+    if (error) {
+      setError(
+        error.code === "23505"
+          ? "Ein Regal mit diesem Namen gibt es schon."
+          : "Das Regal konnte nicht angelegt werden.",
+      );
+      return null;
+    }
+    await reload();
+    return rack.id as string;
+  }
+
+  async function updateRack(id: string, changes: { name?: string; compartments?: number; rows?: number }) {
+    if (mode !== "live") {
+      setDemoData((d) => ({ ...d, racks: d.racks.map((r) => (r.id === id ? { ...r, ...changes } : r)) }));
+      return true;
+    }
+    const supabase = getSupabase();
+    if (!supabase) return false;
+    const { error } = await supabase.from("cellar_racks").update(changes).eq("id", id);
+    if (error) {
+      setError(
+        error.code === "23505"
+          ? "Ein Regal mit diesem Namen gibt es schon."
+          : "Das Regal konnte nicht geändert werden.",
+      );
+      return false;
+    }
+    await reload();
+    return true;
+  }
+
   async function loadDemoIntoAccount() {
     const supabase = getSupabase();
     if (!supabase || mode !== "live") return false;
@@ -169,7 +218,7 @@ export function useCellar() {
     return true;
   }
 
-  return { mode, data, error, addBottles, openBottles, setValue, loadDemoIntoAccount };
+  return { mode, data, error, addBottles, openBottles, setValue, addRack, updateRack, loadDemoIntoAccount };
 }
 
 type Loaded = { orgId: string | null; data: CellarData } | { error: string };
@@ -177,23 +226,25 @@ type Loaded = { orgId: string | null; data: CellarData } | { error: string };
 async function loadCellar(userId: string): Promise<Loaded | null> {
   const supabase = getSupabase();
   if (!supabase) return null;
-  const [profile, items, events, valuations] = await Promise.all([
+  const [profile, items, events, valuations, racks] = await Promise.all([
     supabase.from("profiles").select("personal_org_id").eq("id", userId).maybeSingle(),
     supabase
       .from("cellar_items")
       .select(
-        "id, quantity, purchase_price, purchased_on, drink_from, drink_until, storage_shelf, storage_compartment, storage_row, wine_vintages(vintage, wines(producer, name, color, classification, grape_varieties(name), regions(name)))",
+        "id, quantity, purchase_price, purchased_on, drink_from, drink_until, rack_id, storage_compartment, storage_row, wine_vintages(vintage, wines(producer, name, color, classification, grape_varieties(name), regions(name)))",
       )
       .order("purchased_on"),
     supabase.from("cellar_events").select("id, cellar_item_id, kind, quantity, unit_price, happened_on"),
     supabase.from("cellar_valuations").select("id, cellar_item_id, value, source, valued_on"),
+    supabase.from("cellar_racks").select("id, name, compartments, rows").order("name"),
   ]);
-  if (items.error || events.error || valuations.error)
+  if (items.error || events.error || valuations.error || racks.error)
     return { error: "Der Keller konnte nicht geladen werden." };
   return {
     orgId: profile.data?.personal_org_id ?? null,
     data: {
       asOf: Date.now(),
+      racks: racks.data ?? [],
       items: (items.data ?? []).map(mapItem),
       events: (events.data ?? []).map((e) => ({
         id: e.id,
@@ -221,7 +272,7 @@ type Row = {
   purchased_on: string | null;
   drink_from: number | null;
   drink_until: number | null;
-  storage_shelf: string | null;
+  rack_id: string | null;
   storage_compartment: string | null;
   storage_row: string | null;
   wine_vintages: unknown;
@@ -256,7 +307,7 @@ function mapItem(row: Row): CellarWine {
     purchasedOn: row.purchased_on ?? today(),
     drinkFrom: row.drink_from,
     drinkUntil: row.drink_until,
-    shelf: row.storage_shelf,
+    rackId: row.rack_id,
     compartment: row.storage_compartment,
     row: row.storage_row,
   };

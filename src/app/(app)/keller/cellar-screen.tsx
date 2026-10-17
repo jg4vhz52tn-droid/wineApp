@@ -114,7 +114,12 @@ function CellarContent() {
               />
               <CellarList data={data} groupBy={groupBy} groupFilter={groupFilter} onOpen={setOpened} />
               <DrinkTimeline data={data} onOpen={setOpened} />
-              <ShelfGrid data={data} onOpen={setOpened} />
+              <ShelfGrid
+                data={data}
+                onOpen={setOpened}
+                onAddRack={cellar.addRack}
+                onUpdateRack={cellar.updateRack}
+              />
             </>
           )}
 
@@ -140,7 +145,13 @@ function CellarContent() {
         </button>
       )}
 
-      <AddBottlesSheet open={adding} onClose={() => setAdding(false)} onSave={cellar.addBottles} />
+      <AddBottlesSheet
+        open={adding}
+        racks={data.racks}
+        onClose={() => setAdding(false)}
+        onSave={cellar.addBottles}
+        onAddRack={cellar.addRack}
+      />
       <BottleSheet
         item={opened}
         data={data}

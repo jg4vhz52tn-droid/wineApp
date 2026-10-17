@@ -127,7 +127,7 @@ await as(null, async (tx) => {
 
 const participantA = await as(
   guestA,
-  async (tx) => (await rows(tx, "select public.join_event($1, 'Anna', 'yes') as id", [inviteCode]))[0].id,
+  async (tx) => (await rows(tx, "select public.join_event($1, 'Lea', 'yes') as id", [inviteCode]))[0].id,
 );
 const participantB = await as(
   guestB,
@@ -259,7 +259,7 @@ await as({ id: guestA.id, anonymous: false }, async (tx) => {
   );
   check(
     "upgraded guest keeps the name from the invite",
-    profile?.display_name === "Anna",
+    profile?.display_name === "Lea",
     profile?.display_name,
   );
   const guesses = await rows(tx, "select * from public.guesses where participant_id = $1", [participantA]);
@@ -289,14 +289,44 @@ await as(host, async (tx) => {
   check("adding bottles creates item and purchase event", item?.quantity === 3);
   const [{ left }] = await rows(tx, "select public.open_cellar_bottle($1, 1, 22) as left", [id]);
   check("opening a bottle counts down", left === 2, `${left}`);
+  return id;
+});
+
+// Failing statements get their own transaction (a failed one is rolled back).
+await as(host, async (tx) => {
+  const [{ id }] = await rows(tx, "select id from public.cellar_items where quantity = 2 limit 1");
   const error = await fails(tx.query("select public.open_cellar_bottle($1, 5)", [id]));
   check("cannot open more bottles than there are", error !== null, error ?? "succeeded");
 });
 
+await as(host, async (tx) => {
+  const racks = await rows(tx, "select name from public.cellar_racks order by name");
+  check("demo cellar comes with named racks", racks.length === 3, `${racks.length}`);
+  await tx.query("insert into public.cellar_racks (org_id, name, compartments, rows) values ($1, 'Ferienhaus', 3, 5)", [
+    hostOrg,
+  ]);
+  const [rack] = await rows(tx, "select id from public.cellar_racks where name = 'Ferienhaus'");
+  const [{ id }] = await rows(
+    tx,
+    "select public.add_cellar_bottles($1, 'Weingut Test', 'Ferien-Riesling', 'white', 2015::smallint, 2, 30, current_date, 'Riesling', null, null, null, $2, '1', '1') as id",
+    [hostOrg, rack.id],
+  );
+  const [placed] = await rows(tx, "select rack_id from public.cellar_items where id = $1", [id]);
+  check("bottles can be placed in a named rack", placed?.rack_id === rack.id);
+});
+
+const [{ total }] = (await db.query("select count(*)::int as total from public.cellar_items")).rows;
+check("the owner's cellar really exists (so the next checks mean something)", total >= 11, `${total}`);
+
 await as(stranger, async (tx) => {
+  const racks = await rows(tx, "select * from public.cellar_racks");
+  check("others see none of your racks", racks.length === 0, `${racks.length}`);
   const items = await rows(tx, "select * from public.cellar_items");
   const values = await rows(tx, "select * from public.cellar_valuations");
   check("others see nothing of your cellar", items.length === 0 && values.length === 0);
+});
+
+await as(stranger, async (tx) => {
   const error = await fails(
     tx.query("select public.add_cellar_bottles($1, 'X', 'Y', 'white', 2020::smallint, 1)", [hostOrg]),
   );
