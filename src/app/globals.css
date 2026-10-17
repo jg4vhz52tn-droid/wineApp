@@ -59,9 +59,6 @@
   color-scheme: light;
 }
 
-
-
-
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);

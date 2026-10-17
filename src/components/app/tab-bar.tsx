@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 import { CellarIcon, GlassIcon, LearnIcon, UserIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 
@@ -12,8 +13,20 @@ const TABS = [
   { href: "/profil", label: "Profil", Icon: UserIcon },
 ] as const;
 
+/** The URL is only known at runtime on dynamic pages, so the bar streams in with the active tab. */
 export function TabBar() {
-  const pathname = usePathname();
+  return (
+    <Suspense fallback={<Bar pathname="" />}>
+      <ActiveBar />
+    </Suspense>
+  );
+}
+
+function ActiveBar() {
+  return <Bar pathname={usePathname()} />;
+}
+
+function Bar({ pathname }: { pathname: string }) {
   return (
     <nav
       aria-label="Hauptnavigation"

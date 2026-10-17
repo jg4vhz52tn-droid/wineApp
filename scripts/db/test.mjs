@@ -245,6 +245,184 @@ await as(guestA, async (tx) => {
   check("guests cannot write their own score", error !== null, error ?? "insert succeeded");
 });
 
+// --- live tasting (Phase 1) -------------------------------------------------
+
+console.log("\nLive tasting");
+const guestC = await createUser({ anonymous: true });
+const guestD = await createUser({ anonymous: true });
+const [site] = (await db.query("select id, region_id from public.vineyard_sites order by name limit 1")).rows;
+
+const live = await as(host, async (tx) => {
+  const [event] = await rows(
+    tx,
+    "insert into public.events (title, pirate_mode) values ('Testabend', true) returning id, invite_code",
+  );
+  const [{ v: riesling }] = await rows(
+    tx,
+    "select public.ensure_wine_vintage('Weingut Test', 'Lagen-Riesling', 'white', 2019::smallint, 'Riesling', null, $1) as v",
+    [site.id],
+  );
+  const [{ v: silvaner }] = await rows(
+    tx,
+    "select public.ensure_wine_vintage('Weingut Test', 'Pirat', 'white', 2021::smallint, 'Silvaner') as v",
+  );
+  const [{ v: again }] = await rows(
+    tx,
+    "select public.ensure_wine_vintage('weingut test', 'lagen-riesling', 'white', 2019::smallint) as v",
+  );
+  check("the same wine is found again instead of duplicated", again === riesling);
+  const [{ g: g1 }] = await rows(
+    tx,
+    `select public.save_event_glass($1, 1::smallint, $2, 30, false, null,
+       '{"sweetness": 2, "acidity": 8, "body": 5}', '{Pfirsich,Schiefer}') as g`,
+    [event.id, riesling],
+  );
+  const [{ g: g2 }] = await rows(tx, "select public.save_event_glass($1, 2::smallint, $2, 20, true) as g", [
+    event.id,
+    silvaner,
+  ]);
+  await tx.query("select public.reorder_event_glasses($1, $2)", [event.id, [g2, g1]]);
+  const [first] = await rows(
+    tx,
+    "select id from public.event_wines where event_id = $1 and glass_number = 1",
+    [event.id],
+  );
+  check("organizer can reorder the glasses before the start", first?.id === g2);
+  await tx.query("select public.reorder_event_glasses($1, $2)", [event.id, [g1, g2]]);
+  return { id: event.id, code: event.invite_code, g1, g2 };
+});
+
+const pC = await as(
+  guestC,
+  async (tx) => (await rows(tx, "select public.join_event($1, 'Jonas', 'yes') as id", [live.code]))[0].id,
+);
+const pD = await as(
+  guestD,
+  async (tx) => (await rows(tx, "select public.join_event($1, 'Matti', 'yes') as id", [live.code]))[0].id,
+);
+
+await as(guestC, async (tx) => {
+  const error = await fails(tx.query("select public.save_event_glass($1, 3::smallint, null)", [live.id]));
+  check("guests cannot prepare glasses", error !== null, error ?? "succeeded");
+});
+await as(guestC, async (tx) => {
+  const error = await fails(tx.query("select public.open_glass($1)", [live.g1]));
+  check("guests cannot pour a glass", error !== null, error ?? "succeeded");
+});
+await as(host, async (tx) => {
+  const error = await fails(tx.query("select public.reveal_glass($1)", [live.g1]));
+  check("a glass cannot be revealed before it is poured", error !== null, error ?? "succeeded");
+});
+
+await as(host, async (tx) => {
+  await tx.query("select public.open_glass($1)", [live.g1]);
+  const [event] = await rows(tx, "select status from public.events where id = $1", [live.id]);
+  check("pouring the first glass starts the evening", event?.status === "live", event?.status);
+});
+
+const fullGuess = `insert into public.guesses (event_wine_id, event_id, participant_id, grape_variety_id, site_id,
+    vintage, price, structure, aromas, rating)
+  values ($1, $2, $3, (select id from public.grape_varieties where name = 'Riesling'), $4,
+    2020, 33, '{"sweetness": 2, "acidity": 7, "body": 5}', '{Pfirsich,Schiefer,Honig}', 92.5)`;
+await as(guestC, async (tx) => {
+  await tx.query(fullGuess, [live.g1, live.id, pC, site.id]);
+  check("guests can rate in half points (92,5)", true);
+});
+await as(guestD, async (tx) => {
+  await tx.query(
+    `insert into public.guesses (event_wine_id, event_id, participant_id, grape_variety_id, rating)
+     values ($1, $2, $3, (select id from public.grape_varieties where name = 'Silvaner'), 88)`,
+    [live.g1, live.id, pD],
+  );
+});
+
+await as(guestD, async (tx) => {
+  const progress = await rows(tx, "select * from public.glass_progress($1)", [live.id]);
+  check("everyone sees who has handed in", progress.length === 2, `${progress.length}`);
+  const guesses = await rows(tx, "select * from public.guesses where event_id = $1", [live.id]);
+  check("… but not what the others guessed", guesses.length === 1, `${guesses.length}`);
+});
+await as(guestD, async (tx) => {
+  const error = await fails(tx.query("select public.compute_glass_scores($1)", [live.g1]));
+  check("nobody can trigger the scoring directly", error !== null, error ?? "succeeded");
+});
+await as(guestD, async (tx) => {
+  const error = await fails(tx.query("select public.reveal_glass($1)", [live.g1]));
+  check("guests cannot reveal", error !== null, error ?? "succeeded");
+});
+
+await as(host, async (tx) => {
+  await tx.query("select public.reveal_glass($1)", [live.g1]);
+});
+
+await as(guestC, async (tx) => {
+  const scores = await rows(
+    tx,
+    "select participant_id, points, breakdown from public.scores where event_wine_id = $1",
+    [live.g1],
+  );
+  const mine = scores.find((s) => s.participant_id === pC);
+  const other = scores.find((s) => s.participant_id === pD);
+  // 30 grape + 10 country + 10 region + 15 site + 8 vintage ±1 + 10 price ±15 %
+  // + structure 5 + 3 + 5 + aromas 2 × 2 = 100
+  check(
+    "scoring follows the rules",
+    mine?.points === 100,
+    `${mine?.points} ${JSON.stringify(mine?.breakdown)}`,
+  );
+  check("a wrong guess scores nothing", other?.points === 0, `${other?.points}`);
+  const secrets = await rows(tx, "select event_wine_id from public.event_wine_secrets where event_id = $1", [
+    live.id,
+  ]);
+  check("only the revealed glass is uncovered", secrets.length === 1 && secrets[0].event_wine_id === live.g1);
+  const cards = await rows(tx, "select * from public.user_cards");
+  check("the reveal hands out collectible cards", cards.length >= 2, `${cards.length}`);
+});
+
+await as(host, async (tx) => {
+  await tx.query("select public.open_glass($1)", [live.g2]);
+});
+await as(guestC, async (tx) => {
+  await tx.query(
+    `insert into public.guesses (event_wine_id, event_id, participant_id, grape_variety_id, structure, marked_pirate)
+     values ($1, $2, $3, (select id from public.grape_varieties where name = 'Silvaner'), '{"sweetness": 5}', true)`,
+    [live.g2, live.id, pC],
+  );
+});
+await as(guestD, async (tx) => {
+  await tx.query(
+    `insert into public.guesses (event_wine_id, event_id, participant_id, structure) values ($1, $2, $3, '{"sweetness": 3}')`,
+    [live.g2, live.id, pD],
+  );
+});
+await as(host, async (tx) => {
+  const error = await fails(
+    tx.query("select public.reorder_event_glasses($1, $2)", [live.id, [live.g2, live.g1]]),
+  );
+  check("no reordering once the tasting runs", error !== null, error ?? "succeeded");
+});
+await as(host, async (tx) => {
+  await tx.query("select public.reveal_glass($1)", [live.g2]);
+  const scores = await rows(tx, "select participant_id, points from public.scores where event_wine_id = $1", [
+    live.g2,
+  ]);
+  const c = scores.find((s) => s.participant_id === pC)?.points;
+  const d = scores.find((s) => s.participant_id === pD)?.points;
+  // Group average sweetness 4: both 1 off → 3. Jonas: 30 grape + 20 pirate.
+  check("without a reference the group average counts, the pirate pays", c === 53 && d === 3, `${c} / ${d}`);
+});
+await as(guestD, async (tx) => {
+  const changed = await tx.query(
+    "update public.guesses set marked_pirate = true where participant_id = $1 and event_wine_id = $2",
+    [pD, live.g2],
+  );
+  check(
+    "after the reveal nobody can change a guess",
+    changed.affectedRows === 0,
+    `${changed.affectedRows} rows`,
+  );
+});
+
 // --- upgrade ---------------------------------------------------------------
 
 console.log("\nGuest upgrade");
@@ -269,8 +447,8 @@ await as({ id: guestA.id, anonymous: false }, async (tx) => {
 // --- cellar ------------------------------------------------------------------
 
 console.log("\nCellar");
-const hostOrg = (await db.query("select personal_org_id from public.profiles where id = $1", [host.id])).rows[0]
-  .personal_org_id;
+const hostOrg = (await db.query("select personal_org_id from public.profiles where id = $1", [host.id]))
+  .rows[0].personal_org_id;
 
 await as(host, async (tx) => {
   const [{ n }] = await rows(tx, "select public.create_demo_cellar() as n");
@@ -278,7 +456,10 @@ await as(host, async (tx) => {
   const items = await rows(tx, "select * from public.cellar_items");
   const events = await rows(tx, "select * from public.cellar_events");
   const values = await rows(tx, "select * from public.cellar_valuations");
-  check("owner sees their bottles, events and values", items.length === 10 && events.length === 10 && values.length === 20);
+  check(
+    "owner sees their bottles, events and values",
+    items.length === 10 && events.length === 10 && values.length === 20,
+  );
 
   const [{ id }] = await rows(
     tx,
@@ -302,9 +483,10 @@ await as(host, async (tx) => {
 await as(host, async (tx) => {
   const racks = await rows(tx, "select name from public.cellar_racks order by name");
   check("demo cellar comes with named racks", racks.length === 3, `${racks.length}`);
-  await tx.query("insert into public.cellar_racks (org_id, name, compartments, rows) values ($1, 'Ferienhaus', 3, 5)", [
-    hostOrg,
-  ]);
+  await tx.query(
+    "insert into public.cellar_racks (org_id, name, compartments, rows) values ($1, 'Ferienhaus', 3, 5)",
+    [hostOrg],
+  );
   const [rack] = await rows(tx, "select id from public.cellar_racks where name = 'Ferienhaus'");
   const [{ id }] = await rows(
     tx,

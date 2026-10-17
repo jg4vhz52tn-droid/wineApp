@@ -6,7 +6,7 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { NotConfigured } from "@/components/app/not-configured";
 import { useSession } from "@/components/app/session-provider";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TextField } from "@/components/ui/field";
 import { InviteDetails } from "@/components/event/invite-details";
@@ -22,6 +22,7 @@ type Preview = {
   invitation_text: string | null;
   organizer_name: string | null;
   is_blind: boolean;
+  status: "draft" | "planned" | "live" | "finished";
   participant_limit: number | null;
   confirmed_count: number;
 };
@@ -191,10 +192,23 @@ export function Invitation() {
               ? `Schön, ${name}! Du bist dabei.`
               : `Schade, ${name}. Danke fürs Bescheid geben.`}
           </p>
+          {answered === "yes" &&
+            (preview.status === "planned" ? (
+              <p className="text-sm text-muted">
+                Am Abend öffnest du einfach wieder diesen Link – dann geht’s mit der Verkostung los.
+              </p>
+            ) : (
+              <Link
+                href={`/abende/${preview.event_id}/${preview.status === "finished" ? "rueckblick" : "live"}`}
+                className={buttonClasses({ block: true, size: "lg" })}
+              >
+                {preview.status === "finished" ? "Zum Rückblick" : "● Zur Verkostung"}
+              </Link>
+            ))}
           {answered === "yes" && (
-            <p className="text-sm text-muted">
-              Am Abend öffnest du einfach wieder diesen Link – dann geht’s mit der Verkostung los.
-            </p>
+            <Link href={`/abende/${preview.event_id}`} className="block text-sm text-accent">
+              Zum Abend (Kosten, Gläser) →
+            </Link>
           )}
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
             <button type="button" className="underline underline-offset-4" onClick={() => setAnswered(null)}>
