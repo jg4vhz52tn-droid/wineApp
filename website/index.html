@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wein-App – Wein gemeinsam erleben</title>
+<meta name="description" content="Lagenabende mit Live-Blindverkostung, der Keller als Portfolio, Lernen mit Sammelkarten – und die Vision einer Wein-Börse.">
+<script>try{var t=localStorage.getItem("weinapp-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .hero-stage { position: relative; display: grid; place-items: center; padding: 10px 0 20px; }
+  .hero-stage .phone { --pw: 290px; z-index: 2; }
+  .float-note {
+    position: absolute; z-index: 3; display: flex; gap: 10px; align-items: center; padding: 10px 14px; border-radius: 16px; font-size: .8rem;
+    background: color-mix(in srgb, var(--surface) 88%, transparent); border: 1px solid var(--border-strong); box-shadow: var(--shadow);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); max-width: 220px; line-height: 1.3;
+  }
+  .float-note b { display: block; font-weight: 500; }
+  .float-note .ic { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--accent-soft); color: var(--accent); }
+  .float-note.n1 { left: 0; top: 18%; animation: bob 6s ease-in-out infinite; }
+  .float-note.n2 { right: 0; top: 52%; animation: bob 7s ease-in-out -2s infinite; }
+  .float-note.n3 { left: 4%; bottom: 8%; animation: bob 6.5s ease-in-out -4s infinite; }
+  @keyframes bob { 50% { transform: translateY(-8px); } }
+  @media (max-width: 620px) { .float-note { display: none; } }
+
+  .pillars { display: grid; gap: 14px; }
+  @media (min-width: 760px) { .pillars { grid-template-columns: repeat(2, 1fr); } }
+  .pillar { position: relative; overflow: hidden; display: flex; flex-direction: column; text-decoration: none; min-height: 360px; transition: border-color .3s, transform .3s; }
+  .pillar:hover { border-color: var(--accent); transform: translateY(-3px); }
+  .pillar .art { height: 190px; position: relative; overflow: hidden; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+  .pillar .body { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .pillar h3 { font-size: 2rem; line-height: 1.05; }
+  .pillar p { color: var(--muted); font-size: .94rem; }
+  .pillar .go { margin-top: auto; padding-top: 10px; color: var(--accent); font-weight: 500; font-size: .9rem; }
+  .pillar.vision { border-style: dashed; border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+  .pillar .flag { position: absolute; top: 14px; left: 14px; z-index: 2; background: var(--bg); }
+
+  .art-abend { display: flex; align-items: flex-end; justify-content: center; gap: 14px; padding-top: 24px; }
+  .art-abend .b { height: 160px; transition: transform .5s; }
+  .art-abend .b:nth-child(2) { height: 176px; }
+  .pillar:hover .art-abend .b:nth-child(2) { transform: translateY(-6px); }
+  .art-keller { padding: 18px 20px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 7px; align-content: center; }
+  .art-keller i { aspect-ratio: 1; border-radius: 50%; background: var(--c); opacity: .9; animation: pop .6s backwards; }
+  @keyframes pop { from { transform: scale(0); } }
+  .art-lernen { display: flex; justify-content: center; align-items: center; }
+  .art-lernen .mini-card { width: 92px; height: 128px; border-radius: 12px; margin: 0 -14px; padding: 10px; display: flex; align-items: flex-end; font-family: var(--serif); color: #f4ede5; font-size: 1.05rem; line-height: 1.05; border: 1px solid rgb(209 173 114 / .5); box-shadow: 0 10px 30px -10px rgb(0 0 0 / .6); transition: transform .4s; }
+  .pillar:hover .mini-card:nth-child(1) { transform: rotate(-14deg) translateX(-10px); }
+  .pillar:hover .mini-card:nth-child(3) { transform: rotate(14deg) translateX(10px); }
+  .art-boerse { display: grid; place-items: center; padding: 8px; }
+
+  .acts { display: grid; gap: 14px; }
+  @media (min-width: 900px) { .acts { grid-template-columns: repeat(3, 1fr); } }
+  .act { padding: 22px; }
+  .act .n { font-family: var(--serif); font-size: 3rem; line-height: 1; color: var(--accent); }
+  .act h3 { font-size: 1.6rem; margin: 6px 0 8px; }
+  .act p { color: var(--muted); font-size: .92rem; }
+
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius-card); overflow: hidden; }
+  @media (min-width: 900px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+  .stat { background: var(--bg); padding: 24px 18px; }
+  .stat b { display: block; font-family: var(--serif); font-weight: 400; font-size: clamp(2.4rem, 8vw, 3.6rem); line-height: 1; color: var(--fg); }
+  .stat span { color: var(--muted); font-size: .86rem; }
+
+  .road { display: grid; gap: 10px; }
+  .road li { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; padding: 16px 18px; }
+  .road .st { font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; padding: .3rem .5rem; border-radius: 999px; white-space: nowrap; margin-top: 2px; width: 100px; text-align: center; }
+  .st.done { background: color-mix(in srgb, var(--success) 15%, transparent); color: var(--success); }
+  .st.next { background: var(--accent-soft); color: var(--accent); }
+  .st.later { border: 1px solid var(--border); color: var(--muted); }
+  .st.vision { border: 1px dashed var(--accent); color: var(--accent); }
+  .road b { font-weight: 500; }
+  .road p { color: var(--muted); font-size: .88rem; }
+
+  .stage-strip { display: grid; gap: 10px; }
+  .stage-strip li { padding: 18px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); }
+  .stage-strip b { font-family: var(--serif); font-weight: 400; font-size: 1.4rem; display: block; margin: 4px 0; }
+  .stage-strip p { color: var(--muted); font-size: .88rem; }
+</style>
+</head>
+<body>
+<header id="site-header"></header>
+
+<main>
+  <!-- ===== Hero ===== -->
+  <section class="page-hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow"><span data-app-name>Wein-App</span> · für Weinrunden</span>
+        <h1 class="display">Wein gemeinsam <em>erleben</em> – nicht nur sammeln.</h1>
+        <p class="lead">Wir bauen eine App für Menschen, die Wein mit anderen teilen: Lagenabende planen, blind verkosten und um Punkte raten, den eigenen Keller als Portfolio verstehen – und ganz nebenbei lernen.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="app.html">App entdecken <span class="arrow">→</span></a>
+          <a class="btn btn-ghost" href="boerse.html">Vision: Wein-Börse</a>
+        </div>
+      </div>
+      <div class="hero-stage">
+        <div id="heroPhone"></div>
+        <div class="float-note n1" aria-hidden="true"><span class="ic">✓</span><span><b>Lena hat zugesagt</b><span class="muted">Riesling vom Schiefer</span></span></div>
+        <div class="float-note n2" aria-hidden="true"><span class="ic" style="color:var(--success);background:color-mix(in srgb,var(--success) 15%,transparent)">●</span><span><b>Jetzt perfekt</b><span class="muted">Spätburgunder 2016</span></span></div>
+        <div class="float-note n3" aria-hidden="true"><span class="ic">✦</span><span><b>+83 Punkte</b><span class="muted">Rebsorte und Region richtig</span></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Was wir machen ===== -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Was wir machen</span>
+        <h2 class="h2">Drei Bereiche für heute. Eine große Idee für morgen.</h2>
+        <p class="lead">Jeder Bereich hat eine eigene Seite mit Beispielen zum Ausprobieren.</p>
+      </div>
+      <div class="pillars">
+        <a class="card pillar fade" href="abende.html">
+          <div class="art art-abend" aria-hidden="true">
+            <span class="b"><svg viewBox="0 0 120 330" style="height:100%;width:auto;overflow:visible"><use href="#burgundy" width="120" height="320"/><use href="#bagS" width="120" height="330"/><text x="60" y="244" text-anchor="middle" font-family="Instrument Serif, Georgia, serif" font-size="22" fill="#d1ad72">1</text></svg></span>
+            <span class="b"><svg viewBox="0 0 120 330" style="height:100%;width:auto;overflow:visible"><use href="#schlegel" width="120" height="320"/></svg></span>
+            <span class="b"><svg viewBox="0 0 120 330" style="height:100%;width:auto;overflow:visible"><use href="#schlegel" width="120" height="320"/><use href="#bagS" width="120" height="330"/><text x="60" y="244" text-anchor="middle" font-family="Instrument Serif, Georgia, serif" font-size="22" fill="#d1ad72">3</text></svg></span>
+          </div>
+          <div class="body">
+            <span class="eyebrow">Abende</span>
+            <h3>Lagenabende &amp; Live-Blindverkostung</h3>
+            <p>Einladung als Ticket, Raten am eigenen Handy, Aufdecken mit Samtbeutel, Punkte und Leaderboard in Echtzeit.</p>
+            <span class="go">Abende planen ansehen →</span>
+          </div>
+        </a>
+        <a class="card pillar fade d1" href="keller.html">
+          <div class="art art-keller" aria-hidden="true" id="miniShelf"></div>
+          <div class="body">
+            <span class="eyebrow">Keller</span>
+            <h3>Dein Keller als Portfolio</h3>
+            <p>Kellerwert, Gewinner &amp; Verlierer, Verteilung, Trinkreife-Ampel, eigene Regale – und die Antwort auf „Was machen wir heute auf?“.</p>
+            <span class="go">Beispielkeller öffnen →</span>
+          </div>
+        </a>
+        <a class="card pillar fade" href="lernen.html">
+          <div class="art art-lernen" aria-hidden="true">
+            <span class="mini-card" style="background:linear-gradient(160deg,#3b3a44,#120a0e);transform:rotate(-8deg)">Schiefer</span>
+            <span class="mini-card" style="background:linear-gradient(160deg,#4a1428,#120a0e);z-index:2;transform:translateY(-8px)">Cuvée-Komponist</span>
+            <span class="mini-card" style="background:linear-gradient(160deg,#5d6b3f,#120a0e);transform:rotate(8deg)">Feine Nase</span>
+          </div>
+          <div class="body">
+            <span class="eyebrow">Lernen</span>
+            <h3>12 Kapitel zum Anfassen</h3>
+            <p>Boden-Explorer, Rebsorten-Vergleich, Cuvée-Baukasten, Aromarad, Weinfehler-Quiz – jedes Kapitel schaltet eine Sammelkarte frei.</p>
+            <span class="go">Ein Kapitel ausprobieren →</span>
+          </div>
+        </a>
+        <a class="card pillar vision fade d1" href="boerse.html">
+          <span class="future-flag flag">◇ Vision</span>
+          <div class="art art-boerse" aria-hidden="true">
+            <svg viewBox="0 0 320 170" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+              <rect x="20" y="30" width="120" height="110" rx="10" fill="none" stroke="var(--border-strong)"/>
+              <g id="vaultDots"></g>
+              <text x="80" y="160" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="Inter">Lager · geprüft &amp; versichert</text>
+              <path d="M150 85 h40" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 4"><animate attributeName="stroke-dashoffset" from="16" to="0" dur="1s" repeatCount="indefinite"/></path>
+              <rect x="200" y="50" width="100" height="70" rx="10" fill="var(--surface)" stroke="var(--accent)"/>
+              <text x="250" y="76" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="Inter">Besitz wechselt</text>
+              <text x="250" y="100" text-anchor="middle" font-size="20" fill="var(--fg)" font-family="Instrument Serif, Georgia, serif">digital</text>
+            </svg>
+          </div>
+          <div class="body">
+            <span class="eyebrow">Wein-Börse · Idee</span>
+            <h3>Flaschen handeln wie Gold</h3>
+            <p>Von „Abzugeben“ in der Runde bis zum zentralen, versicherten Lager mit digitalem Handel. Noch nicht gebaut – so stellen wir es uns vor.</p>
+            <span class="go">Wie das funktionieren würde →</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Ein Abend in drei Akten ===== -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">So fühlt es sich an</span>
+        <h2 class="h2">Ein Abend in drei Akten.</h2>
+      </div>
+      <ol class="acts">
+        <li class="card act fade"><div class="n">I</div><h3>Einladen</h3><p>Der Organisator legt Thema, Lage, Datum und Flaschen fest. Gäste öffnen einen Link – ohne App-Installation – und reißen den Abschnitt ihres Tickets ab.</p></li>
+        <li class="card act fade d1"><div class="n">II</div><h3>Raten</h3><p>Glas für Glas schätzen alle am Handy: Säure, Körper, Aromen, Rebsorte, Region, Jahrgang, Preis. Regler und Chips statt Tippen – das Glas bleibt in der Hand.</p></li>
+        <li class="card act fade d2"><div class="n">III</div><h3>Aufdecken</h3><p>Ein Tipp des Organisators, und auf allen Handys wird der Samtbeutel von der Flasche gezogen. Punkte zählen hoch, das Leaderboard sortiert sich neu.</p></li>
+      </ol>
+      <div class="actions fade"><a class="btn btn-ghost" href="abende.html">Selbst raten und aufdecken <span class="arrow">→</span></a></div>
+    </div>
+  </section>
+
+  <!-- ===== Zahlen ===== -->
+  <section class="section">
+    <div class="wrap">
+      <div class="stats fade" id="stats">
+        <div class="stat"><b data-to="12">12</b><span>interaktive Lernkapitel</span></div>
+        <div class="stat"><b data-to="0">0</b><span>App-Installationen für Gäste nötig</span></div>
+        <div class="stat"><b data-to="100">100</b><span>Punkte-Skala für Bewertungen</span></div>
+        <div class="stat"><b data-to="48">48</b><span>Aromen im Aromarad</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Vision-Teaser ===== -->
+  <section class="section">
+    <div class="wrap split">
+      <div class="fade">
+        <span class="future-flag">◇ Vision · noch nicht gebaut</span>
+        <h2 class="h2" style="margin:16px 0">Die Wein-Börse: Flaschen finden ihren nächsten Tisch.</h2>
+        <p class="lead">In vielen Kellern liegen Flaschen, die woanders mehr Freude machen würden. Unsere Idee wächst in drei Stufen – Schritt für Schritt und erst nach rechtlicher Prüfung.</p>
+        <div class="actions"><a class="btn btn-primary" href="boerse.html">Den Handel verstehen <span class="arrow">→</span></a></div>
+      </div>
+      <ol class="stage-strip fade d1">
+        <li><span class="k">Stufe 1</span><b>„Abzugeben“</b><p>Flaschen in der eigenen Weinrunde anbieten.</p></li>
+        <li><span class="k">Stufe 2</span><b>Marktplatz</b><p>Handeln zwischen Weinliebhabern.</p></li>
+        <li><span class="k">Stufe 3</span><b>Lager + digitaler Handel</b><p>Geprüft und versichert lagern, digital kaufen und verkaufen, auf Wunsch liefern lassen.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===== Fahrplan ===== -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Fahrplan</span>
+        <h2 class="h2">Wo wir stehen.</h2>
+      </div>
+      <ol class="road">
+        <li class="card fade"><span class="st done">Gebaut</span><div><b>Fundament &amp; Design</b><p>Look „Dunkel &amp; edel“ in Hell und Dunkel, Anmeldung, Gäste per Link, installierbar auf dem Homescreen.</p></div></li>
+        <li class="card fade"><span class="st done">Gebaut</span><div><b>Lernen &amp; Keller</b><p>12 Kapitel mit Sammelkarten. Keller als Portfolio mit Wertverlauf, Regalen und Trinkreife.</p></div></li>
+        <li class="card fade"><span class="st next">Als Nächstes</span><div><b>Lagenabend &amp; Live-Blindverkostung</b><p>Einladung, Zusagen, Raten in Echtzeit, Aufdecken, Punkte, Leaderboard, Rückblick. Ziel: unser nächster echter Abend.</p></div></li>
+        <li class="card fade"><span class="st later">Danach</span><div><b>Etikett-Scan, Tagebuch, Geschmacks-DNA</b><p>Foto vom Etikett genügt, Sprachnotiz wird zur Verkostungsnotiz, KI-Sommelier und Weinbegleitung.</p></div></li>
+        <li class="card fade"><span class="st vision">Vision</span><div><b>Wein-Börse</b><p>Erst „Abzugeben“ in der Runde – Marktplatz und Lager nur nach Rechtsberatung.</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="wrap fade">
+      <span class="eyebrow">Wie es weitergeht</span>
+      <h2>Bald für eure Weinrunde.</h2>
+      <p class="lead">Als Nächstes testen wir den ersten echten Lagenabend mit Live-Blindverkostung. Bis dahin: Schaut euch um und probiert die Beispiele aus.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="app.html">Rundgang durch die App <span class="arrow">→</span></a>
+        <a class="btn btn-ghost" href="keller.html">Beispielkeller</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="assets/site.js"></script>
+<script src="assets/screens.js"></script>
+<script>
+(() => {
+  const { $, countUp, whenSeen } = Site;
+  Screens.mount($("#heroPhone"), { start: "abende", auto: true });
+
+  // Mini-Kellerregal in der Karte
+  const colors = { w: "var(--wait)", p: "var(--success)", u: "var(--danger)", e: "var(--bg)" };
+  $("#miniShelf").innerHTML = [..."pwwpwuepwwppwewpuwwpwwepwpwwupw"].slice(0, 30)
+    .map((c, i) => `<i style="--c:${colors[c]};animation-delay:${i * 25}ms"></i>`).join("");
+
+  // Tresor-Punkte in der Börsen-Karte
+  let dots = "";
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 5; c++) dots += `<circle cx="${38 + c * 21}" cy="${52 + r * 22}" r="7" fill="${(r * 5 + c) % 7 === 3 ? "var(--accent)" : "var(--surface-3)"}"/>`;
+  $("#vaultDots").innerHTML = dots;
+
+  whenSeen($("#stats"), () => document.querySelectorAll("#stats [data-to]").forEach(el => countUp(el, +el.dataset.to, { ms: 1400 })));
+})();
+</script>
+</body>
+</html>

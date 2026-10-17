@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wein-App – Lernen</title>
+<meta name="description" content="12 interaktive Kapitel über Wein – mit Boden-Explorer, Rebsorten-Vergleich, Cuvée-Baukasten, Aromarad, Weinfehler-Quiz und Sammelkarten.">
+<script>try{var t=localStorage.getItem("weinapp-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .fan { position: relative; height: 340px; display: grid; place-items: center; }
+  .fan .cc { position: absolute; width: 170px; height: 240px; transition: transform .6s cubic-bezier(.3,.8,.2,1); }
+  .fan:hover .cc:nth-child(1) { transform: rotate(-22deg) translate(-70px, 14px); }
+  .fan:hover .cc:nth-child(3) { transform: rotate(22deg) translate(70px, 14px); }
+
+  /* Sammelkarte */
+  .cc { border-radius: 16px; padding: 12px; display: flex; flex-direction: column; color: #f4ede5; border: 1px solid rgb(209 173 114 / .55); box-shadow: 0 18px 40px -16px rgb(0 0 0 / .7); overflow: hidden; position: relative; background: linear-gradient(160deg, var(--cc1), #120a0e 85%); }
+  .cc .art { flex: 1; border-radius: 10px; background: rgb(255 255 255 / .06); display: grid; place-items: center; margin-bottom: 10px; overflow: hidden; }
+  .cc .art svg { width: 64%; height: auto; color: #d1ad72; }
+  .cc .tag { font-size: .58rem; letter-spacing: .14em; text-transform: uppercase; color: #d1ad72; }
+  .cc h4 { font-family: var(--serif); font-weight: 400; font-size: 1.35rem; line-height: 1.05; margin: 2px 0 4px; }
+  .cc p { font-size: .7rem; opacity: .75; line-height: 1.35; }
+  .cc.locked { background: var(--surface-2); color: var(--muted); border: 1px dashed var(--border-strong); box-shadow: none; }
+  .cc.locked .art { background: none; }
+  .cc.locked .art svg { color: var(--border-strong); }
+  .cc.new { animation: unlock 1s cubic-bezier(.3,.8,.2,1); }
+  @keyframes unlock { 0% { transform: rotateY(90deg) scale(.9); } 60% { transform: rotateY(-8deg) scale(1.04); } 100% { transform: none; } }
+
+  .chapters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  @media (min-width: 700px) { .chapters { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (min-width: 1040px) { .chapters { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .chap { padding: 14px; display: flex; flex-direction: column; gap: 10px; min-height: 170px; text-decoration: none; transition: border-color .25s, transform .25s; }
+  .chap:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .chap .top2 { display: flex; justify-content: space-between; align-items: center; }
+  .chap .no { font-family: var(--serif); color: var(--accent); font-size: 1.3rem; }
+  .chap .ic { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+  .chap .ic svg { width: 20px; height: 20px; }
+  .chap b { font-weight: 500; line-height: 1.25; }
+  .chap p { font-size: .76rem; color: var(--muted); line-height: 1.4; }
+  .chap .foot { margin-top: auto; display: flex; justify-content: space-between; font-size: .7rem; color: var(--muted); }
+  .chap.demo { border-color: var(--accent); background: linear-gradient(160deg, var(--accent-soft), var(--surface) 60%); }
+
+  /* Kapitel-Player */
+  .player { max-width: 980px; margin: 0 auto; overflow: hidden; }
+  .player-top { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .progress { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .progress i { height: 4px; border-radius: 99px; background: var(--surface-3); overflow: hidden; position: relative; }
+  .progress i::after { content: ""; position: absolute; inset: 0; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .5s; }
+  .progress i.done::after { transform: none; }
+  .player-body { padding: 22px 20px; min-height: 420px; }
+  @media (min-width: 760px) { .player-body { padding: 30px 36px; } }
+  .pstep { display: none; animation: stepIn .5s both; }
+  .pstep.on { display: block; }
+  @keyframes stepIn { from { opacity: 0; transform: translateX(14px); } }
+  .player-foot { display: flex; justify-content: space-between; gap: 10px; padding: 14px 20px 20px; }
+  .story { display: grid; gap: 22px; align-items: center; }
+  @media (min-width: 760px) { .story { grid-template-columns: 1fr 1fr; } }
+  .explorer { display: grid; gap: 22px; }
+  @media (min-width: 860px) { .explorer { grid-template-columns: 340px 1fr; } }
+  .xsec { width: 100%; max-width: 360px; height: auto; border-radius: 16px; overflow: hidden; margin: 0 auto; display: block; }
+  .xsec .roots path { fill: none; stroke: #e8c98f; stroke-width: 2; stroke-linecap: round; transition: d .8s; }
+  .meters { display: grid; gap: 10px; margin: 16px 0; }
+  .meters div { display: grid; grid-template-columns: 7rem 1fr 2rem; gap: 10px; align-items: center; font-size: .84rem; }
+  .meters .tr { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+  .meters .tr i { display: block; height: 100%; border-radius: 99px; background: var(--series-1); transition: width .7s cubic-bezier(.3,.8,.2,1); }
+  .quiz-opts { display: grid; gap: 8px; margin-top: 16px; }
+  .quiz-opts button { text-align: left; min-height: 52px; padding: 10px 16px; border-radius: 14px; border: 1px solid var(--border-strong); background: var(--surface); transition: border-color .2s, background .2s; }
+  .quiz-opts button:hover { border-color: var(--accent); }
+  .quiz-opts button.right { border-color: var(--success); background: color-mix(in srgb, var(--success) 14%, transparent); }
+  .quiz-opts button.wrong { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
+  .feedback { margin-top: 12px; font-size: .9rem; min-height: 1.5em; }
+  .reward { display: grid; place-items: center; text-align: center; gap: 16px; padding: 10px 0; }
+  .reward .cc { width: 190px; height: 270px; }
+
+  /* Werkzeuge */
+  .tools { display: grid; gap: 14px; }
+  @media (min-width: 960px) { .tools { grid-template-columns: 1fr 1fr; } }
+  .tool h3 { font-size: 1.8rem; line-height: 1.1; margin: 8px 0 6px; }
+  .radar { width: 100%; max-width: 280px; margin: 10px auto 0; display: block; overflow: visible; }
+  .vs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: end; margin-top: 14px; }
+  .vs .x { font-family: var(--serif); color: var(--muted); padding-bottom: 12px; }
+  .berries { display: flex; justify-content: space-around; align-items: center; margin-top: 10px; height: 90px; }
+  .berry { border-radius: 50%; transition: all .5s; display: grid; place-items: center; }
+  .key { display: flex; gap: 14px; justify-content: center; font-size: .78rem; color: var(--muted); }
+  .key i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .stack { display: flex; height: 14px; border-radius: 99px; overflow: hidden; margin: 12px 0 4px; }
+  .stack i { transition: flex-grow .3s; }
+  .wheel { width: 100%; max-width: 340px; margin: 10px auto 0; display: block; }
+  .wheel path { cursor: pointer; transition: transform .3s, opacity .3s; transform-origin: 170px 170px; stroke: var(--surface); stroke-width: 2; }
+  .wheel path:hover, .wheel path.on { transform: scale(1.05); }
+  .wheel.has-on path:not(.on) { opacity: .45; }
+  .aroma-out { text-align: center; min-height: 92px; }
+  .aroma-out .chips { justify-content: center; margin-top: 8px; }
+  .fault { display: grid; gap: 10px; margin-top: 12px; }
+  .fault .card { padding: 16px; }
+  .fault .opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .fault .opts button.right { background: var(--success); border-color: var(--success); color: #0e1a12; }
+  .fault .opts button.wrong { border-color: var(--danger); color: var(--danger); }
+
+  .album { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  @media (min-width: 640px) { .album { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  @media (min-width: 1040px) { .album { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+  .album .cc { aspect-ratio: 3 / 4.2; }
+  .album-head { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  .album-bar { width: min(320px, 100%); }
+  .album-bar .tr { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; margin-top: 6px; }
+  .album-bar .tr i { display: block; height: 100%; background: var(--accent); transition: width .8s; }
+</style>
+</head>
+<body>
+<header id="site-header"></header>
+
+<main>
+  <section class="page-hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow">Lernen · 12 Kapitel</span>
+        <h1 class="display">Wein verstehen – <em>zum Anfassen.</em></h1>
+        <p class="lead">Kein Lehrbuch: kurze Kapitel von drei bis fünf Minuten, jedes mit einer Interaktion oder einem kleinen Spiel. Wer ein Kapitel abschließt – oder beim Lagenabend eine Flasche aufdeckt – bekommt eine Sammelkarte fürs Album.</p>
+        <p class="lead" style="margin-top:12px;font-size:.92rem">Auf dieser Seite kannst du ein ganzes Kapitel durchspielen und vier Werkzeuge ausprobieren. Jedes schaltet unten eine Karte frei.</p>
+        <div class="actions"><a class="btn btn-primary" href="#kapitel">Kapitel starten <span class="arrow">→</span></a><a class="btn btn-ghost" href="#album">Zum Album</a></div>
+      </div>
+      <div class="fan" aria-hidden="true" id="fan"></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Alle Kapitel</span>
+        <h2 class="h2">Vom Weinberg bis zum Korkschmecker.</h2>
+      </div>
+      <div class="chapters" id="chapters"></div>
+    </div>
+  </section>
+
+  <!-- ===== Ein Kapitel ===== -->
+  <section class="section" id="kapitel">
+    <div class="wrap">
+      <div class="section-head center fade">
+        <span class="eyebrow">So sieht ein Kapitel aus</span>
+        <h2 class="h2">Kapitel 2 · Boden-Explorer</h2>
+        <p class="lead">Vier kurze Schritte: Einstieg, Entdecken, Quiz, Belohnung.</p>
+      </div>
+      <div class="card player fade" id="player">
+        <div class="player-top">
+          <span class="k" id="stepLbl">1 / 4 · Einstieg</span>
+          <div class="progress" id="progress" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+          <span class="muted" style="font-size:.78rem">4 Min</span>
+        </div>
+        <div class="player-body">
+          <!-- 1 Einstieg -->
+          <div class="pstep on" data-step="0">
+            <div class="story">
+              <div>
+                <span class="eyebrow">Einstieg</span>
+                <h3 class="h3" style="margin:12px 0">Warum schmeckt ein Riesling vom Schiefer anders als einer vom Kalk?</h3>
+                <p class="muted">Die Rebe holt sich Wasser und Wärme aus dem Boden. Wie tief sie wurzeln muss und wie warm es um sie herum ist, prägt die Trauben – und am Ende das Glas. In diesem Kapitel gräbst du dich durch fünf typische Böden.</p>
+              </div>
+              <svg viewBox="0 0 320 220" class="xsec" aria-hidden="true">
+                <rect width="320" height="70" fill="var(--surface-2)"/>
+                <circle cx="270" cy="30" r="14" fill="#d1ad72" opacity=".8"/>
+                <path d="M0 70 Q80 58 160 70 T320 66 V220 H0Z" fill="#3b3a44"/>
+                <path d="M0 110 L320 100 M0 140 L320 130 M0 170 L320 160 M0 200 L320 190" stroke="#55545f" stroke-width="3"/>
+                <path d="M150 70 C150 110 140 150 148 215 M150 90 C170 120 180 140 176 170 M150 95 C130 120 118 140 122 175" stroke="#e8c98f" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M150 70 v-26 M150 50 c-14 -6 -20 -14 -22 -22 M150 44 c12 -4 18 -12 20 -20" stroke="#7fa06a" stroke-width="3" fill="none" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+          <!-- 2 Entdecken -->
+          <div class="pstep" data-step="1">
+            <div class="chips" id="soilTabs" role="group" aria-label="Boden wählen" style="margin-bottom:18px"></div>
+            <div class="explorer">
+              <svg viewBox="0 0 320 300" class="xsec" id="xsec" role="img" aria-label="Querschnitt durch den Boden mit Wurzeln"></svg>
+              <div aria-live="polite">
+                <h3 class="h3" id="soilName"></h3>
+                <p class="muted" id="soilOrigin" style="font-size:.88rem;margin-top:4px"></p>
+                <div class="meters" id="soilMeters"></div>
+                <p id="soilWhat" style="font-size:.92rem"></p>
+                <p style="margin-top:12px;font-size:.92rem"><b style="color:var(--accent);font-weight:500">Im Glas:</b> <span id="soilTaste"></span></p>
+                <p class="muted" style="margin-top:10px;font-size:.8rem">Bekannte Lagen: <span id="soilSites"></span></p>
+              </div>
+            </div>
+          </div>
+          <!-- 3 Quiz -->
+          <div class="pstep" data-step="2">
+            <span class="eyebrow">Kurz-Quiz</span>
+            <h3 class="h3" style="margin:12px 0 0">Welcher Boden speichert tagsüber die Sonnenwärme und gibt sie nachts an die Reben ab?</h3>
+            <div class="quiz-opts" id="quiz">
+              <button type="button" data-ok="0">Löss – weich, tief, fruchtbar</button>
+              <button type="button" data-ok="1">Schiefer – dunkle Platten in Steillagen</button>
+              <button type="button" data-ok="0">Kalk – kühl, mit feinen Poren</button>
+            </div>
+            <p class="feedback" id="feedback" aria-live="polite"></p>
+          </div>
+          <!-- 4 Belohnung -->
+          <div class="pstep" data-step="3">
+            <div class="reward">
+              <span class="eyebrow">Kapitel geschafft</span>
+              <div class="cc" id="rewardCard" style="--cc1:#3b3a44"></div>
+              <p class="muted" style="max-width:28rem">Die Karte liegt jetzt in deinem Album. Beim nächsten Lagenabend schaltest du mit jeder aufgedeckten Flasche weitere frei.</p>
+            </div>
+          </div>
+        </div>
+        <div class="player-foot">
+          <button class="btn btn-ghost btn-sm" type="button" id="prev">← Zurück</button>
+          <button class="btn btn-primary btn-sm" type="button" id="next">Weiter →</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Werkzeuge ===== -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Ausprobieren</span>
+        <h2 class="h2">Vier Werkzeuge aus anderen Kapiteln.</h2>
+        <p class="lead">Jedes davon steckt in der App in einem eigenen Kapitel – hier in Kurzform.</p>
+      </div>
+      <div class="tools">
+        <div class="card pad tool fade">
+          <span class="eyebrow">Kapitel 3 · Rebsorten</span>
+          <h3>Zwei Rebsorten im Vergleich</h3>
+          <div class="vs">
+            <div><label class="sr-only" for="gA">Erste Rebsorte</label><select class="input" id="gA"></select></div>
+            <span class="x">vs.</span>
+            <div><label class="sr-only" for="gB">Zweite Rebsorte</label><select class="input" id="gB"></select></div>
+          </div>
+          <svg class="radar" id="grapeRadar" viewBox="-36 -18 272 236" role="img" aria-label="Vergleich der Rebsorten"></svg>
+          <div class="key"><span><i style="background:var(--series-1)"></i><span id="kA"></span></span><span><i style="background:var(--series-2)"></i><span id="kB"></span></span></div>
+          <div class="berries" aria-hidden="true"><span class="berry" id="bA"></span><span class="berry" id="bB"></span></div>
+          <p class="caption">Beerengröße und Schalendicke – dicke Schale heißt mehr Farbe und Tannin.</p>
+        </div>
+        <div class="card pad tool fade d1">
+          <span class="eyebrow">Kapitel 4 · Cuvée-Baukasten</span>
+          <h3>Misch dir deinen Bordeaux-Stil</h3>
+          <div class="stack" id="stack" aria-hidden="true"><i style="background:#8c2547"></i><i style="background:#d1ad72"></i><i style="background:#7fa7c4"></i></div>
+          <div style="display:grid;gap:4px;margin-top:10px">
+            <label class="field-lbl" for="cs"><span><span class="dot" style="background:#8c2547"></span> Cabernet Sauvignon</span><b id="csOut"></b></label><input type="range" id="cs" min="0" max="10" value="6">
+            <label class="field-lbl" for="me"><span><span class="dot" style="background:#d1ad72"></span> Merlot</span><b id="meOut"></b></label><input type="range" id="me" min="0" max="10" value="3">
+            <label class="field-lbl" for="cf"><span><span class="dot" style="background:#7fa7c4"></span> Cabernet Franc</span><b id="cfOut"></b></label><input type="range" id="cf" min="0" max="10" value="1">
+          </div>
+          <svg class="radar" id="cuveeRadar" viewBox="-36 -18 272 236" role="img" aria-label="Geschmacksprofil der Cuvée"></svg>
+          <p class="muted" id="cuveeNote" style="text-align:center;font-size:.88rem" aria-live="polite"></p>
+        </div>
+        <div class="card pad tool fade">
+          <span class="eyebrow">Kapitel 6 · Aromen</span>
+          <h3>Das Aromarad</h3>
+          <p class="muted" style="font-size:.88rem">12 Familien, 48 Aromen – dasselbe Rad wie im Rate-Bogen. Tippe eine Familie an.</p>
+          <svg class="wheel" id="wheel" viewBox="0 0 340 340" role="group" aria-label="Aromarad"></svg>
+          <div class="aroma-out" id="aromaOut" aria-live="polite"><p class="muted" style="padding-top:10px">Noch keine Familie gewählt.</p></div>
+        </div>
+        <div class="card pad tool fade d1">
+          <span class="eyebrow">Kapitel 12 · Weinfehler</span>
+          <h3>Was stimmt mit diesem Wein nicht?</h3>
+          <p class="muted" style="font-size:.88rem">Drei Gläser, drei Verdachtsfälle. <b id="faultScore" style="color:var(--fg);font-weight:500">0 / 3</b></p>
+          <div class="fault" id="faults"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Album ===== -->
+  <section class="section" id="album">
+    <div class="wrap">
+      <div class="album-head fade">
+        <div class="section-head" style="margin:0"><span class="eyebrow">Sammelalbum</span><h2 class="h2" style="margin-top:14px">Deine Karten.</h2></div>
+        <div class="album-bar"><div class="field-lbl"><span class="muted">Kapitel-Karten</span><b id="albumCount"></b></div><div class="tr"><i id="albumBar"></i></div></div>
+      </div>
+      <div class="album" id="albumGrid"></div>
+      <p class="muted fade" style="margin-top:18px;font-size:.84rem">In der App kommen dazu Karten für Regionen, Lagen und Rebsorten – freigeschaltet beim Aufdecken. Zum Beispiel „12 von 40 deutschen Lagen“.</p>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="wrap fade">
+      <span class="eyebrow">Gelernt ist gelernt</span>
+      <h2>Und dann: blind raten.</h2>
+      <p class="lead">Was du hier lernst, hilft beim nächsten Lagenabend – Riesling am Pfirsich erkennen, Schiefer an der Rauchnote.</p>
+      <div class="actions"><a class="btn btn-primary" href="abende.html">Zum Ratespiel <span class="arrow">→</span></a><a class="btn btn-ghost" href="keller.html">Zum Beispielkeller</a></div>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="assets/site.js"></script>
+<script>
+(() => {
+  const { $, $$, radar, toast, reduced } = Site;
+
+  /* ---------- Motive für Kacheln und Karten ---------- */
+  const M = {
+    vineyard: '<path d="M3 20h18M6 20V10M12 20V7M18 20v-9"/><circle cx="6" cy="8" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="18" cy="9" r="2"/>',
+    soil: '<path d="M3 7h18M3 12h18M3 17h18"/><path d="M12 3v18" stroke-dasharray="2 2"/>',
+    grape: '<circle cx="9" cy="10" r="2.5"/><circle cx="15" cy="10" r="2.5"/><circle cx="12" cy="14.5" r="2.5"/><circle cx="12" cy="19" r="2"/><path d="M12 7V3l3 2"/>',
+    blend: '<path d="M6 3h12l-1.5 8a4.5 4.5 0 0 1-9 0z"/><path d="M12 15.5V21M8 21h8"/><path d="M8 7h8" opacity=".5"/>',
+    map: '<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>',
+    aroma: '<circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16M6.3 6.3l11.4 11.4M17.7 6.3 6.3 17.7"/>',
+    glass: '<path d="M7 3h10l-.6 6.2A4.4 4.4 0 0 1 12 13.2a4.4 4.4 0 0 1-4.4-4L7 3Z"/><path d="M12 13.2V20M8.5 21h7"/>',
+    pairing: '<path d="M4 3v8a2 2 0 0 0 4 0V3M6 11v10"/><path d="M14 3h5l-.5 5a2 2 0 0 1-4 0zM16.5 10v11"/>',
+    thermo: '<path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0z"/><path d="M12 9v7"/>',
+    cellar: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="2"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/><circle cx="16" cy="16" r="2"/>',
+    label: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+    fault: '<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5h.01"/>',
+  };
+  const icon = m => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${M[m]}</svg>`;
+
+  const MODULES = [
+    ["Vom Weinberg ins Glas", "Das Weinjahr – und warum Rotwein auf den Schalen gärt.", 4, "vineyard", "Kellerkind", "Weiß, warum Rotwein auf der Maische gärt.", "#4f6b3a"],
+    ["Boden-Explorer", "Schiefer, Kalk, Löss, Granit, Vulkan – was der Boden mit dem Geschmack macht.", 4, "soil", "Bodenkundler", "Liest Lagen wie andere Landkarten.", "#3b3a44"],
+    ["Rebsorten", "Steckbriefe – und zwei Sorten nebeneinander vergleichen.", 5, "grape", "Rebsorten-Kenner", "Erkennt Riesling am Duft der Steinfrucht.", "#5d6b3f"],
+    ["Cuvée-Baukasten", "Regler schieben, Radar beobachten.", 3, "blend", "Cuvée-Komponist", "Mischt Merlot und Cabernet nach Gefühl.", "#4a1428"],
+    ["Weinatlas", "Regionen und Lagen auf einer eigenen Karte.", 4, "map", "Lagen-Lotse", "Findet die Ahr auch ohne Navi.", "#2f5d50"],
+    ["Was sind Aromen?", "Primär-, Sekundär-, Tertiäraromen.", 4, "aroma", "Aromen-Profi", "Riecht Jahre im Glas.", "#7d5a22"],
+    ["Verkosten wie ein Profi", "Sehen, schwenken, riechen, schmecken.", 4, "glass", "Feine Nase", "Sieht, schwenkt, riecht, schmeckt – in der Reihenfolge.", "#6e1733"],
+    ["Wein & Essen", "Was passt wozu – und warum.", 4, "pairing", "Tafelmeister", "Säure zum Fett, Süße zur Schärfe.", "#5a4a8a"],
+    ["Richtig servieren", "Temperatur, Glas, Dekanter.", 3, "thermo", "Sommelier-Lehrling", "Rotwein nicht zu warm, Weißwein nicht zu kalt.", "#3f6f93"],
+    ["Richtig lagern", "Licht, liegend oder stehend, Luftfeuchte, Trinkfenster.", 3, "cellar", "Kellermeister", "Kühl, dunkel, ruhig – und geduldig.", "#2a1820"],
+    ["Etikett lesen", "Qualitätsstufen verstehen, gut einkaufen.", 4, "label", "Etiketten-Leser", "Weiß, dass Spätlese nicht süß heißen muss.", "#8a6630"],
+    ["Weinfehler erkennen", "Kork, Oxidation, zu alt – woran man es merkt.", 3, "fault", "Fehler-Finder", "Schickt Korkschmecker zurück.", "#5a1730"],
+  ];
+  const unlocked = new Set([0, 6]); // schon vorhanden: Kellerkind, Feine Nase
+  const cardHtml = (i, locked) => {
+    const [, , , motif, title, line] = MODULES[i];
+    return locked
+      ? `<span class="art">${icon(motif)}</span><span class="tag">Karte ${i + 1}</span><h4>???</h4><p>Schließe „${MODULES[i][0]}“ ab.</p>`
+      : `<span class="art">${icon(motif)}</span><span class="tag">Kapitel ${i + 1}</span><h4>${title}</h4><p>${line}</p>`;
+  };
+  function renderAlbum(newIdx) {
+    $("#albumGrid").innerHTML = MODULES.map((m, i) => `<div class="cc${unlocked.has(i) ? "" : " locked"}${i === newIdx ? " new" : ""}" style="--cc1:${m[6]}">${cardHtml(i, !unlocked.has(i))}</div>`).join("");
+    $("#albumCount").textContent = `${unlocked.size} von ${MODULES.length}`;
+    $("#albumBar").style.width = unlocked.size / MODULES.length * 100 + "%";
+  }
+  function unlock(i) {
+    if (unlocked.has(i)) return;
+    unlocked.add(i); renderAlbum(i);
+    toast(`✦ Neue Sammelkarte: ${MODULES[i][4]}`);
+  }
+  renderAlbum();
+
+  // Fächer im Hero
+  $("#fan").innerHTML = [1, 3, 11].map((i, k) => `<div class="cc" style="--cc1:${MODULES[i][6]};transform:rotate(${(k - 1) * 10}deg) translate(${(k - 1) * 40}px, ${k === 1 ? -10 : 8}px);z-index:${k === 1 ? 2 : 1}">${cardHtml(i, false)}</div>`).join("");
+
+  // Kapitel-Kacheln
+  $("#chapters").innerHTML = MODULES.map(([t, d, min, motif, card], i) =>
+    `<a class="card chap fade${i === 1 ? " demo" : ""}" href="${i === 1 ? "#kapitel" : "#album"}"><span class="top2"><span class="no">${String(i + 1).padStart(2, "0")}</span><span class="ic">${icon(motif)}</span></span><span><b>${t}</b><p style="margin-top:4px">${d}</p></span><span class="foot"><span>${min} Min</span><span>${i === 1 ? "Hier ausprobieren ↓" : "✦ " + card}</span></span></a>`).join("");
+  $$("#chapters .fade").forEach(el => el.classList.add("in"));
+
+  /* ---------- Kapitel-Player: Boden-Explorer ---------- */
+  const SOILS = [
+    { id: "schiefer", name: "Schiefer", origin: "Uralte, zu Platten gepresste Meeresablagerungen – grau, blau oder rot.", water: 3, heat: 9, nutrients: 3, depth: 280, spread: 30, color: "#3b3a44", line: "#56556a", what: "Die dunklen Platten speichern tagsüber Sonnenwärme und geben sie nachts an die Reben ab – ideal in kühlen Steillagen. Wasser läuft schnell durch die Spalten ab, deshalb wurzeln die Reben sehr tief.", taste: "Filigran und rassig, oft mit rauchig-würziger „Schiefernote“ und straffer Säure.", sites: "Scharzhofberg, Wehlener Sonnenuhr, Erdener Prälat", pattern: "slate" },
+    { id: "kalk", name: "Kalk & Muschelkalk", origin: "Aus Muscheln und Kalkschlamm urzeitlicher Meere entstanden.", water: 6, heat: 5, nutrients: 5, depth: 240, spread: 55, color: "#bdb29b", line: "#a2967d", what: "Kalk speichert Wasser in feinen Poren und gibt es gleichmäßig ab, bleibt dabei eher kühl. Die Trauben reifen langsam und behalten ihre Frische.", taste: "Straff und spannungsgeladen, kräuterig bis salzig – Weine mit Rückgrat, die lange reifen.", sites: "Westhofener Morstein, Escherndorfer Lump", pattern: "dots" },
+    { id: "loess", name: "Löss", origin: "Feiner Staub, den Eiszeit-Winde angeweht haben – tief, weich, fruchtbar.", water: 8, heat: 6, nutrients: 8, depth: 160, spread: 100, color: "#b8925e", line: "#a07c4c", what: "Löss hält viel Wasser und Nährstoffe. Die Reben müssen kaum suchen: Sie wurzeln flacher und breiter und wachsen kräftig.", taste: "Zugänglich und saftig, fruchtbetont mit runder, weicher Textur.", sites: "Kaiserstuhl, Rheinhessisches Hügelland", pattern: "fine" },
+    { id: "granit", name: "Granit", origin: "Erstarrtes Magma tief aus der Erde, verwittert zu grobem Sand.", water: 2, heat: 7, nutrients: 2, depth: 260, spread: 42, color: "#8d7f80", line: "#c9bdbd", what: "Der grobe Sand lässt Wasser sofort durch und erwärmt sich schnell. Wenig Nährstoffe bremsen das Wachstum – die Rebe steckt ihre Kraft in wenige, konzentrierte Trauben.", taste: "Präzise und klar, kühle Frucht und feine Würze.", sites: "Durbacher Plauelrain, Wachau (Urgestein)", pattern: "grain" },
+    { id: "vulkan", name: "Vulkan", origin: "Basalt, Tuff und Porphyr – Spuren alter Vulkane.", water: 4, heat: 8, nutrients: 6, depth: 210, spread: 65, color: "#2a1d22", line: "#5a3a3a", what: "Das dunkle Gestein wird warm, ist mineralreich und gut durchlüftet. Die Trauben reifen voll aus, ohne die Spannung zu verlieren.", taste: "Kraftvoll und würzig, oft rauchig mit salzigem Nachhall.", sites: "Forster Pechstein, Kaiserstuhl, Niederhäuser Hermannshöhle", pattern: "blocks" },
+  ];
+  let soil = 0;
+  $("#soilTabs").innerHTML = SOILS.map((s, i) => `<button type="button" class="chip" aria-pressed="${i === 0}" data-soil="${i}">${s.name}</button>`).join("");
+  function soilTexture(s) {
+    let t = "";
+    for (let k = 0; k < 40; k++) {
+      const x = (k * 53) % 320, y = 90 + ((k * 37) % 200);
+      if (s.pattern === "slate") t += `<path d="M${x - 30} ${y} l60 -6" stroke="${s.line}" stroke-width="3"/>`;
+      if (s.pattern === "dots") t += `<circle cx="${x}" cy="${y}" r="${2 + (k % 3)}" fill="${s.line}"/>`;
+      if (s.pattern === "fine") t += `<circle cx="${x}" cy="${y}" r="1.2" fill="${s.line}"/>`;
+      if (s.pattern === "grain") t += `<rect x="${x}" y="${y}" width="4" height="4" fill="${s.line}" transform="rotate(${k * 17} ${x} ${y})"/>`;
+      if (s.pattern === "blocks") t += `<path d="M${x} ${y} l10 -8 l12 4 l-4 12z" fill="${s.line}"/>`;
+    }
+    return t;
+  }
+  function rootsPath(depth, spread) {
+    const x = 160, y0 = 80;
+    return [
+      `M${x} ${y0} C${x - 4} ${y0 + depth * .4} ${x + 6} ${y0 + depth * .7} ${x - 2} ${y0 + depth}`,
+      `M${x} ${y0 + 20} C${x + spread * .6} ${y0 + 40} ${x + spread} ${y0 + 60} ${x + spread * 1.1} ${y0 + depth * .45}`,
+      `M${x} ${y0 + 26} C${x - spread * .6} ${y0 + 46} ${x - spread} ${y0 + 66} ${x - spread * 1.05} ${y0 + depth * .5}`,
+      `M${x} ${y0 + depth * .55} C${x + spread * .4} ${y0 + depth * .6} ${x + spread * .5} ${y0 + depth * .7} ${x + spread * .6} ${y0 + depth * .8}`,
+      `M${x} ${y0 + depth * .6} C${x - spread * .3} ${y0 + depth * .66} ${x - spread * .45} ${y0 + depth * .74} ${x - spread * .5} ${y0 + depth * .86}`,
+    ];
+  }
+  function renderSoil() {
+    const s = SOILS[soil];
+    $$("[data-soil]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.soil === soil));
+    const sun = s.heat / 10;
+    $("#xsec").innerHTML = `
+      <rect width="320" height="80" fill="var(--surface-2)"/>
+      <circle cx="272" cy="34" r="${10 + sun * 8}" fill="#d1ad72" opacity="${.4 + sun * .5}"/>
+      <path d="M0 80 Q80 70 160 80 T320 76 V300 H0Z" fill="${s.color}"/>
+      ${soilTexture(s)}
+      <g class="roots">${rootsPath(s.depth, s.spread).map(d => `<path d="${d}"/>`).join("")}</g>
+      <path d="M160 80 v-30 M160 56 c-16 -6 -22 -16 -24 -26 M160 50 c14 -4 20 -14 22 -24" stroke="#7fa06a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <circle cx="137" cy="32" r="4" fill="#8c2547"/><circle cx="143" cy="38" r="4" fill="#8c2547"/><circle cx="133" cy="40" r="4" fill="#8c2547"/>
+      <text x="12" y="${80 + s.depth + 6 > 290 ? 290 : 80 + s.depth + 6}" fill="#f4ede5" font-size="11" font-family="Inter">Wurzeln: ${s.depth > 250 ? "sehr tief" : s.depth > 200 ? "tief" : "flach & breit"}</text>`;
+    if (!reduced) $$("#xsec .roots path").forEach((p, i) => { const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L; p.getBoundingClientRect(); p.style.transition = `stroke-dashoffset 1.1s ${i * .12}s cubic-bezier(.3,.8,.2,1)`; p.style.strokeDashoffset = 0; });
+    $("#soilName").textContent = s.name; $("#soilOrigin").textContent = s.origin;
+    $("#soilWhat").textContent = s.what; $("#soilTaste").textContent = s.taste; $("#soilSites").textContent = s.sites;
+    $("#soilMeters").innerHTML = [["Wasser", s.water], ["Wärme", s.heat], ["Nährstoffe", s.nutrients]].map(([k, v]) => `<div><span>${k}</span><span class="tr"><i style="width:${v * 10}%"></i></span><b class="num">${v}</b></div>`).join("");
+  }
+  $("#soilTabs").addEventListener("click", e => { const b = e.target.closest("[data-soil]"); if (!b) return; soil = +b.dataset.soil; renderSoil(); });
+
+  const LABELS = ["Einstieg", "Entdecken", "Quiz", "Belohnung"];
+  let step = 0, quizOk = false;
+  function go(n) {
+    step = Math.max(0, Math.min(3, n));
+    $$(".pstep").forEach(p => p.classList.toggle("on", +p.dataset.step === step));
+    $$("#progress i").forEach((i, k) => i.classList.toggle("done", k <= step));
+    $("#stepLbl").textContent = `${step + 1} / 4 · ${LABELS[step]}`;
+    $("#prev").disabled = step === 0;
+    $("#next").textContent = step === 2 && !quizOk ? "Erst das Quiz lösen" : step === 3 ? "Nochmal von vorn" : "Weiter →";
+    $("#next").disabled = step === 2 && !quizOk;
+    if (step === 1) renderSoil();
+    if (step === 3) {
+      $("#rewardCard").innerHTML = cardHtml(1, false);
+      $("#rewardCard").classList.remove("new"); $("#rewardCard").getBoundingClientRect(); $("#rewardCard").classList.add("new");
+      unlock(1);
+    }
+  }
+  $("#prev").addEventListener("click", () => go(step - 1));
+  $("#next").addEventListener("click", () => go(step === 3 ? 0 : step + 1));
+  $("#quiz").addEventListener("click", e => {
+    const b = e.target.closest("[data-ok]"); if (!b) return;
+    if (b.dataset.ok === "1") {
+      b.classList.add("right"); quizOk = true;
+      $("#feedback").innerHTML = '<span class="up">Richtig!</span> Die dunklen Schieferplatten sind wie eine Wärmflasche für die Reben – deshalb reift Riesling selbst in kühlen Steillagen an der Mosel.';
+      go(2);
+    } else {
+      b.classList.add("wrong");
+      $("#feedback").innerHTML = '<span class="down">Nicht ganz.</span> Denk an dunkle Platten in steilen Hängen …';
+    }
+  });
+  go(0);
+
+  /* ---------- Rebsorten-Vergleich ---------- */
+  const TRAITS = ["Säure", "Körper", "Aroma", "Tannin", "Schale", "Beere"];
+  const GRAPES = {
+    "Riesling": [9, 4, 8, 0, 4, 3], "Silvaner": [5, 5, 3, 0, 3, 6], "Grauburgunder": [4, 7, 5, 0, 4, 3], "Weißburgunder": [6, 5, 4, 0, 3, 3],
+    "Chardonnay": [6, 7, 5, 0, 3, 3], "Grüner Veltliner": [7, 6, 6, 0, 5, 5], "Sauvignon Blanc": [8, 4, 9, 0, 4, 3], "Müller-Thurgau": [3, 3, 5, 0, 3, 6],
+    "Spätburgunder": [7, 4, 7, 3, 2, 3], "Lemberger": [8, 6, 6, 6, 7, 5],
+  };
+  const opts = Object.keys(GRAPES).map(g => `<option>${g}</option>`).join("");
+  $("#gA").innerHTML = opts; $("#gB").innerHTML = opts; $("#gA").value = "Riesling"; $("#gB").value = "Spätburgunder";
+  const gr = radar($("#grapeRadar"), TRAITS);
+  const sA = gr.shape("var(--series-1)", .22), sB = gr.shape("var(--series-2)", .22);
+  let touchedGrapes = 0;
+  function renderGrapes(user) {
+    const a = $("#gA").value, b = $("#gB").value;
+    sA(GRAPES[a]); sB(GRAPES[b]); $("#kA").textContent = a; $("#kB").textContent = b;
+    const berry = (el, v, c, red) => { const size = 34 + v[5] * 7, ring = 2 + v[4] * 1.3; el.style.width = el.style.height = size + "px"; el.style.background = red ? "#3a1020" : "#a8b86a"; el.style.boxShadow = `inset 0 0 0 ${ring}px ${c}`; };
+    berry($("#bA"), GRAPES[a], "var(--series-1)", ["Spätburgunder", "Lemberger"].includes(a));
+    berry($("#bB"), GRAPES[b], "var(--series-2)", ["Spätburgunder", "Lemberger"].includes(b));
+    if (user && ++touchedGrapes >= 1) unlock(2);
+  }
+  $("#gA").addEventListener("change", () => renderGrapes(true)); $("#gB").addEventListener("change", () => renderGrapes(true));
+  renderGrapes();
+
+  /* ---------- Cuvée ---------- */
+  const CAX = ["Tannin", "Frucht", "Körper", "Säure", "Würze"];
+  const CV = { cs: [9, 6, 8, 7, 8], me: [5, 9, 7, 5, 4], cf: [6, 7, 5, 7, 9] };
+  const cr = radar($("#cuveeRadar"), CAX);
+  const cShape = cr.shape("var(--series-2)", .28);
+  let cuveeMoves = 0;
+  function renderCuvee(user) {
+    const w = { cs: +$("#cs").value, me: +$("#me").value, cf: +$("#cf").value };
+    const sum = w.cs + w.me + w.cf || 1;
+    const p = k => w[k] / sum;
+    $("#csOut").textContent = Math.round(p("cs") * 100) + " %"; $("#meOut").textContent = Math.round(p("me") * 100) + " %"; $("#cfOut").textContent = Math.round(p("cf") * 100) + " %";
+    $$("#stack i").forEach((i, k) => (i.style.flexGrow = [w.cs, w.me, w.cf][k] || 0.0001));
+    const vals = CAX.map((_, i) => CV.cs[i] * p("cs") + CV.me[i] * p("me") + CV.cf[i] * p("cf"));
+    cShape(vals);
+    const [tan, fr, , , wz] = vals;
+    $("#cuveeNote").textContent = tan > 7.8 ? "Kräftig und streng – braucht Jahre im Keller." : fr > 8 ? "Rund und saftig – früh zugänglich, weiche Tannine." : wz > 7.5 ? "Würzig und frisch – mit Kräuternote vom Cabernet Franc." : "Ausgewogen – Struktur vom Cabernet, Rundheit vom Merlot.";
+    if (user && ++cuveeMoves === 6) unlock(3);
+  }
+  ["cs", "me", "cf"].forEach(id => $("#" + id).addEventListener("input", () => renderCuvee(true)));
+  renderCuvee();
+
+  /* ---------- Aromarad ---------- */
+  const FAM = [
+    ["Zitrus", "#e6d27a", ["Zitrone", "Limette", "Grapefruit", "Orangenzeste"], "Primär"], ["Kernobst", "#bfd38a", ["Grüner Apfel", "Gelber Apfel", "Birne", "Quitte"], "Primär"],
+    ["Steinobst", "#efb98a", ["Pfirsich", "Aprikose", "Mirabelle", "Nektarine"], "Primär"], ["Tropisch", "#f0cd72", ["Ananas", "Mango", "Maracuja", "Litschi"], "Primär"],
+    ["Rote Frucht", "#e7959b", ["Erdbeere", "Himbeere", "Kirsche", "Johannisbeere"], "Primär"], ["Dunkle Frucht", "#c39cc4", ["Brombeere", "Cassis", "Pflaume", "Heidelbeere"], "Primär"],
+    ["Blüten", "#e9b5cd", ["Holunder", "Akazie", "Rose", "Veilchen"], "Primär"], ["Kräuter", "#9fcaa8", ["Gras", "Minze", "Heu", "Paprika"], "Primär"],
+    ["Würze", "#dca67e", ["Weißer Pfeffer", "Ingwer", "Zimt", "Nelke"], "Primär / Tertiär"], ["Mineral", "#b5c0c8", ["Schiefer", "Feuerstein", "Salz", "Nasser Stein"], "Primär"],
+    ["Holz & Röst", "#cdae8e", ["Vanille", "Toast", "Rauch", "Kaffee"], "Sekundär (Ausbau)"], ["Reife", "#dfbd7c", ["Honig", "Petrol", "Nuss", "Leder"], "Tertiär (Alterung)"],
+  ];
+  const wheel = $("#wheel"), C = 170, R1 = 70, R2 = 160;
+  const arc = (a0, a1) => {
+    const p = (r, a) => [C + r * Math.cos(a), C + r * Math.sin(a)];
+    const [x0, y0] = p(R2, a0), [x1, y1] = p(R2, a1), [x2, y2] = p(R1, a1), [x3, y3] = p(R1, a0);
+    return `M${x0} ${y0} A${R2} ${R2} 0 0 1 ${x1} ${y1} L${x2} ${y2} A${R1} ${R1} 0 0 0 ${x3} ${y3}Z`;
+  };
+  wheel.innerHTML = FAM.map(([n, c], i) => {
+    const a0 = -Math.PI / 2 + i * 2 * Math.PI / 12, a1 = a0 + 2 * Math.PI / 12, am = (a0 + a1) / 2;
+    const tx = C + (R1 + R2) / 2 * Math.cos(am), ty = C + (R1 + R2) / 2 * Math.sin(am);
+    return `<path d="${arc(a0, a1)}" fill="${c}" data-f="${i}" tabindex="0" role="button" aria-label="${n}"/><text x="${tx}" y="${ty + 3}" text-anchor="middle" font-size="10" font-family="Inter" font-weight="600" fill="#2a1520" pointer-events="none">${n.split(" ")[0]}</text>`;
+  }).join("") + `<circle cx="${C}" cy="${C}" r="${R1 - 6}" fill="var(--surface-2)"/><text x="${C}" y="${C - 2}" text-anchor="middle" font-family="Instrument Serif, Georgia, serif" font-size="22" fill="var(--fg)" id="wheelCenter">Aromen</text><text x="${C}" y="${C + 16}" text-anchor="middle" font-size="9" font-family="Inter" fill="var(--muted)" id="wheelSub">antippen</text>`;
+  const seen = new Set();
+  function pickFam(i) {
+    const [n, c, list, layer] = FAM[i];
+    wheel.classList.add("has-on"); $$("path", wheel).forEach(p => p.classList.toggle("on", +p.dataset.f === i));
+    $("#wheelCenter").textContent = n.split(" ")[0]; $("#wheelSub").textContent = layer;
+    $("#aromaOut").innerHTML = `<b style="font-weight:500">${n}</b> <span class="muted" style="font-size:.8rem">· ${layer}</span><div class="chips">${list.map(a => `<span class="chip" style="background:${c};border-color:${c};color:#2a1520">${a}</span>`).join("")}</div>`;
+    seen.add(i); if (seen.size === 4) unlock(5);
+  }
+  wheel.addEventListener("click", e => { const p = e.target.closest("[data-f]"); if (p) pickFam(+p.dataset.f); });
+  wheel.addEventListener("keydown", e => { const p = e.target.closest("[data-f]"); if (p && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pickFam(+p.dataset.f); } });
+
+  /* ---------- Weinfehler ---------- */
+  const FAULTS = [
+    ["Glas 1", "Riecht nach nassem Karton und muffigem Keller. Die Frucht ist kaum zu spüren.", "Korkschmecker", "Typisch für TCA aus dem Korken. Ab damit zurück – das ist kein Geschmack, sondern ein Fehler."],
+    ["Glas 2", "Weißwein mit bräunlichem Schimmer, riecht nach angeschnittenem Apfel und Sherry.", "Oxidation", "Zu viel Luft – etwa durch einen undichten Korken. Bei Sherry gewollt, bei Riesling nicht."],
+    ["Glas 3", "Sauber, aber flach: Die Frucht ist müde, die Säure wirkt stumpf, der Abgang kurz.", "Zu alt", "Kein Fehler im engeren Sinn – der Wein hat sein Trinkfenster verpasst. Genau dafür gibt es die Trinkreife-Ampel im Keller."],
+  ];
+  const CHOICES = ["Korkschmecker", "Oxidation", "Zu alt", "Alles in Ordnung"];
+  let faultScore = 0;
+  $("#faults").innerHTML = FAULTS.map(([g, d], i) => `<div class="card" data-fault="${i}"><span class="k">${g}</span><p style="margin-top:6px;font-size:.92rem">${d}</p><div class="opts">${CHOICES.map(c => `<button type="button" class="chip" data-c="${c}">${c}</button>`).join("")}</div><p class="feedback" style="font-size:.84rem"></p></div>`).join("");
+  $("#faults").addEventListener("click", e => {
+    const b = e.target.closest("[data-c]"); if (!b) return;
+    const card = b.closest("[data-fault]"), f = FAULTS[+card.dataset.fault];
+    if (card.dataset.done) return;
+    if (b.dataset.c === f[2]) {
+      b.classList.add("right"); card.dataset.done = 1; faultScore++;
+      card.querySelector(".feedback").innerHTML = `<span class="up">Richtig.</span> ${f[3]}`;
+      $("#faultScore").textContent = `${faultScore} / 3`;
+      if (faultScore === 3) unlock(11);
+    } else {
+      b.classList.add("wrong"); card.querySelector(".feedback").innerHTML = '<span class="down">Nochmal riechen …</span>';
+    }
+  });
+})();
+</script>
+</body>
+</html>

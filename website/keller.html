@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wein-App – Keller &amp; Weinportfolio</title>
+<meta name="description" content="Ein Beispielkeller zum Ausprobieren: Kellerwert, Wertverlauf, Gewinner und Verlierer, Verteilung, Filter, Trinkreife und eigene Regale.">
+<script>try{var t=localStorage.getItem("weinapp-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .demo-flag { display: inline-flex; gap: 8px; align-items: center; font-size: .8rem; color: var(--muted); margin-top: 18px; padding: 8px 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+  .kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 32px; }
+  @media (min-width: 900px) { .kpis { grid-template-columns: 1.6fr repeat(4, 1fr); } }
+  .kpi { padding: 16px 18px; }
+  .kpi.main { grid-column: 1 / -1; background: linear-gradient(150deg, color-mix(in srgb, var(--curtain) 55%, var(--surface)), var(--surface) 70%); border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); }
+  @media (min-width: 900px) { .kpi.main { grid-column: auto; } }
+  .kpi b { display: block; font-family: var(--serif); font-weight: 400; font-size: 1.9rem; line-height: 1.1; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .kpi.main b { font-size: clamp(2.6rem, 9vw, 3.4rem); }
+  .kpi small { font-size: .8rem; }
+
+  .dash { display: grid; gap: 14px; }
+  @media (min-width: 960px) { .dash { grid-template-columns: 1.5fr 1fr; } }
+  .chart-wrap { position: relative; margin-top: 14px; }
+  .chart { width: 100%; height: 230px; display: block; overflow: visible; touch-action: pan-y; }
+  .chart .line { fill: none; stroke: var(--series-1); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+  .chart .cost { fill: none; stroke: var(--muted); stroke-width: 1.2; stroke-dasharray: 4 4; opacity: .7; }
+  .chart .grid { stroke: var(--border); }
+  .chart .axis { fill: var(--muted); font: 10px var(--sans); }
+  .tip { position: absolute; top: 0; pointer-events: none; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; padding: 6px 10px; font-size: .78rem; white-space: nowrap; transform: translateX(-50%); opacity: 0; transition: opacity .15s; box-shadow: var(--shadow); }
+  .tip b { font-variant-numeric: tabular-nums; }
+  .legend-line { display: flex; gap: 16px; font-size: .76rem; color: var(--muted); margin-top: 8px; flex-wrap: wrap; }
+  .legend-line i { display: inline-block; width: 16px; height: 0; border-top: 2px solid var(--series-1); vertical-align: middle; margin-right: 6px; }
+  .legend-line i.c { border-top: 1.5px dashed var(--muted); }
+
+  .alloc { display: grid; gap: 6px; margin-top: 14px; }
+  .alloc button { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; text-align: left; padding: 8px 10px; border-radius: 12px; border: 1px solid transparent; background: none; transition: background .2s, opacity .2s, border-color .2s; }
+  .alloc button:hover { background: var(--surface-2); }
+  .alloc button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .alloc.filtered button[aria-pressed="false"] { opacity: .5; }
+  .alloc .lb { font-size: .86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .alloc .vl { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .alloc .tr { grid-column: 1 / -1; height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+  .alloc .tr i { display: block; height: 100%; border-radius: 99px; background: var(--series-1); transition: width .7s cubic-bezier(.3,.8,.2,1); }
+
+  .movers { display: grid; gap: 14px; }
+  @media (min-width: 900px) { .movers { grid-template-columns: 1fr 1fr; } }
+  .mv-list { display: grid; gap: 6px; margin-top: 12px; }
+  .mv { display: grid; grid-template-columns: 1fr 70px auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 14px; background: var(--surface-2); border: 1px solid transparent; text-align: left; transition: border-color .2s; width: 100%; }
+  .mv:hover { border-color: var(--border-strong); }
+  .mv .n { font-weight: 500; font-size: .9rem; line-height: 1.25; }
+  .mv .s { font-size: .74rem; color: var(--muted); }
+  .mv .pc { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; font-size: .92rem; }
+  .mv .pc small { display: block; font-weight: 400; font-size: .72rem; }
+  .spark { width: 70px; height: 28px; overflow: visible; }
+
+  /* Kartei */
+  .toolbar { display: grid; gap: 10px; margin-bottom: 14px; }
+  @media (min-width: 900px) { .toolbar { grid-template-columns: 1fr auto auto; align-items: center; } }
+  .search { position: relative; }
+  .search svg { position: absolute; left: 14px; top: 50%; width: 18px; height: 18px; margin-top: -9px; color: var(--muted); }
+  .search .input { padding-left: 42px; }
+  .active-filters { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 12px; min-height: 32px; font-size: .84rem; color: var(--muted); }
+  .active-filters button { display: inline-flex; gap: 6px; align-items: center; min-height: 32px; padding: 0 10px; border-radius: 99px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--fg); font-size: .8rem; }
+  .list { display: grid; gap: 6px; }
+  .wrow { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 14px 10px 10px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); text-align: left; width: 100%; transition: border-color .2s, transform .2s; animation: rowIn .4s backwards; }
+  @keyframes rowIn { from { opacity: 0; transform: translateY(6px); } }
+  .wrow:hover { border-color: var(--accent); }
+  .wrow .mini { height: 52px; width: 30px; }
+  .wrow .n { font-weight: 500; line-height: 1.25; }
+  .wrow .s { font-size: .76rem; color: var(--muted); }
+  .wrow .r { text-align: right; display: grid; gap: 4px; justify-items: end; }
+  .wrow .v { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .wrow .meta2 { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .empty { padding: 30px; text-align: center; color: var(--muted); border: 1px dashed var(--border-strong); border-radius: 16px; }
+  @media (min-width: 900px) { .wrow { grid-template-columns: 30px minmax(0, 2fr) 1fr 1fr auto; } .wrow .c3, .wrow .c4 { display: block !important; } }
+  .c3, .c4 { display: none; font-size: .84rem; }
+  .c3 small, .c4 small { display: block; color: var(--muted); font-size: .72rem; }
+
+  /* Trinkreife */
+  .ripe { display: grid; gap: 14px; }
+  @media (min-width: 960px) { .ripe { grid-template-columns: 1.5fr 1fr; } }
+  .tl-wrap { overflow-x: auto; }
+  .tl { min-width: 520px; position: relative; }
+  .tl-years { display: grid; grid-template-columns: 9rem 1fr; font-size: .7rem; color: var(--muted); margin-bottom: 6px; }
+  .tl-years div { position: relative; height: 14px; }
+  .tl-years div span { position: absolute; transform: translateX(-50%); }
+  .tl-row { display: grid; grid-template-columns: 9rem 1fr; align-items: center; gap: 0; padding: 4px 0; font-size: .78rem; border: 0; background: none; text-align: left; width: 100%; border-radius: 8px; }
+  .tl-row:hover { background: var(--surface-2); }
+  .tl-row .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 10px; }
+  .tl-row .bar { position: relative; height: 12px; }
+  .tl-row .bar i { position: absolute; top: 0; bottom: 0; border-radius: 99px; }
+  .tl-now { position: absolute; top: 18px; bottom: 0; width: 2px; background: var(--fg); opacity: .7; }
+  .tl-now::before { content: "heute"; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: .64rem; color: var(--fg); }
+  .today-pick { margin-top: 12px; padding: 16px; border-radius: 16px; background: var(--surface-2); min-height: 120px; display: grid; grid-template-columns: 40px 1fr; gap: 14px; align-items: center; }
+  .today-pick .mini { height: 80px; }
+
+  /* Regale */
+  .racks { display: grid; gap: 14px; }
+  @media (min-width: 960px) { .racks { grid-template-columns: 1.6fr 1fr; } }
+  .rack-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .rack { padding: 14px; border-radius: 18px; background: linear-gradient(180deg, var(--surface-2), var(--surface)); border: 1px solid var(--border); }
+  .rack-grid { display: grid; gap: 6px; }
+  .rack-row-lbl { font-size: .64rem; color: var(--muted); display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .slot { aspect-ratio: 1; border-radius: 50%; border: 0; padding: 0; position: relative; transition: transform .25s, box-shadow .25s, opacity .25s; max-width: 46px; width: 100%; justify-self: center; }
+  .slot.empty { background: var(--bg); box-shadow: inset 0 2px 5px rgb(0 0 0 / .35); }
+  .slot.empty.target { box-shadow: inset 0 0 0 2px var(--accent); animation: pulse 1.2s infinite; }
+  @keyframes pulse { 50% { box-shadow: inset 0 0 0 2px transparent; } }
+  .slot.b { background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 60%, #fff) 0 12%, var(--c) 45%, color-mix(in srgb, var(--c) 55%, #000) 100%); }
+  .slot.b.sel { transform: scale(1.18); box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent); z-index: 2; }
+  .slot.b.same { box-shadow: 0 0 0 2px var(--accent); }
+  .slot.dim { opacity: .3; }
+  .rack-info { margin-top: 12px; font-size: .86rem; color: var(--muted); min-height: 2.8em; }
+  .rack-info b { color: var(--fg); font-weight: 500; }
+  .tray { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .tray button { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px 0 6px; border-radius: 99px; border: 1px dashed var(--border-strong); background: none; font-size: .8rem; }
+  .tray button[aria-pressed="true"] { border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
+  .tray i { width: 26px; height: 26px; border-radius: 50%; background: var(--c); }
+
+  /* Detail-Sheet */
+  .d-head { display: grid; grid-template-columns: 54px 1fr; gap: 16px; align-items: center; padding-right: 40px; }
+  .d-head .mini { height: 120px; }
+  .d-head h3 { font-size: 1.9rem; line-height: 1.05; }
+  .d-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 18px 0; }
+  .d-stats div { padding: 10px 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+  .d-stats b { display: block; font-variant-numeric: tabular-nums; font-size: 1.05rem; margin-top: 2px; }
+  .d-sec { margin-top: 18px; }
+  .win-bar { position: relative; height: 12px; border-radius: 99px; background: var(--surface-2); margin: 22px 0 8px; }
+  .win-bar i { position: absolute; top: 0; bottom: 0; border-radius: 99px; }
+  .win-bar .nowm { position: absolute; top: -6px; bottom: -6px; width: 2px; background: var(--fg); }
+  .win-bar .nowm::before { content: "heute"; position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: .64rem; }
+  .win-yrs { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); }
+  .offers { display: none; gap: 6px; margin-top: 10px; }
+  .offers.show { display: grid; animation: rise .4s both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+  .offer { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); font-size: .86rem; }
+  .offer b { font-variant-numeric: tabular-nums; }
+  .d-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
+</style>
+</head>
+<body>
+<header id="site-header"></header>
+
+<main>
+  <section class="page-hero">
+    <div class="wrap">
+      <span class="eyebrow">Keller · Weinportfolio</span>
+      <h1 class="display" style="max-width:15ch">Dein Keller als <em>Portfolio</em>.</h1>
+      <p class="lead">Wie viel ist mein Keller wert? Welche Flaschen sind gerade perfekt – und welche müssen dringend auf den Tisch? Hier ist ein vollständiger Beispielkeller, genau wie in der App: zum Filtern, Sortieren, Anklicken und Umräumen.</p>
+      <p class="demo-flag">ⓘ Beispieldaten: Weingüter und Preise sind erfunden. Werte sind Schätzungen, keine Marktpreise.</p>
+      <div class="kpis" id="kpis"></div>
+    </div>
+  </section>
+
+  <!-- ===== Wert & Verteilung ===== -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Wert &amp; Verteilung</span>
+        <h2 class="h2">Wie sich dein Keller entwickelt.</h2>
+        <p class="lead">Der Wertverlauf zeigt den geschätzten Wert aller Flaschen über die Zeit – die gestrichelte Linie ist, was du bezahlt hast. Fahr mit dem Finger oder der Maus über das Diagramm.</p>
+      </div>
+      <div class="dash">
+        <div class="card pad fade">
+          <div class="field-lbl" style="flex-wrap:wrap">
+            <span class="k">Wertverlauf <span class="estim">geschätzt</span></span>
+            <div class="seg" id="range" role="group" aria-label="Zeitraum"><button type="button" aria-pressed="false" data-r="12">1 J</button><button type="button" aria-pressed="true" data-r="36">3 J</button><button type="button" aria-pressed="false" data-r="999">Alles</button></div>
+          </div>
+          <div class="chart-wrap">
+            <svg class="chart" id="chart" viewBox="0 0 600 230" preserveAspectRatio="none" role="img" aria-label="Wertverlauf des Kellers"></svg>
+            <div class="tip" id="tip"></div>
+          </div>
+          <div class="legend-line"><span><i></i>Geschätzter Wert</span><span><i class="c"></i>Bezahlt (Einkauf)</span></div>
+        </div>
+        <div class="card pad fade d1">
+          <div class="field-lbl"><span class="k">Verteilung des Werts</span></div>
+          <div class="seg" id="allocBy" role="group" aria-label="Aufteilen nach" style="margin-top:12px">
+            <button type="button" aria-pressed="true" data-by="region">Region</button><button type="button" aria-pressed="false" data-by="grape">Rebsorte</button><button type="button" aria-pressed="false" data-by="color">Farbe</button><button type="button" aria-pressed="false" data-by="ready">Trinkreife</button>
+          </div>
+          <div class="alloc" id="alloc"></div>
+          <p class="muted" style="font-size:.78rem;margin-top:10px">Tipp: Antippen filtert die Kartei unten.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Gewinner & Verlierer ===== -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Gewinner &amp; Verlierer</span>
+        <h2 class="h2">Was sich pro Flasche verändert hat.</h2>
+        <p class="lead">Kaufpreis gegen heutige Schätzung – pro Flasche, in Prozent und in Euro. Antippen öffnet die Flasche mit Verlauf, Trinkfenster und Nachkauf-Möglichkeit.</p>
+      </div>
+      <div class="movers">
+        <div class="card pad fade"><span class="k">Gewinner</span><div class="mv-list" id="winners"></div></div>
+        <div class="card pad fade d1"><span class="k">Verlierer</span><div class="mv-list" id="losers"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Kartei ===== -->
+  <section class="section" id="beispielkeller">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Kartei</span>
+        <h2 class="h2">Alle Flaschen – filtern wie in der App.</h2>
+      </div>
+      <div class="toolbar">
+        <label class="search"><span class="sr-only">Suchen</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <input class="input" id="q" type="search" placeholder="Weingut, Rebsorte, Region …" autocomplete="off">
+        </label>
+        <div class="seg" id="colorSeg" role="group" aria-label="Farbe">
+          <button type="button" aria-pressed="true" data-c="">Alle</button><button type="button" aria-pressed="false" data-c="white">Weiß</button><button type="button" aria-pressed="false" data-c="red">Rot</button><button type="button" aria-pressed="false" data-c="sweet">Süß</button><button type="button" aria-pressed="false" data-c="sparkling">Sekt</button><button type="button" aria-pressed="false" data-c="rose">Rosé</button>
+        </div>
+        <select class="input" id="sort" aria-label="Sortieren" style="min-width:200px">
+          <option value="value">Sortieren: Wert</option><option value="change">Veränderung</option><option value="ready">Trinkreife</option><option value="vintage">Jahrgang</option><option value="name">Name</option>
+        </select>
+      </div>
+      <div class="chips" id="readyChips" role="group" aria-label="Trinkreife" style="margin-bottom:12px">
+        <button type="button" class="chip" aria-pressed="false" data-ready="perfect"><span class="dot" style="background:var(--success)"></span>Jetzt perfekt</button>
+        <button type="button" class="chip" aria-pressed="false" data-ready="urgent"><span class="dot" style="background:var(--danger)"></span>Dringend trinken</button>
+        <button type="button" class="chip" aria-pressed="false" data-ready="wait"><span class="dot" style="background:var(--wait)"></span>Noch warten</button>
+      </div>
+      <div class="active-filters" id="activeFilters" aria-live="polite"></div>
+      <div class="list" id="list"></div>
+    </div>
+  </section>
+
+  <!-- ===== Trinkreife ===== -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Trinkreife</span>
+        <h2 class="h2">Wann du was am besten trinkst.</h2>
+        <p class="lead">Jede Flasche hat ein Trinkfenster – vorgeschlagen aus Rebsorte, Qualitätsstufe und Jahrgang, jederzeit änderbar. Die App erinnert dich, wenn eine Flasche ins perfekte Fenster kommt.</p>
+      </div>
+      <div class="ripe">
+        <div class="card pad fade">
+          <span class="k">Trinkfenster-Zeitstrahl</span>
+          <div class="tl-wrap" style="margin-top:14px"><div class="tl" id="timeline"></div></div>
+        </div>
+        <div class="card pad fade d1">
+          <span class="k">Was trinke ich heute?</span>
+          <div class="chips" id="occasion" style="margin-top:12px" role="group" aria-label="Anlass">
+            <button type="button" class="chip" aria-pressed="true" data-o="any">Einfach so</button>
+            <button type="button" class="chip" aria-pressed="false" data-o="fish">Zu Fisch</button>
+            <button type="button" class="chip" aria-pressed="false" data-o="meat">Zu Fleisch</button>
+            <button type="button" class="chip" aria-pressed="false" data-o="dessert">Zum Dessert</button>
+            <button type="button" class="chip" aria-pressed="false" data-o="party">Mit Freunden</button>
+          </div>
+          <div class="today-pick" id="todayPick" aria-live="polite"><span></span><p class="muted">Wähle einen Anlass und lass dir eine Flasche vorschlagen.</p></div>
+          <button class="btn btn-primary" id="todayBtn" type="button" style="width:100%;margin-top:12px">Flasche vorschlagen</button>
+          <div class="k" style="margin-top:22px">Bald öffnen</div>
+          <div class="mv-list" id="soon"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Regale ===== -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Regale</span>
+        <h2 class="h2">Deine Regale – so wie sie wirklich aussehen.</h2>
+        <p class="lead">Lege Klimaschrank, Kellerregal oder Kiste mit Spalten und Reihen an. Tippe eine Flasche an, dann einen freien Platz – schon ist sie umgeräumt. Die Farbe zeigt die Trinkreife.</p>
+      </div>
+      <div class="racks">
+        <div class="card pad fade">
+          <div class="rack-tabs" id="rackTabs" role="group" aria-label="Regale"></div>
+          <div class="rack" id="rack"></div>
+          <div class="rack-info" id="rackInfo" aria-live="polite">Tippe eine Flasche an.</div>
+          <div class="k" style="margin-top:8px">Noch ohne Platz</div>
+          <div class="tray" id="tray"></div>
+        </div>
+        <div class="card pad fade d1">
+          <b style="font-weight:500;font-size:1.05rem">Neues Regal anlegen</b>
+          <p class="muted" style="font-size:.86rem;margin-top:4px">Probier es aus – es erscheint links als neuer Reiter.</p>
+          <div style="display:grid;gap:14px;margin-top:16px">
+            <div><label class="lbl" for="rName" style="display:block;font-size:.78rem;color:var(--muted);margin-bottom:6px">Name</label><input class="input" id="rName" value="Holzkiste im Flur" maxlength="28"></div>
+            <div><label for="rCols" class="field-lbl"><span class="muted">Spalten</span><b id="rColsOut">6</b></label><input type="range" id="rCols" min="2" max="10" value="6"></div>
+            <div><label for="rRows" class="field-lbl"><span class="muted">Reihen</span><b id="rRowsOut">3</b></label><input type="range" id="rRows" min="1" max="8" value="3"></div>
+            <div class="rack" id="rPreview" aria-hidden="true" style="padding:10px"></div>
+            <button class="btn btn-primary" id="rAdd" type="button">Regal anlegen</button>
+          </div>
+          <div class="legend-line" style="margin-top:18px"><span><span class="dot" style="background:var(--success)"></span> Jetzt perfekt</span><span><span class="dot" style="background:var(--danger)"></span> Dringend</span><span><span class="dot" style="background:var(--wait)"></span> Warten</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="wrap fade">
+      <span class="eyebrow">Und dann?</span>
+      <h2>Wenn eine Flasche woanders mehr Freude macht.</h2>
+      <p class="lead">Aus dem Keller heraus eine Flasche als „abzugeben“ markieren – das ist die erste Stufe unserer Vision einer Wein-Börse.</p>
+      <div class="actions"><a class="btn btn-primary" href="boerse.html">Zur Wein-Börse <span class="arrow">→</span></a><a class="btn btn-ghost" href="lernen.html">Richtig lagern lernen</a></div>
+    </div>
+  </section>
+</main>
+
+<!-- Flaschen-Detail -->
+<div class="sheet" id="detail" role="dialog" aria-modal="true" aria-labelledby="dTitle" aria-hidden="true">
+  <div class="grab"></div>
+  <button class="icon-btn sheet-close" type="button" aria-label="Schließen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  <div id="dBody"></div>
+</div>
+
+<footer id="site-footer"></footer>
+<script src="assets/site.js"></script>
+<script>
+(() => {
+  const { $, $$, euro, pct, countUp, toast, whenSeen, reduced, sheet } = Site;
+  const NOW = 2026, NOW_M = 2026 * 12 + 9; // Oktober 2026
+
+  /* ---------- Beispielkeller (erfundene Weingüter) ---------- */
+  // [Weingut, Wein, Jahrgang, Farbe, Rebsorte, Region, Anzahl, Kaufpreis, Wert heute, Kauf (JJJJ-MM), trinken ab, bis, Grund]
+  const RAW = [
+    ["Weingut Steinbach", "Riesling GG Schieferkopf", 2019, "white", "Riesling", "Mosel", 3, 42, 55, "2021-09", 2023, 2035, "Ein Riesling GG braucht Zeit – jetzt beginnt die schönste Phase."],
+    ["Weingut Steinbach", "Riesling Kabinett", 2021, "white", "Riesling", "Mosel", 6, 18, 22, "2022-11", 2023, 2036, "Kabinett hält dank Säure lange, ist aber schon jetzt saftig."],
+    ["Hofgut Lindenberg", "Spätburgunder GG Kalkofen", 2015, "red", "Spätburgunder", "Baden", 2, 65, 90, "2018-03", 2020, 2027, "Auf dem Höhepunkt – bald baut er ab."],
+    ["Hofgut Lindenberg", "Spätburgunder Ortswein", 2020, "red", "Spätburgunder", "Baden", 4, 24, 26, "2022-05", 2023, 2030, "Gute Spätburgunder legen mit den Jahren zu – jetzt schön offen."],
+    ["Weingut Morgenrot", "Riesling GG Sonnenhang", 2021, "white", "Riesling", "Rheingau", 2, 58, 64, "2023-03", 2027, 2040, "Noch verschlossen – gib ihm ein, zwei Jahre."],
+    ["Weingut Morgenrot", "Riesling Spätlese", 2017, "sweet", "Riesling", "Rheingau", 3, 29, 41, "2019-05", 2022, 2040, "Die Süße wird mit dem Alter feiner – jederzeit ein Genuss."],
+    ["Kellerei am Turm", "Riesling Auslese", 2011, "sweet", "Riesling", "Rheingau", 1, 45, 70, "2014-12", 2016, 2045, "Edelsüßes reift über Jahrzehnte."],
+    ["Weingut Hohe Mauer", "Silvaner Muschelkalk", 2022, "white", "Silvaner", "Franken", 4, 16, 15, "2023-08", 2023, 2027, "Frisch genießen – bald ist die beste Zeit vorbei."],
+    ["Weingut Hohe Mauer", "Silvaner GG", 2021, "white", "Silvaner", "Franken", 2, 34, 36, "2023-02", 2024, 2033, "Silvaner aus Spitzenlagen reift gut."],
+    ["Weingut Lössberg", "Grauburgunder", 2020, "white", "Grauburgunder", "Baden", 3, 14, 12, "2021-06", 2021, 2025, "Fenster eigentlich vorbei – bald probieren, ob er noch frisch ist."],
+    ["Weingut Lössberg", "Weißburgunder", 2023, "white", "Weißburgunder", "Baden", 6, 12, 12, "2024-05", 2024, 2028, "In den ersten Jahren am schönsten."],
+    ["Weingut Rotfels", "Lemberger GG", 2018, "red", "Lemberger", "Württemberg", 2, 38, 48, "2020-11", 2022, 2033, "Kräftiger Lemberger mit Tannin und Säure – jetzt rund."],
+    ["Weingut Rotfels", "Lemberger GG", 2022, "red", "Lemberger", "Württemberg", 3, 39, 41, "2024-02", 2027, 2037, "Braucht noch Zeit, das Tannin ist jung."],
+    ["Sektkellerei Feinperl", "Riesling Sekt brut", 2019, "sparkling", "Riesling", "Pfalz", 4, 22, 23, "2023-12", 2023, 2026, "Sekt lebt von Frische – dieses Jahr trinken."],
+    ["Weingut Ahrstein", "Spätburgunder GG", 2019, "red", "Spätburgunder", "Ahr", 2, 55, 72, "2022-01", 2027, 2039, "Großer Spätburgunder will Geduld."],
+    ["Weingut Ahrstein", "Frühburgunder", 2021, "red", "Frühburgunder", "Ahr", 3, 26, 27, "2023-05", 2023, 2029, "Saftig und offen – jetzt perfekt."],
+    ["Weingut Sonnenkap", "Rosé", 2024, "rose", "Spätburgunder", "Pfalz", 4, 11, 10, "2025-04", 2025, 2026, "Rosé lebt von Frische – diesen Sommer war er perfekt."],
+    ["Weingut Morgenrot", "Riesling trocken", 2024, "white", "Riesling", "Rheingau", 6, 13, 13, "2025-03", 2025, 2029, "Ein Gutsriesling schmeckt jung am besten."],
+  ];
+  const COLOR_LBL = { white: "Weiß", red: "Rot", sweet: "Süß", sparkling: "Sekt", rose: "Rosé" };
+  const READY_LBL = { perfect: "Jetzt perfekt", urgent: "Dringend trinken", wait: "Noch warten" };
+  const READY_ORDER = { urgent: 0, perfect: 1, wait: 2 };
+  const READY_COLOR = { perfect: "var(--success)", urgent: "var(--danger)", wait: "var(--wait)" };
+
+  // kleiner, fester Zufall – gleiche Kurven bei jedem Laden
+  let seed = 11; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const W = RAW.map((r, i) => {
+    const [producer, name, vintage, color, grape, region, qty, buy, value, bought, from, until, reason] = r;
+    const [by, bm] = bought.split("-").map(Number);
+    const startM = by * 12 + bm - 1;
+    const hist = []; // Wert pro Flasche je Monat
+    for (let m = startM; m <= NOW_M; m++) {
+      const t = (m - startM) / Math.max(1, NOW_M - startM);
+      const noise = m === startM || m === NOW_M ? 0 : (rnd() - .5) * buy * .05;
+      hist.push(buy + (value - buy) * Math.pow(t, 1.15) + noise);
+    }
+    const ready = NOW < from ? "wait" : until - NOW <= 1 ? "urgent" : "perfect";
+    return { id: i, producer, name, vintage, color, grape, region, qty, buy, value, startM, from, until, reason, hist, ready, change: (value - buy) / buy * 100 };
+  });
+
+  const totals = () => {
+    const bottles = W.reduce((a, w) => a + w.qty, 0);
+    const value = W.reduce((a, w) => a + w.qty * w.value, 0);
+    const cost = W.reduce((a, w) => a + w.qty * w.buy, 0);
+    return { bottles, value, cost, diff: value - cost, pct: (value - cost) / cost * 100 };
+  };
+
+  /* Mini-Flasche passend zur Farbe */
+  const bottleSvg = w => {
+    const red = w.color === "red";
+    const glass = red ? "#2a0d18" : w.color === "rose" ? "#c97a86" : w.color === "sparkling" ? "#3e4a2a" : "#5d6b3f";
+    const cap = red ? "#6e1733" : w.color === "sparkling" ? "#d1ad72" : "#d1ad72";
+    const body = red ? "M50 16h20v84c0 34 30 50 30 84v118a10 10 0 0 1-10 10H30a10 10 0 0 1-10-10V184c0-34 30-50 30-84z" : "M53 8h14v78c0 40 25 70 25 104v120a10 10 0 0 1-10 10H38a10 10 0 0 1-10-10V190c0-34 25-64 25-104z";
+    return `<svg class="mini" viewBox="0 0 120 330" aria-hidden="true" style="width:auto;overflow:visible"><path d="${body}" fill="${glass}"/><path d="${body}" fill="url(#glassG)"/><rect x="${red ? 47.5 : 51}" y="${red ? 10 : 4}" width="${red ? 25 : 18}" height="44" rx="3" fill="${cap}"/><rect x="${red ? 30 : 36}" y="215" width="${red ? 60 : 48}" height="60" rx="3" fill="#f4ede5"/></svg>`;
+  };
+  const spark = (w, cls = "spark") => {
+    const h = w.hist, min = Math.min(...h), max = Math.max(...h), rng = max - min || 1;
+    const pts = h.map((v, i) => `${(i / Math.max(1, h.length - 1)) * 70},${26 - (v - min) / rng * 24}`).join(" ");
+    return `<svg class="${cls}" viewBox="0 0 70 28" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${w.value >= w.buy ? "var(--success)" : "var(--danger)"}" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+  };
+  const changeTxt = w => `<span class="${w.change > 0 ? "up" : w.change < 0 ? "down" : "muted"}">${pct(w.change)}</span>`;
+
+  /* ---------- KPIs ---------- */
+  function renderKpis() {
+    const t = totals();
+    $("#kpis").innerHTML = `
+      <div class="card kpi main"><span class="k">Kellerwert <span class="estim">geschätzt</span></span><b id="kVal">${euro.format(t.value)}</b><small class="${t.diff >= 0 ? "up" : "down"}">${t.diff >= 0 ? "▲" : "▼"} ${euro.format(Math.abs(t.diff))} · ${pct(t.pct)} seit Kauf</small></div>
+      <div class="card kpi"><span class="k">Flaschen</span><b>${t.bottles}</b><small class="muted">${W.filter(w => w.qty).length} Weine</small></div>
+      <div class="card kpi"><span class="k">Bezahlt</span><b>${euro.format(t.cost)}</b><small class="muted">Einkaufswert</small></div>
+      <div class="card kpi"><span class="k">Ø pro Flasche</span><b>${euro.format(t.value / t.bottles)}</b><small class="muted">geschätzt</small></div>
+      <div class="card kpi"><span class="k">Jetzt perfekt</span><b>${W.filter(w => w.ready === "perfect").reduce((a, w) => a + w.qty, 0)}</b><small class="up">Flaschen trinkbereit</small></div>`;
+  }
+  renderKpis();
+  countUp($("#kVal"), totals().value, { ms: 1600, format: v => euro.format(v) });
+
+  /* ---------- Wertverlauf ---------- */
+  const series = (() => {
+    const first = Math.min(...W.map(w => w.startM)), out = [];
+    for (let m = first; m <= NOW_M; m++) {
+      let v = 0, c = 0;
+      W.forEach(w => { if (m >= w.startM) { v += w.qty * w.hist[m - w.startM]; c += w.qty * w.buy; } });
+      out.push({ m, v, c });
+    }
+    return out;
+  })();
+  const mName = m => new Date(Math.floor(m / 12), m % 12, 1).toLocaleDateString("de-DE", { month: "short", year: "numeric" });
+  let range = 36;
+  function drawChart() {
+    const svg = $("#chart"), data = series.slice(-Math.min(range, series.length));
+    const Wd = 600, H = 230, pad = { l: 0, r: 0, t: 14, b: 22 };
+    const max = Math.max(...data.map(d => Math.max(d.v, d.c))) * 1.06, min = Math.min(...data.map(d => Math.min(d.v, d.c))) * .9;
+    const x = i => pad.l + i / (data.length - 1) * (Wd - pad.l - pad.r);
+    const y = v => pad.t + (1 - (v - min) / (max - min)) * (H - pad.t - pad.b);
+    const path = k => data.map((d, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(d[k]).toFixed(1)}`).join(" ");
+    const ticks = [0, .5, 1].map(f => min + (max - min) * f);
+    const yearsIdx = data.map((d, i) => (d.m % 12 === 0 ? i : -1)).filter(i => i >= 0);
+    const step = Math.ceil(yearsIdx.length / 6);
+    svg.innerHTML = `
+      <defs><linearGradient id="areaG" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--series-1)" stop-opacity=".32"/><stop offset="1" stop-color="var(--series-1)" stop-opacity="0"/></linearGradient></defs>
+      ${ticks.map(v => `<line class="grid" x1="0" x2="${Wd}" y1="${y(v)}" y2="${y(v)}"/>`).join("")}
+      ${yearsIdx.filter((_, k) => k % step === 0).map(i => `<text class="axis" x="${x(i)}" y="${H - 4}" text-anchor="middle">${Math.floor(data[i].m / 12)}</text>`).join("")}
+      <path d="${path("v")} L${x(data.length - 1)} ${H - pad.b} L${x(0)} ${H - pad.b}Z" fill="url(#areaG)"/>
+      <path class="cost" d="${path("c")}"/>
+      <path class="line" id="vLine" d="${path("v")}"/>
+      <line id="cross" y1="${pad.t}" y2="${H - pad.b}" stroke="var(--fg)" stroke-opacity=".4" stroke-width="1" style="display:none"/>
+      <circle id="crossDot" r="5" fill="var(--series-1)" stroke="var(--bg)" stroke-width="2" style="display:none"/>`;
+    if (!reduced) {
+      const l = $("#vLine"), len = l.getTotalLength();
+      l.style.strokeDasharray = len; l.style.strokeDashoffset = len; l.getBoundingClientRect();
+      l.style.transition = "stroke-dashoffset 1.6s cubic-bezier(.4,0,.2,1)"; l.style.strokeDashoffset = 0;
+    }
+    const tip = $("#tip");
+    const move = e => {
+      const r = svg.getBoundingClientRect();
+      const i = Math.round(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) * (data.length - 1));
+      const d = data[i], px = x(i) / Wd * r.width;
+      $("#cross").setAttribute("x1", x(i)); $("#cross").setAttribute("x2", x(i)); $("#cross").style.display = "";
+      $("#crossDot").setAttribute("cx", x(i)); $("#crossDot").setAttribute("cy", y(d.v)); $("#crossDot").style.display = "";
+      tip.innerHTML = `${mName(d.m)} · <b>${euro.format(d.v)}</b> <span class="muted">(bezahlt ${euro.format(d.c)})</span>`;
+      tip.style.left = Math.min(r.width - 90, Math.max(90, px)) + "px"; tip.style.opacity = 1;
+    };
+    svg.onpointermove = move; svg.onpointerdown = move;
+    svg.onpointerleave = () => { tip.style.opacity = 0; $("#cross").style.display = "none"; $("#crossDot").style.display = "none"; };
+  }
+  $("#range").addEventListener("click", e => {
+    const b = e.target.closest("[data-r]"); if (!b) return;
+    range = +b.dataset.r; $$("[data-r]").forEach(x => x.setAttribute("aria-pressed", x === b)); drawChart();
+  });
+  drawChart(); // sofort zeichnen, beim Sichtbarwerden noch einmal mit Animation
+  whenSeen($("#chart").closest(".card"), drawChart);
+
+  /* ---------- Filter-Zustand ---------- */
+  const F = { q: "", color: "", ready: new Set(), alloc: null, sort: "value" };
+  const groupKey = (w, by) => by === "color" ? COLOR_LBL[w.color] : by === "ready" ? READY_LBL[w.ready] : w[by];
+  function matches(w) {
+    if (!w.qty) return false;
+    if (F.color && w.color !== F.color) return false;
+    if (F.ready.size && !F.ready.has(w.ready)) return false;
+    if (F.alloc && groupKey(w, F.alloc.by) !== F.alloc.label) return false;
+    if (F.q) { const s = `${w.producer} ${w.name} ${w.grape} ${w.region} ${w.vintage}`.toLowerCase(); if (!F.q.split(/\s+/).every(t => s.includes(t))) return false; }
+    return true;
+  }
+
+  /* ---------- Verteilung ---------- */
+  let allocBy = "region";
+  function renderAlloc() {
+    const groups = {};
+    W.filter(w => w.qty).forEach(w => { const k = groupKey(w, allocBy); groups[k] = (groups[k] || 0) + w.qty * w.value; });
+    const total = Object.values(groups).reduce((a, b) => a + b, 0);
+    const rows = Object.entries(groups).sort((a, b) => b[1] - a[1]);
+    const max = rows[0][1];
+    const el = $("#alloc");
+    el.classList.toggle("filtered", !!(F.alloc && F.alloc.by === allocBy));
+    el.innerHTML = rows.map(([k, v]) => {
+      const on = F.alloc && F.alloc.by === allocBy && F.alloc.label === k;
+      return `<button type="button" aria-pressed="${!!on}" data-l="${k}"><span class="lb">${k}</span><span class="vl">${euro.format(v)} · ${Math.round(v / total * 100)} %</span><span class="tr"><i style="width:0" data-w="${v / max * 100}%"></i></span></button>`;
+    }).join("");
+    requestAnimationFrame(() => $$(".tr i", el).forEach(i => (i.style.width = i.dataset.w)));
+  }
+  $("#allocBy").addEventListener("click", e => {
+    const b = e.target.closest("[data-by]"); if (!b) return;
+    allocBy = b.dataset.by; $$("[data-by]").forEach(x => x.setAttribute("aria-pressed", x === b)); renderAlloc();
+  });
+  $("#alloc").addEventListener("click", e => {
+    const b = e.target.closest("[data-l]"); if (!b) return;
+    const same = F.alloc && F.alloc.by === allocBy && F.alloc.label === b.dataset.l;
+    F.alloc = same ? null : { by: allocBy, label: b.dataset.l };
+    renderAlloc(); renderList();
+    if (!same) toast(`Kartei gefiltert: ${b.dataset.l}`);
+  });
+  renderAlloc();
+
+  /* ---------- Gewinner & Verlierer ---------- */
+  function renderMovers() {
+    const live = W.filter(w => w.qty);
+    const sorted = [...live].sort((a, b) => b.change - a.change);
+    const row = w => `<button class="mv" type="button" data-open="${w.id}"><span><span class="n">${w.name} ${w.vintage}</span><br><span class="s">${w.producer} · ${w.qty} Fl.</span></span>${spark(w)}<span class="pc">${changeTxt(w)}<small class="muted">${w.value >= w.buy ? "+" : "−"}${euro.format(Math.abs(w.value - w.buy))} / Fl.</small></span></button>`;
+    $("#winners").innerHTML = sorted.filter(w => w.change > 0).slice(0, 4).map(row).join("");
+    $("#losers").innerHTML = sorted.filter(w => w.change < 0).reverse().slice(0, 4).map(row).join("") || '<p class="muted">Keine Verlierer.</p>';
+  }
+  renderMovers();
+
+  /* ---------- Kartei ---------- */
+  function renderFiltersBar(n) {
+    const parts = [];
+    if (F.alloc) parts.push(`<button type="button" data-clear="alloc">${F.alloc.label} ✕</button>`);
+    if (F.color) parts.push(`<button type="button" data-clear="color">${COLOR_LBL[F.color]} ✕</button>`);
+    F.ready.forEach(r => parts.push(`<button type="button" data-clear="ready:${r}">${READY_LBL[r]} ✕</button>`));
+    if (F.q) parts.push(`<button type="button" data-clear="q">„${F.q}“ ✕</button>`);
+    $("#activeFilters").innerHTML = `<span>${n} ${n === 1 ? "Wein" : "Weine"}</span>${parts.join("")}${parts.length > 1 ? '<button type="button" data-clear="all" style="border-style:dashed;background:none">Alle zurücksetzen</button>' : ""}`;
+  }
+  function renderList() {
+    const items = W.filter(matches).sort((a, b) =>
+      F.sort === "value" ? b.qty * b.value - a.qty * a.value :
+      F.sort === "change" ? b.change - a.change :
+      F.sort === "ready" ? READY_ORDER[a.ready] - READY_ORDER[b.ready] || a.until - b.until :
+      F.sort === "vintage" ? a.vintage - b.vintage : a.name.localeCompare(b.name, "de"));
+    renderFiltersBar(items.length);
+    $("#list").innerHTML = items.length ? items.map((w, i) => `
+      <button class="wrow" type="button" data-open="${w.id}" style="animation-delay:${Math.min(i, 10) * 30}ms">
+        ${bottleSvg(w)}
+        <span><span class="n">${w.name} ${w.vintage}</span><br><span class="s">${w.producer} · ${w.region}</span>
+          <span class="meta2"><span class="rb rb-${w.ready}">${READY_LBL[w.ready]}</span><span class="chip" style="min-height:22px;padding:0 8px;font-size:.7rem">${w.qty} Fl. · ${locOf(w)}</span></span></span>
+        <span class="c3">${w.from}–${w.until}<small>Trinkfenster</small></span>
+        <span class="c4">${euro.format(w.buy)} → ${euro.format(w.value)}<small>pro Flasche</small></span>
+        <span class="r"><span class="v">${euro.format(w.qty * w.value)}</span>${changeTxt(w)}</span>
+      </button>`).join("") : `<div class="empty">Keine Flasche passt zu diesen Filtern.</div>`;
+  }
+  $("#q").addEventListener("input", e => { F.q = e.target.value.trim().toLowerCase(); renderList(); });
+  $("#colorSeg").addEventListener("click", e => { const b = e.target.closest("[data-c]"); if (!b) return; F.color = b.dataset.c; $$("[data-c]").forEach(x => x.setAttribute("aria-pressed", x === b)); renderList(); });
+  $("#readyChips").addEventListener("click", e => { const b = e.target.closest("[data-ready]"); if (!b) return; const r = b.dataset.ready; F.ready.has(r) ? F.ready.delete(r) : F.ready.add(r); b.setAttribute("aria-pressed", F.ready.has(r)); renderList(); });
+  $("#sort").addEventListener("change", e => { F.sort = e.target.value; renderList(); });
+  $("#activeFilters").addEventListener("click", e => {
+    const b = e.target.closest("[data-clear]"); if (!b) return;
+    const c = b.dataset.clear;
+    if (c === "alloc" || c === "all") { F.alloc = null; renderAlloc(); }
+    if (c === "color" || c === "all") { F.color = ""; $$("[data-c]").forEach(x => x.setAttribute("aria-pressed", x.dataset.c === "")); }
+    if (c.startsWith("ready:") || c === "all") { c === "all" ? F.ready.clear() : F.ready.delete(c.slice(6)); $$("[data-ready]").forEach(x => x.setAttribute("aria-pressed", F.ready.has(x.dataset.ready))); }
+    if (c === "q" || c === "all") { F.q = ""; $("#q").value = ""; }
+    renderList();
+  });
+
+  /* ---------- Regale ---------- */
+  const racks = [
+    { name: "Klimaschrank", cols: 6, rows: 4, slots: [] },
+    { name: "Kellerregal", cols: 8, rows: 5, slots: [] },
+  ];
+  racks.forEach(r => (r.slots = Array(r.cols * r.rows).fill(null)));
+  const tray = []; // Flaschen ohne Platz: Wein-IDs
+  (() => {
+    // Weiß/Süß/Sekt in den Klimaschrank, Rot ins Kellerregal, ein paar Lücken lassen
+    const place = (rack, id, skipEvery) => {
+      let i = rack.slots.findIndex((s, k) => s === null && !(skipEvery && k % skipEvery === skipEvery - 1));
+      if (i < 0) i = rack.slots.indexOf(null);
+      if (i < 0) return false; rack.slots[i] = id; return true;
+    };
+    W.forEach(w => {
+      for (let n = 0; n < w.qty; n++) {
+        if (w.name === "Riesling trocken") { tray.push(w.id); continue; }
+        const rack = ["red", "rose"].includes(w.color) ? racks[1] : racks[0];
+        if (!place(rack, w.id, 9) && !place(racks[1], w.id, 7)) tray.push(w.id);
+      }
+    });
+  })();
+  function locOf(w) {
+    const where = new Set();
+    racks.forEach(r => r.slots.forEach(id => { if (id === w.id) where.add(r.name); }));
+    if (tray.includes(w.id)) where.add("ohne Platz");
+    return [...where].join(", ") || "–";
+  }
+  function slotsOf(w) {
+    const out = [];
+    racks.forEach(r => r.slots.forEach((id, k) => { if (id === w.id) out.push(`${r.name} R${Math.floor(k / r.cols) + 1}/P${k % r.cols + 1}`); }));
+    return out;
+  }
+  let rackIdx = 0, sel = null; // sel: {from:'rack'|'tray', i}
+  function renderRackTabs() {
+    $("#rackTabs").innerHTML = racks.map((r, i) => {
+      const used = r.slots.filter(s => s !== null).length;
+      return `<button type="button" class="chip" aria-pressed="${i === rackIdx}" data-rack="${i}">${r.name} <span style="opacity:.7">${used}/${r.slots.length}</span></button>`;
+    }).join("");
+  }
+  function renderRack() {
+    const r = racks[rackIdx];
+    const selId = sel ? (sel.from === "rack" ? racks[sel.rack].slots[sel.i] : tray[sel.i]) : null;
+    $("#rack").innerHTML = `<div class="rack-row-lbl"><span>${r.cols} Spalten × ${r.rows} Reihen</span><span>${r.slots.filter(s => s !== null).length} Flaschen</span></div>
+      <div class="rack-grid" style="grid-template-columns:repeat(${r.cols},1fr)">${r.slots.map((id, k) => {
+        if (id === null) return `<button type="button" class="slot empty${sel ? " target" : ""}" data-slot="${k}" aria-label="Reihe ${Math.floor(k / r.cols) + 1}, Platz ${k % r.cols + 1}: frei"></button>`;
+        const w = W[id], isSel = sel && sel.from === "rack" && sel.rack === rackIdx && sel.i === k;
+        return `<button type="button" class="slot b${isSel ? " sel" : selId === id ? " same" : ""}" style="--c:${READY_COLOR[w.ready]}" data-slot="${k}" title="${w.name} ${w.vintage}" aria-label="${w.name} ${w.vintage}, Reihe ${Math.floor(k / r.cols) + 1}, Platz ${k % r.cols + 1}: ${READY_LBL[w.ready]}"></button>`;
+      }).join("")}</div>`;
+    $("#tray").innerHTML = tray.length ? tray.map((id, i) => `<button type="button" aria-pressed="${!!(sel && sel.from === "tray" && sel.i === i)}" data-tray="${i}"><i style="--c:${READY_COLOR[W[id].ready]}"></i>${W[id].name} ${W[id].vintage}</button>`).join("") : '<span class="muted" style="font-size:.84rem">Alle Flaschen haben einen Platz. ✓</span>';
+    renderRackTabs();
+  }
+  $("#rackTabs").addEventListener("click", e => { const b = e.target.closest("[data-rack]"); if (!b) return; rackIdx = +b.dataset.rack; renderRack(); });
+  $("#rack").addEventListener("click", e => {
+    const b = e.target.closest("[data-slot]"); if (!b) return;
+    const k = +b.dataset.slot, r = racks[rackIdx], id = r.slots[k];
+    if (id !== null) {
+      sel = sel && sel.from === "rack" && sel.rack === rackIdx && sel.i === k ? null : { from: "rack", rack: rackIdx, i: k };
+      const w = W[id];
+      $("#rackInfo").innerHTML = sel ? `<b>${w.name} ${w.vintage}</b> · ${w.producer} · <span class="rb rb-${w.ready}">${READY_LBL[w.ready]}</span><br>Reihe ${Math.floor(k / r.cols) + 1}, Platz ${k % r.cols + 1}. Tippe einen freien Platz, um sie umzulegen – oder <button type="button" class="chip" data-open="${w.id}" style="min-height:28px">Details</button>` : "Tippe eine Flasche an.";
+    } else if (sel) {
+      const movingId = sel.from === "rack" ? racks[sel.rack].slots[sel.i] : tray[sel.i];
+      if (sel.from === "rack") racks[sel.rack].slots[sel.i] = null; else tray.splice(sel.i, 1);
+      r.slots[k] = movingId;
+      $("#rackInfo").innerHTML = `<b>${W[movingId].name} ${W[movingId].vintage}</b> liegt jetzt in ${r.name}, Reihe ${Math.floor(k / r.cols) + 1}, Platz ${k % r.cols + 1}. ✓`;
+      sel = null; renderList();
+    } else {
+      $("#rackInfo").textContent = "Freier Platz. Wähle zuerst eine Flasche – im Regal oder unten „Noch ohne Platz“.";
+    }
+    renderRack();
+  });
+  $("#tray").addEventListener("click", e => {
+    const b = e.target.closest("[data-tray]"); if (!b) return;
+    const i = +b.dataset.tray;
+    sel = sel && sel.from === "tray" && sel.i === i ? null : { from: "tray", i };
+    $("#rackInfo").innerHTML = sel ? `<b>${W[tray[i]].name} ${W[tray[i]].vintage}</b> – tippe einen freien Platz im Regal.` : "Tippe eine Flasche an.";
+    renderRack();
+  });
+  // Neues Regal
+  const rCols = $("#rCols"), rRows = $("#rRows");
+  function previewRack() {
+    $("#rColsOut").textContent = rCols.value; $("#rRowsOut").textContent = rRows.value;
+    $("#rPreview").innerHTML = `<div class="rack-grid" style="grid-template-columns:repeat(${rCols.value},1fr);gap:5px">${'<span class="slot empty" style="max-width:26px"></span>'.repeat(rCols.value * rRows.value)}</div>`;
+  }
+  rCols.addEventListener("input", previewRack); rRows.addEventListener("input", previewRack); previewRack();
+  $("#rAdd").addEventListener("click", () => {
+    const name = $("#rName").value.trim() || `Regal ${racks.length + 1}`;
+    racks.push({ name, cols: +rCols.value, rows: +rRows.value, slots: Array(+rCols.value * +rRows.value).fill(null) });
+    rackIdx = racks.length - 1; sel = null;
+    $("#rackInfo").textContent = `„${name}“ angelegt. Wähle eine Flasche aus „Noch ohne Platz“ und leg sie hinein.`;
+    renderRack(); toast(`Regal „${name}“ angelegt`);
+    $("#rack").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+  });
+
+  /* ---------- Trinkreife ---------- */
+  function renderTimeline() {
+    const y0 = 2016, y1 = 2046, span = y1 - y0;
+    const xp = y => (y - y0) / span * 100;
+    const items = W.filter(w => w.qty).sort((a, b) => a.until - b.until);
+    $("#timeline").innerHTML = `
+      <div class="tl-years"><span></span><div>${[2020, 2025, 2030, 2035, 2040, 2045].map(y => `<span style="left:${xp(y)}%">${y}</span>`).join("")}</div></div>
+      <div style="position:relative">
+        ${items.map(w => `<button type="button" class="tl-row" data-open="${w.id}"><span class="nm">${w.name} ’${String(w.vintage).slice(2)}</span><span class="bar"><i style="left:${xp(w.from)}%;width:${xp(w.until + 1) - xp(w.from)}%;background:${READY_COLOR[w.ready]};opacity:.85"></i></span></button>`).join("")}
+        <div class="tl-now" style="left:calc(9rem + (100% - 9rem) * ${xp(NOW + .8) / 100})"></div>
+      </div>`;
+  }
+  renderTimeline();
+  function renderSoon() {
+    $("#soon").innerHTML = W.filter(w => w.qty && w.ready === "urgent").sort((a, b) => a.until - b.until)
+      .map(w => `<button class="mv" type="button" data-open="${w.id}" style="grid-template-columns:1fr auto"><span><span class="n">${w.name} ${w.vintage}</span><br><span class="s">${w.until < NOW ? "Fenster vorbei seit " + w.until : "bis " + w.until} · ${w.qty} Fl.</span></span><span class="rb rb-urgent">Dringend</span></button>`).join("");
+  }
+  renderSoon();
+  const OCC = {
+    any: w => w.ready !== "wait",
+    fish: w => ["white", "sparkling"].includes(w.color) && w.ready !== "wait",
+    meat: w => w.color === "red" && w.ready !== "wait",
+    dessert: w => w.color === "sweet" && w.ready !== "wait",
+    party: w => ["sparkling", "rose", "white"].includes(w.color) && w.ready !== "wait" && w.qty >= 3,
+  };
+  const OCC_WHY = { any: "", fish: " Die Säure passt wunderbar zu Fisch.", meat: " Kräftig genug für Fleisch.", dessert: " Die Süße sollte etwas süßer sein als das Dessert.", party: " Genug Flaschen für alle." };
+  let occ = "any", lastPick = null;
+  $("#occasion").addEventListener("click", e => { const b = e.target.closest("[data-o]"); if (!b) return; occ = b.dataset.o; $$("[data-o]").forEach(x => x.setAttribute("aria-pressed", x === b)); });
+  $("#todayBtn").addEventListener("click", () => {
+    const pool = W.filter(w => w.qty && OCC[occ](w));
+    if (!pool.length) return toast("Dafür ist gerade nichts trinkbereit.");
+    // dringende zuerst, sonst zufällig – aber nicht zweimal dieselbe
+    const urgent = pool.filter(w => w.ready === "urgent" && w !== lastPick);
+    const choice = (urgent.length && rnd() < .6 ? urgent : pool.filter(w => w !== lastPick).length ? pool.filter(w => w !== lastPick) : pool);
+    const w = choice[Math.floor(Math.random() * choice.length)]; lastPick = w;
+    const el = $("#todayPick");
+    el.innerHTML = `${bottleSvg(w)}<div><span class="rb rb-${w.ready}">${READY_LBL[w.ready]}</span><div class="serif" style="font-size:1.45rem;line-height:1.1;margin:6px 0 2px">${w.name} ${w.vintage}</div><p class="muted" style="font-size:.84rem">${w.producer} · ${slotsOf(w)[0] || "ohne Platz"}</p><p style="font-size:.86rem;margin-top:6px">${w.reason}${OCC_WHY[occ]}</p><button type="button" class="chip" data-open="${w.id}" style="margin-top:8px">Flasche öffnen</button></div>`;
+    if (!reduced) el.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 400, easing: "ease-out" });
+  });
+
+  /* ---------- Detail-Sheet ---------- */
+  const detail = sheet("detail");
+  function openDetail(id) {
+    const w = W[id];
+    const y0 = Math.min(w.vintage, w.from - 1), y1 = Math.max(w.until + 2, NOW + 2), xp = y => (y - y0) / (y1 - y0) * 100;
+    const dPer = w.value - w.buy;
+    const sl = slotsOf(w);
+    $("#dBody").innerHTML = `
+      <div class="d-head">${bottleSvg(w)}<div><span class="k">${w.producer}</span><h3 id="dTitle">${w.name} ${w.vintage}</h3><p class="muted" style="font-size:.86rem;margin-top:4px">${w.grape} · ${w.region} · ${COLOR_LBL[w.color]}</p><span class="rb rb-${w.ready}" style="margin-top:8px">${READY_LBL[w.ready]}</span></div></div>
+      <div class="d-stats">
+        <div><span class="k">Gekauft</span><b>${euro.format(w.buy)}</b></div>
+        <div><span class="k">Heute ca.</span><b>${euro.format(w.value)}</b></div>
+        <div><span class="k">Pro Flasche</span><b class="${dPer >= 0 ? "up" : "down"}">${dPer >= 0 ? "+" : "−"}${euro.format(Math.abs(dPer))}</b></div>
+        <div><span class="k">Anzahl</span><b>${w.qty}</b></div>
+        <div><span class="k">Gesamt</span><b>${euro.format(w.qty * w.value)}</b></div>
+        <div><span class="k">Veränderung</span><b>${changeTxt(w)}</b></div>
+      </div>
+      <div class="d-sec"><span class="k">Wert pro Flasche seit Kauf <span class="estim">geschätzt</span></span>${spark(w, "spark")
+        .replace('class="spark"', 'class="spark" style="width:100%;height:70px;margin-top:10px"').replace('viewBox="0 0 70 28"', 'viewBox="0 0 70 28"')}</div>
+      <div class="d-sec"><span class="k">Trinkfenster ${w.from}–${w.until}</span>
+        <div class="win-bar"><i style="left:${xp(w.from)}%;width:${xp(w.until + 1) - xp(w.from)}%;background:${READY_COLOR[w.ready]}"></i><span class="nowm" style="left:${xp(NOW + .8)}%"></span></div>
+        <div class="win-yrs"><span>${y0}</span><span>${y1}</span></div>
+        <p style="font-size:.88rem;margin-top:10px">✦ ${w.reason}</p></div>
+      <div class="d-sec"><span class="k">Lagerplatz</span><p style="font-size:.88rem;margin-top:6px">${sl.length ? sl.join(" · ") : "Noch ohne Platz"}${tray.includes(w.id) ? " · teils noch ohne Platz" : ""}</p></div>
+      <div class="d-actions">
+        <button class="btn btn-ghost btn-sm" type="button" id="dDrink">Eine trinken → Tagebuch</button>
+        <button class="btn btn-primary btn-sm" type="button" id="dBuy">Nachkaufen</button>
+      </div>
+      <div class="offers" id="offers">
+        <p class="muted" style="font-size:.78rem">Fundstellen (Beispiel) – in der App aus einer Preis-Suche, klar als Schätzung gekennzeichnet.</p>
+        ${[["Weinhandel am Markt", .96, "2–3 Tage"], ["Vinothek Beispielstadt", 1.04, "morgen abholbereit"], ["Direkt beim Weingut", 1, "ab 6 Flaschen versandkostenfrei"]].map(([s, f, d]) => `<div class="offer"><span>${s}<br><small class="muted">${d}</small></span><b>${euro.format(w.value * f)}</b><button class="btn btn-ghost btn-sm" type="button" data-shop="${s}">Zum Händler</button></div>`).join("")}
+      </div>
+      <a class="chip" href="boerse.html" style="margin-top:14px;text-decoration:none">◇ Vision: als „abzugeben“ markieren</a>`;
+    $("#dDrink").addEventListener("click", () => {
+      if (!w.qty) return;
+      w.qty--;
+      // eine Flasche aus Regal oder Ablage entfernen
+      let done = false;
+      racks.forEach(r => { if (done) return; const k = r.slots.lastIndexOf(w.id); if (k >= 0) { r.slots[k] = null; done = true; } });
+      if (!done) { const k = tray.lastIndexOf(w.id); if (k >= 0) tray.splice(k, 1); }
+      toast(`Zum Wohl! ${w.name} ${w.vintage} steht jetzt im Weintagebuch.`);
+      detail.close(); refreshAll();
+    });
+    $("#dBuy").addEventListener("click", () => $("#offers").classList.toggle("show"));
+    $$("[data-shop]", $("#dBody")).forEach(b => b.addEventListener("click", () => toast(`In der App öffnet sich hier „${b.dataset.shop}“ (Beispiel).`)));
+    detail.open();
+  }
+  document.addEventListener("click", e => { const b = e.target.closest("[data-open]"); if (b) openDetail(+b.dataset.open); });
+
+  function refreshAll() { renderKpis(); renderAlloc(); renderMovers(); renderList(); renderTimeline(); renderSoon(); renderRack(); }
+  renderList(); renderRack();
+})();
+</script>
+</body>
+</html>

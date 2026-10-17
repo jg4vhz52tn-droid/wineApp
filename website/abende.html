@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wein-App – Lagenabende planen &amp; blind verkosten</title>
+<meta name="description" content="Einen Lagenabend planen, einladen, live blind verkosten und aufdecken – zum Ausprobieren.">
+<script>try{var t=localStorage.getItem("weinapp-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .steps-nav { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-top: 28px; padding-bottom: 4px; }
+  .steps-nav::-webkit-scrollbar { display: none; }
+  .steps-nav a { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 14px 8px 8px; border-radius: 999px; border: 1px solid var(--border); text-decoration: none; font-size: .86rem; color: var(--muted); background: var(--surface); }
+  .steps-nav a b { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: .78rem; }
+  .steps-nav a:hover { color: var(--fg); border-color: var(--border-strong); }
+  .hero-bottles { display: flex; justify-content: center; align-items: flex-end; gap: 6px; height: clamp(200px, 58vw, 330px); }
+  .hero-bottles > div { height: 100%; }
+  .hero-bottles > div:nth-child(odd) { height: 88%; }
+
+  /* Planer */
+  .planner { display: grid; gap: 18px; }
+  @media (min-width: 960px) { .planner { grid-template-columns: 1.15fr 1fr; align-items: start; } .planner .preview { position: sticky; top: 90px; } }
+  .form-grid { display: grid; gap: 16px; }
+  .form-row { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+  .lbl { display: block; font-size: .78rem; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+  .switch { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border-radius: 14px; background: var(--surface-2); }
+  .switch p { font-size: .8rem; color: var(--muted); }
+  .toggle { position: relative; width: 52px; height: 32px; border-radius: 99px; border: 0; background: var(--surface-3); flex: none; transition: background .25s; }
+  .toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: var(--fg); transition: transform .25s; }
+  .toggle[aria-checked="true"] { background: var(--accent); }
+  .toggle[aria-checked="true"]::after { transform: translateX(20px); background: var(--accent-fg); }
+  .stepper { display: flex; align-items: center; gap: 4px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); background: var(--surface); }
+  .stepper button { width: 44px; height: 44px; border: 0; background: none; font-size: 1.2rem; color: var(--accent); }
+  .stepper output { flex: 1; text-align: center; font-variant-numeric: tabular-nums; font-weight: 500; }
+
+  .wine-list { display: grid; gap: 6px; position: relative; }
+  .wl { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; padding: 10px 10px 10px 12px; border-radius: 14px; background: var(--surface-2); border: 1px solid transparent; transition: transform .6s cubic-bezier(.3,.8,.2,1), border-color .3s; }
+  .wl .g { font-family: var(--serif); font-size: 1.3rem; color: var(--accent); text-align: center; }
+  .wl .n { font-weight: 500; line-height: 1.25; font-size: .92rem; }
+  .wl .m { font-size: .74rem; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .wl .mv { display: flex; gap: 2px; }
+  .wl .mv button { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); font-size: .9rem; color: var(--muted); }
+  .wl .mv button:disabled { opacity: .3; }
+  .wl.pirate { border-color: color-mix(in srgb, var(--danger) 50%, transparent); }
+  .pirate-tag { color: var(--danger); font-weight: 600; }
+  .meter { display: inline-flex; gap: 2px; vertical-align: middle; }
+  .meter i { width: 6px; height: 6px; border-radius: 2px; background: var(--surface-3); }
+  .meter i.f { background: var(--accent); }
+  .ai-box { display: none; margin-top: 10px; padding: 12px 14px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); background: var(--accent-soft); font-size: .86rem; }
+  .ai-box.show { display: block; animation: rise .5s both; }
+  .ai-box b { color: var(--accent); font-weight: 600; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+
+  /* Ticket */
+  .ticket { display: grid; grid-template-columns: 1fr auto; position: relative; filter: drop-shadow(0 22px 36px rgb(0 0 0 / .32)); }
+  .ticket .main, .ticket .stub { background: var(--surface); border: 1px solid var(--border-strong); }
+  .ticket .main { border-radius: 20px 0 0 20px; border-right: 0; padding: 20px; position: relative; overflow: hidden; }
+  .ticket .main::before { content: ""; position: absolute; right: -60px; top: -60px; width: 180px; height: 180px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--wine) 40%, transparent), transparent); }
+  .ticket .stub {
+    border-radius: 0 20px 20px 0; border-left: 2px dashed var(--border-strong); width: 100px; padding: 14px 10px;
+    display: grid; place-items: center; text-align: center; transform-origin: 0% 100%; transition: transform .9s cubic-bezier(.5,0,.3,1), opacity .9s;
+    -webkit-mask: radial-gradient(circle at 0 0, transparent 10px, #000 10.5px) top left / 100% 51% no-repeat, radial-gradient(circle at 0 100%, transparent 10px, #000 10.5px) bottom left / 100% 51% no-repeat;
+            mask: radial-gradient(circle at 0 0, transparent 10px, #000 10.5px) top left / 100% 51% no-repeat, radial-gradient(circle at 0 100%, transparent 10px, #000 10.5px) bottom left / 100% 51% no-repeat;
+  }
+  .ticket .stub .serif { font-size: 1.1rem; line-height: 1.1; color: var(--accent); }
+  .ticket .stub small { display: block; font-size: .62rem; color: var(--muted); margin-top: 6px; letter-spacing: .08em; text-transform: uppercase; }
+  .ticket.torn .stub { transform: translate(18px, 40px) rotate(14deg); opacity: 0; pointer-events: none; }
+  .ticket.gone { grid-template-columns: 1fr; }
+  .ticket.gone .stub { display: none; }
+  .ticket.gone .main { border-radius: 20px; border-right: 1px solid var(--border-strong); }
+  @media (max-width: 420px) { .ticket .stub { width: 80px; } .ticket .main { padding: 16px; } }
+  .ticket .t-title { font-size: 1.7rem; line-height: 1.05; margin: 6px 0 10px; position: relative; }
+  .ticket .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: .8rem; position: relative; }
+  .ticket .meta span { display: block; color: var(--muted); font-size: .64rem; text-transform: uppercase; letter-spacing: .1em; }
+  .ticket .after { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border-strong); gap: 6px; flex-wrap: wrap; position: relative; }
+  .ticket.torn .after { display: flex; animation: rise .6s .4s both; }
+  .ticket .glasses { display: flex; gap: 4px; margin-top: 12px; position: relative; }
+  .ticket .glasses i { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--accent); display: grid; place-items: center; font: 600 10px var(--sans); color: var(--accent); font-style: normal; }
+
+  /* Einladen */
+  .invite { display: grid; gap: 18px; }
+  @media (min-width: 960px) { .invite { grid-template-columns: 1fr 1fr; } }
+  .rsvp { display: grid; gap: 6px; }
+  .rsvp li { display: grid; grid-template-columns: 34px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--surface-2); }
+  .av { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 600; font-size: .82rem; color: var(--wine-fg); background: var(--wine); }
+  .rs { font-size: .74rem; padding: .2rem .6rem; border-radius: 99px; transition: background .3s, color .3s; }
+  .rs.open { color: var(--muted); border: 1px solid var(--border); }
+  .rs.yes { color: var(--success); background: color-mix(in srgb, var(--success) 14%, transparent); }
+  .rs.no { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+  .rsvp-sum { display: flex; gap: 14px; font-size: .86rem; margin: 10px 0 12px; }
+  .share { display: grid; grid-template-columns: 130px 1fr; gap: 16px; align-items: center; }
+  .qr { width: 130px; height: 130px; padding: 8px; background: #fff; border-radius: 12px; }
+
+  /* Raten-Spiel */
+  .game { display: grid; gap: 18px; }
+  @media (min-width: 960px) { .game { grid-template-columns: 1.2fr 1fr; align-items: start; } .game .stage-col { position: sticky; top: 90px; } }
+  .sheet-form { display: grid; gap: 18px; }
+  .q { display: grid; gap: 8px; }
+  .q > .lbl { margin: 0; display: flex; justify-content: space-between; }
+  .q > .lbl b { color: var(--fg); font-variant-numeric: tabular-nums; }
+  .aroma-chip[aria-pressed="true"] { background: var(--ac); border-color: var(--ac); color: #2a1520; }
+  .stage { height: 300px; display: grid; place-items: center; position: relative; }
+  .stage .bottle { height: 280px; }
+  .stage-name { text-align: center; min-height: 3.4rem; }
+  .stage-name .t { font-family: var(--serif); font-size: 1.5rem; line-height: 1.1; }
+  .stage-name .s { color: var(--muted); font-size: .8rem; }
+  .score-table { display: grid; gap: 4px; margin-top: 14px; }
+  .score-table li { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 8px 12px; border-radius: 12px; background: var(--surface-2); font-size: .84rem; opacity: 0; transform: translateY(6px); transition: opacity .4s, transform .4s; }
+  .score-table li.in { opacity: 1; transform: none; }
+  .score-table .yours { color: var(--muted); font-size: .76rem; text-align: right; }
+  .score-table .p { font-weight: 600; min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
+  .total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 12px; padding: 14px 4px 0; border-top: 1px solid var(--border); }
+  .total b { font-family: var(--serif); font-weight: 400; font-size: 2.6rem; line-height: 1; color: var(--accent); }
+  .board { position: relative; margin-top: 14px; }
+  .board .row { position: absolute; left: 0; right: 0; height: 48px; display: grid; grid-template-columns: 26px 34px 1fr auto; gap: 10px; align-items: center; padding: 0 12px; border-radius: 14px; background: var(--surface-2); transition: top .8s cubic-bezier(.3,.8,.2,1); }
+  .board .row.me { box-shadow: inset 0 0 0 1px var(--accent); }
+  .board .rank { font-family: var(--serif); color: var(--accent); font-size: 1.2rem; }
+
+  /* Punkte & Rückblick */
+  .points { display: grid; gap: 1px; background: var(--border); border-radius: 16px; overflow: hidden; border: 1px solid var(--border); }
+  .points div { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 12px 16px; background: var(--surface); font-size: .9rem; }
+  .points b { font-variant-numeric: tabular-nums; color: var(--accent); }
+  .recap { display: grid; gap: 14px; }
+  @media (min-width: 900px) { .recap { grid-template-columns: repeat(3, 1fr); } .recap .wide { grid-column: span 2; } }
+  .crown { font-size: 2rem; line-height: 1; }
+  .bars { display: grid; gap: 8px; margin-top: 10px; }
+  .bars li { display: grid; grid-template-columns: 7.5rem 1fr 3rem; gap: 10px; align-items: center; font-size: .82rem; }
+  .bars .track { height: 10px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+  .bars .track i { display: block; height: 100%; border-radius: 99px; background: var(--series-1); width: 0; transition: width 1.2s cubic-bezier(.3,.8,.2,1); }
+  .bars li.fav .track i { background: var(--series-2); }
+  .in .bars .track i { width: var(--w); }
+  .costs li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: .86rem; }
+  .costs li:last-child { border: 0; }
+</style>
+</head>
+<body>
+<header id="site-header"></header>
+
+<main>
+  <section class="page-hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow">Abende · Lagenabend &amp; Blindverkostung</span>
+        <h1 class="display">Ein Abend, sechs Gläser, <em>eine Lage.</em></h1>
+        <p class="lead">Die App nimmt dem Organisator die Arbeit ab und macht aus der Verkostung ein Spiel: planen, einladen, raten, aufdecken, feiern. Auf dieser Seite kannst du jeden Schritt selbst ausprobieren.</p>
+        <nav class="steps-nav" aria-label="Schritte">
+          <a href="#planen"><b>1</b>Planen</a><a href="#einladen"><b>2</b>Einladen</a><a href="#raten"><b>3</b>Raten &amp; Aufdecken</a><a href="#punkte"><b>4</b>Punkte</a><a href="#rueckblick"><b>5</b>Rückblick</a>
+        </nav>
+      </div>
+      <div class="hero-bottles" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!-- ===== 1 Planen ===== -->
+  <section class="section" id="planen">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Schritt 1 · Planen</span>
+        <h2 class="h2">Thema wählen, Flaschen eintragen – fertig ist die Einladung.</h2>
+        <p class="lead">Probier es aus: Rechts entsteht live das Ticket, das deine Gäste bekommen. Die Reihenfolge der Flaschen kannst du selbst ändern oder dir vorschlagen lassen.</p>
+      </div>
+      <div class="planner">
+        <div class="card pad form-grid fade">
+          <div>
+            <span class="lbl">Thema</span>
+            <div class="chips" id="themes" role="group" aria-label="Thema"></div>
+          </div>
+          <div>
+            <label class="lbl" for="title">Titel des Abends</label>
+            <input class="input" id="title" maxlength="48">
+          </div>
+          <div class="form-row">
+            <div><label class="lbl" for="date">Datum</label><input class="input" type="date" id="date" value="2026-11-14"></div>
+            <div><label class="lbl" for="time">Uhrzeit</label><input class="input" type="time" id="time" value="19:00"></div>
+          </div>
+          <div class="form-row">
+            <div><label class="lbl" for="place">Ort</label><input class="input" id="place" value="bei Lena"></div>
+            <div><span class="lbl" id="seatsLbl">Plätze</span><div class="stepper" role="group" aria-labelledby="seatsLbl"><button type="button" id="seatsMinus" aria-label="Weniger Plätze">−</button><output id="seats">8</output><button type="button" id="seatsPlus" aria-label="Mehr Plätze">+</button></div></div>
+          </div>
+          <div class="switch">
+            <div><b style="font-weight:500">Finde den Piraten</b><p>Ein Wein passt nicht ins Thema. Wer ihn entlarvt, bekommt 20 Bonuspunkte.</p></div>
+            <button class="toggle" type="button" role="switch" aria-checked="true" id="pirate" aria-label="Piraten-Modus"></button>
+          </div>
+          <div>
+            <div class="field-lbl" style="margin-bottom:8px"><span class="lbl" style="margin:0">Flaschen &amp; Gläser</span><span class="muted" style="font-size:.74rem">Süße · Körper</span></div>
+            <ol class="wine-list" id="wineList"></ol>
+            <button class="btn btn-ghost btn-sm" type="button" id="suggest" style="margin-top:12px;width:100%">✦ Schlag mir eine Reihenfolge vor</button>
+            <div class="ai-box" id="aiBox" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="preview fade d1">
+          <p class="k" style="margin-bottom:10px">Vorschau · so sieht es der Gast</p>
+          <div class="ticket" id="ticket">
+            <div class="main">
+              <span class="eyebrow">Einladung · Lagenabend</span>
+              <h3 class="t-title" id="tTitle"></h3>
+              <div class="meta">
+                <div><span>Wann</span><b id="tDate" style="font-weight:500"></b></div>
+                <div><span>Wo</span><b id="tPlace" style="font-weight:500"></b></div>
+                <div><span>Gläser</span><b id="tGlasses" style="font-weight:500"></b></div>
+                <div><span>Plätze</span><b id="tSeats" style="font-weight:500"></b></div>
+              </div>
+              <div class="glasses" id="tGlassIcons" aria-hidden="true"></div>
+              <div class="after" aria-live="polite">
+                <span class="chip">✓ Du bist dabei</span><span class="chip" id="tCountdown"></span><span class="chip">Kalender</span><span class="chip">Route</span>
+              </div>
+            </div>
+            <button class="stub" id="stub" type="button" aria-label="Zusagen: Abschnitt abreißen"><span><span class="serif">Ich bin dabei</span><small>Abreißen</small></span></button>
+          </div>
+          <p class="caption">Den Abschnitt antippen – so sagt der Gast zu.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 2 Einladen ===== -->
+  <section class="section" id="einladen">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Schritt 2 · Einladen</span>
+        <h2 class="h2">Ein Link genügt. Zusagen kommen live.</h2>
+        <p class="lead">Gäste brauchen keine App und kein Konto: Link öffnen, Namen eingeben, zusagen. Der Organisator sieht alles in Echtzeit und kann erinnern oder nachfassen.</p>
+      </div>
+      <div class="invite">
+        <div class="card pad fade">
+          <div class="field-lbl"><b style="font-weight:500">Gästeliste</b><button class="btn btn-primary btn-sm" type="button" id="sendInvite">Einladung verschicken</button></div>
+          <div class="rsvp-sum num"><span class="up">● <b id="cYes">0</b> dabei</span><span class="down">● <b id="cNo">0</b> abgesagt</span><span class="muted">● <b id="cOpen">8</b> offen</span></div>
+          <ul class="rsvp" id="rsvp"></ul>
+          <div class="chips" style="margin-top:14px">
+            <button class="chip" type="button" data-toast="Erinnerung an alle Offenen geschickt">Erinnerung senden</button>
+            <button class="chip" type="button" data-toast="Follow-up mit Fotos und Rückblick vorbereitet">Follow-up nach dem Abend</button>
+          </div>
+        </div>
+        <div class="card pad fade d1">
+          <b style="font-weight:500">Teilen</b>
+          <div class="share" style="margin-top:14px">
+            <svg class="qr" id="qr" viewBox="0 0 25 25" role="img" aria-label="QR-Code (Beispiel)" shape-rendering="crispEdges"></svg>
+            <div>
+              <p class="muted" style="font-size:.88rem">QR-Code am Tisch auslegen oder den Link in den Gruppenchat schicken. Gäste landen direkt auf der Einladung.</p>
+              <div class="chips" style="margin-top:12px">
+                <button class="chip" type="button" data-toast="Link kopiert (Beispiel)">Link kopieren</button>
+                <button class="chip" type="button" data-toast="Teilen-Menü geöffnet (Beispiel)">Im Messenger teilen</button>
+              </div>
+            </div>
+          </div>
+          <div class="switch" style="margin-top:18px">
+            <div><b style="font-weight:500">Gästeliste nur für Zugesagte</b><p>Wer kommt, sieht, wer sonst noch kommt. Alle anderen nicht.</p></div>
+            <button class="toggle" type="button" role="switch" aria-checked="true" aria-label="Gästeliste nur für Zugesagte" data-flip></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 3 Raten & Aufdecken ===== -->
+  <section class="section" id="raten">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Schritt 3 · Raten &amp; Aufdecken</span>
+        <h2 class="h2">Jetzt du: Was ist in Glas 3?</h2>
+        <p class="lead">Ein Riesling-Abend, Glas 3 ist eingeschenkt. Füll den Rate-Bogen aus und deck auf – die Punkte werden genau so berechnet wie in der App.</p>
+      </div>
+      <div class="game">
+        <form class="card pad sheet-form fade" id="guessForm" onsubmit="return false">
+          <div class="q"><span class="lbl">Rebsorte</span><div class="chips" data-single="grape">
+            <button type="button" class="chip" aria-pressed="false" data-v="Riesling">Riesling</button><button type="button" class="chip" aria-pressed="false" data-v="Silvaner">Silvaner</button><button type="button" class="chip" aria-pressed="false" data-v="Grüner Veltliner">Grüner Veltliner</button><button type="button" class="chip" aria-pressed="false" data-v="Sauvignon Blanc">Sauvignon Blanc</button></div></div>
+          <div class="q"><span class="lbl">Region</span><div class="chips" data-single="region">
+            <button type="button" class="chip" aria-pressed="false" data-v="Mosel">Mosel</button><button type="button" class="chip" aria-pressed="false" data-v="Rheingau">Rheingau</button><button type="button" class="chip" aria-pressed="false" data-v="Pfalz">Pfalz</button><button type="button" class="chip" aria-pressed="false" data-v="Wachau">Wachau (AT)</button></div></div>
+          <div class="q"><span class="lbl">Lage</span><div class="chips" data-single="site">
+            <button type="button" class="chip" aria-pressed="false" data-v="Schieferkopf">Schieferkopf</button><button type="button" class="chip" aria-pressed="false" data-v="Sonnenhang">Sonnenhang</button><button type="button" class="chip" aria-pressed="false" data-v="Kalkofen">Kalkofen</button><button type="button" class="chip" aria-pressed="false" data-v="?">Keine Ahnung</button></div></div>
+          <div class="form-row">
+            <div class="q"><span class="lbl" id="vintLbl">Jahrgang</span><div class="stepper" role="group" aria-labelledby="vintLbl"><button type="button" id="vMinus" aria-label="Älter">−</button><output id="vint">2020</output><button type="button" id="vPlus" aria-label="Jünger">+</button></div></div>
+            <div class="q"><label class="lbl" for="price">Preis <b id="priceOut">25 €</b></label><input type="range" id="price" min="5" max="120" step="1" value="25"></div>
+          </div>
+          <div class="q"><label class="lbl" for="sweet">Süße <b id="sweetOut">3,0</b></label><input type="range" id="sweet" min="0" max="10" step="0.1" value="3"></div>
+          <div class="q"><label class="lbl" for="acid">Säure <b id="acidOut">6,0</b></label><input type="range" id="acid" min="0" max="10" step="0.1" value="6"></div>
+          <div class="q"><label class="lbl" for="body">Körper <b id="bodyOut">5,0</b></label><input type="range" id="body" min="0" max="10" step="0.1" value="5"></div>
+          <div class="q"><span class="lbl">Aromen <b id="aromaCount">0 gewählt</b></span><div class="chips" id="aromas"></div></div>
+          <div class="q"><label class="lbl" for="rating">Deine Bewertung <b id="ratingOut">90,0</b></label><input type="range" id="rating" min="50" max="100" step="0.5" value="90"></div>
+          <div class="switch"><div><b style="font-weight:500">Das ist der Pirat!</b><p>Passt dieser Wein nicht ins Thema?</p></div><button class="toggle" type="button" role="switch" aria-checked="false" id="isPirate" aria-label="Als Pirat markieren" data-flip></button></div>
+        </form>
+        <div class="stage-col fade d1">
+          <div class="card pad">
+            <div class="field-lbl"><span class="chip" style="color:var(--danger);border-color:currentColor;min-height:26px">● LIVE</span><span class="muted" style="font-size:.8rem">Glas 3 von 6</span></div>
+            <div class="stage" id="stage"><div class="bottle" id="bottleBox"></div></div>
+            <div class="stage-name" id="stageName" aria-live="polite"><div class="t">Glas 3</div><div class="s">Was meinst du?</div></div>
+            <button class="btn btn-primary" style="width:100%;margin-top:12px" id="revealBtn" type="button">Aufdecken</button>
+            <ol class="score-table" id="scoreTable" aria-live="polite"></ol>
+            <div class="total" id="totalBox" hidden><span class="muted">Deine Punkte für Glas 3</span><b id="total">0</b></div>
+            <div class="board" id="board" hidden></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 4 Punkte ===== -->
+  <section class="section" id="punkte">
+    <div class="wrap split">
+      <div class="fade">
+        <span class="eyebrow">Schritt 4 · So wird gezählt</span>
+        <h2 class="h2" style="margin:14px 0">Faire Punkte – und trotzdem Platz für Bauchgefühl.</h2>
+        <p class="lead">Wer die Rebsorte trifft, punktet am meisten. Aber auch, wer Säure und Körper gut einschätzt, sammelt. Für die Struktur legt der Organisator eine Referenz fest – oder es zählt der Schnitt der Gruppe. Alle Werte lassen sich später anpassen.</p>
+      </div>
+      <div class="points fade d1" id="pointsTable"></div>
+    </div>
+  </section>
+
+  <!-- ===== 5 Rückblick ===== -->
+  <section class="section" id="rueckblick">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Schritt 5 · Rückblick</span>
+        <h2 class="h2">Am Ende: ein schöner Rückblick zum Teilen.</h2>
+        <p class="lead">Automatisch erstellt – mit Gewinner, Lieblingswein der Runde, Ranking aller Weine und den lustigsten Beobachtungen.</p>
+      </div>
+      <div class="recap">
+        <div class="card pad fade">
+          <span class="k">Gewinnerin des Abends</span>
+          <div class="crown" style="margin-top:10px">♛</div>
+          <h3 class="h3" style="margin:6px 0 4px">Lena</h3>
+          <p class="muted">412 Punkte · hat 4 von 6 Rebsorten erkannt und den Piraten entlarvt.</p>
+        </div>
+        <div class="card pad wide fade d1">
+          <span class="k">Ranking der Weine · Ø Bewertung der Runde</span>
+          <ol class="bars" id="wineBars"></ol>
+          <p class="muted" style="font-size:.78rem;margin-top:10px"><span style="color:var(--series-2)">●</span> Lieblingswein der Runde</p>
+        </div>
+        <div class="card pad fade">
+          <span class="k">Beobachtung</span>
+          <p class="serif" style="font-size:1.5rem;line-height:1.2;margin-top:10px">„Alle haben Glas 3 für deutlich teurer gehalten.“</p>
+          <p class="muted" style="font-size:.84rem;margin-top:8px">Geschätzt im Schnitt 52 €, tatsächlich 34 €.</p>
+        </div>
+        <div class="card pad fade d1">
+          <span class="k">Sammelkarten verteilt</span>
+          <p style="margin-top:10px">6 Karten an 8 Gäste – darunter <b style="font-weight:500">Schieferkopf</b> und <b style="font-weight:500">Mosel</b>.</p>
+          <button class="btn btn-ghost btn-sm" style="margin-top:14px" type="button" data-toast="Rückblick als Bild gespeichert (Beispiel)">Als Bild teilen</button>
+        </div>
+        <div class="card pad fade d2">
+          <span class="k">Kostenteilung · im Hintergrund</span>
+          <ul class="costs" style="margin-top:8px">
+            <li><span>Lena brachte 3 Flaschen</span><span class="num">132 €</span></li>
+            <li><span>Paul brachte 2 Flaschen</span><span class="num">74 €</span></li>
+            <li><span>Pro Person (8)</span><span class="num">25,75 €</span></li>
+            <li><span class="muted">Du schuldest Lena</span><span class="num up">25,75 €</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="wrap fade">
+      <span class="eyebrow">Als Nächstes in der App</span>
+      <h2>Unser erster echter Lagenabend.</h2>
+      <p class="lead">Genau dieser Ablauf ist das nächste Ziel: damit wir den nächsten Abend unserer Weinrunde komplett mit der App durchführen.</p>
+      <div class="actions"><a class="btn btn-primary" href="keller.html">Weiter zum Keller <span class="arrow">→</span></a><a class="btn btn-ghost" href="app.html">Zur App-Tour</a></div>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="assets/site.js"></script>
+<script>
+(() => {
+  const { $, $$, veiledBottle, countUp, toast, reduced } = Site;
+
+  /* ---------- Hero-Flaschen ---------- */
+  $(".hero-bottles").innerHTML = [["burgundy", 1], ["schlegel", 2], ["schlegel", 3], ["burgundy", 4]]
+    .map(([k, n], i) => `<div class="float${i % 2 ? " d2" : ""}">${veiledBottle(k, n)}</div>`).join("");
+
+  /* ---------- 1 Planen ---------- */
+  const THEMES = {
+    riesling: { label: "Riesling vom Schiefer", title: "Riesling vom Schiefer – eine Lage, sechs Gläser", reason: "Erst die trockenen, dann die süßen Weine – und innerhalb davon von leicht nach kräftig. So überdeckt kein Wein den nächsten, und die Süße kommt zum Schluss.",
+      wines: [["Riesling Kabinett", 2021, 4, 3], ["Riesling GG Schieferkopf", 2019, 1.5, 6], ["Riesling Auslese", 2011, 8, 7], ["Riesling trocken", 2023, 1, 3], ["Riesling Spätlese", 2017, 6, 5], ["Grüner Veltliner", 2022, 1, 5, true]] },
+    pinot: { label: "Spätburgunder-Abend", title: "Spätburgunder – vom Gutswein zum Großen Gewächs", reason: "Von leicht und jung zu kräftig und gereift: Die feinen Weine kommen zuerst, die tanninreichen GGs am Ende – sonst wirken die leichten dünn.",
+      wines: [["Spätburgunder GG", 2015, 0, 8], ["Spätburgunder Ortswein", 2020, 0, 5], ["Frühburgunder", 2021, 0, 4], ["Spätburgunder Gutswein", 2022, 0, 3], ["Spätburgunder GG", 2018, 0, 7], ["Lemberger", 2020, 0, 6, true]] },
+    burgunder: { label: "Weiße Burgunder", title: "Weiße Burgunder – Weiß, Grau & Chardonnay", reason: "Von schlank zu cremig: Auxerrois und Weißburgunder zuerst, holzgereifter Chardonnay zum Schluss, damit das Holz nichts überdeckt.",
+      wines: [["Chardonnay (Holz)", 2020, 0.5, 7], ["Weißburgunder", 2022, 0.5, 4], ["Grauburgunder", 2021, 1, 6], ["Auxerrois", 2022, 0.5, 3], ["Weißburgunder Lage", 2020, 0.5, 5], ["Sauvignon Blanc", 2023, 1, 3, true]] },
+  };
+  let theme = "riesling", pirateOn = true, wines = [];
+  const meter = (v, max = 10) => `<span class="meter" aria-hidden="true">${Array.from({ length: 5 }, (_, i) => `<i class="${v / max * 5 > i + .25 ? "f" : ""}"></i>`).join("")}</span>`;
+  const themesEl = $("#themes");
+  themesEl.innerHTML = Object.entries(THEMES).map(([k, t]) => `<button type="button" class="chip" aria-pressed="${k === theme}" data-k="${k}">${t.label}</button>`).join("");
+  themesEl.addEventListener("click", e => {
+    const b = e.target.closest("[data-k]"); if (!b) return;
+    theme = b.dataset.k;
+    $$("[data-k]", themesEl).forEach(x => x.setAttribute("aria-pressed", x === b));
+    loadTheme();
+  });
+  function loadTheme() {
+    const t = THEMES[theme];
+    $("#title").value = t.title;
+    wines = t.wines.map(([name, year, sweet, body, pirate]) => ({ name, year, sweet, body, pirate: !!pirate }));
+    $("#aiBox").classList.remove("show");
+    renderWines(); renderTicket();
+  }
+  function visibleWines() { return wines.filter(w => pirateOn || !w.pirate); }
+  function renderWines(flip) {
+    const list = $("#wineList");
+    const before = new Map($$(".wl", list).map(el => [el.dataset.id, el.getBoundingClientRect().top]));
+    const vis = visibleWines();
+    list.innerHTML = vis.map((w, i) => `
+      <li class="wl${w.pirate ? " pirate" : ""}" data-id="${w.name}${w.year}">
+        <span class="g">${i + 1}</span>
+        <span><span class="n" style="display:block">${w.name} ${w.year}</span>
+          <span class="m">${meter(w.sweet)} ${meter(w.body)}${w.pirate ? '<span class="pirate-tag">☠ Pirat · nur du weißt es</span>' : ""}</span></span>
+        <span class="mv"><button type="button" aria-label="${w.name} nach oben" data-up="${i}" ${i === 0 ? "disabled" : ""}>↑</button><button type="button" aria-label="${w.name} nach unten" data-down="${i}" ${i === vis.length - 1 ? "disabled" : ""}>↓</button></span>
+      </li>`).join("");
+    if (flip && !reduced) $$(".wl", list).forEach(el => {
+      const old = before.get(el.dataset.id); if (old == null) return;
+      const dy = old - el.getBoundingClientRect().top; if (!dy) return;
+      el.style.transition = "none"; el.style.transform = `translateY(${dy}px)`;
+      requestAnimationFrame(() => { el.style.transition = ""; el.style.transform = ""; });
+    });
+    renderTicket();
+  }
+  function move(i, d) {
+    const vis = visibleWines(), a = vis[i], b = vis[i + d]; if (!b) return;
+    const ia = wines.indexOf(a), ib = wines.indexOf(b);
+    [wines[ia], wines[ib]] = [wines[ib], wines[ia]];
+    renderWines(true);
+  }
+  $("#wineList").addEventListener("click", e => {
+    const up = e.target.closest("[data-up]"), dn = e.target.closest("[data-down]");
+    if (up) move(+up.dataset.up, -1); if (dn) move(+dn.dataset.down, 1);
+  });
+  $("#suggest").addEventListener("click", () => {
+    const box = $("#aiBox"); box.classList.remove("show");
+    $("#suggest").textContent = "Denke nach …";
+    setTimeout(() => {
+      // Pirat bleibt an seinem Platz verborgen in der Mitte – sonst wäre er zu leicht zu erkennen
+      const others = wines.filter(w => !w.pirate).sort((a, b) => (a.sweet * 2 + a.body) - (b.sweet * 2 + b.body));
+      const pir = wines.find(w => w.pirate);
+      wines = pir ? [...others.slice(0, 2), pir, ...others.slice(2)] : others;
+      renderWines(true);
+      box.innerHTML = `<b>✦ Vorschlag</b> ${THEMES[theme].reason}${pirateOn && pir ? " Den Piraten habe ich unauffällig an Position 3 gesetzt." : ""} <span class="muted">Nur ein Vorschlag – frei änderbar.</span>`;
+      box.classList.add("show");
+      $("#suggest").textContent = "✦ Schlag mir eine Reihenfolge vor";
+    }, reduced ? 0 : 700);
+  });
+  const fmtDate = (d, t) => {
+    if (!d) return "Datum folgt";
+    const dt = new Date(d + "T" + (t || "19:00"));
+    return dt.toLocaleDateString("de-DE", { weekday: "short", day: "numeric", month: "long" }) + " · " + (t || "19:00") + " Uhr";
+  };
+  function renderTicket() {
+    $("#tTitle").textContent = $("#title").value || "Dein Lagenabend";
+    $("#tDate").textContent = fmtDate($("#date").value, $("#time").value);
+    $("#tPlace").textContent = $("#place").value || "Ort folgt";
+    const n = visibleWines().length;
+    $("#tGlasses").textContent = n + " Gläser · blind";
+    $("#tSeats").textContent = seats + " Plätze";
+    $("#tGlassIcons").innerHTML = Array.from({ length: n }, (_, i) => `<i>${i + 1}</i>`).join("");
+    const days = Math.max(0, Math.round((new Date($("#date").value) - new Date().setHours(0, 0, 0, 0)) / 864e5));
+    $("#tCountdown").textContent = isNaN(days) ? "Countdown" : `Noch ${days} Tage`;
+  }
+  let seats = 8;
+  $("#seatsMinus").addEventListener("click", () => { seats = Math.max(2, seats - 1); $("#seats").textContent = seats; renderTicket(); });
+  $("#seatsPlus").addEventListener("click", () => { seats = Math.min(20, seats + 1); $("#seats").textContent = seats; renderTicket(); });
+  ["title", "date", "time", "place"].forEach(id => $("#" + id).addEventListener("input", renderTicket));
+  $("#pirate").addEventListener("click", e => { pirateOn = !pirateOn; e.currentTarget.setAttribute("aria-checked", pirateOn); renderWines(); });
+  $$("[data-flip]").forEach(b => b.addEventListener("click", () => b.setAttribute("aria-checked", b.getAttribute("aria-checked") !== "true")));
+  const ticket = $("#ticket");
+  $("#stub").addEventListener("click", () => { ticket.classList.add("torn"); setTimeout(() => ticket.classList.add("gone"), reduced ? 0 : 950); toast("Zugesagt – der Abend steht in deinem Kalender."); });
+  loadTheme();
+
+  /* ---------- 2 Einladen ---------- */
+  const GUESTS = [["Lena", "#8c2547"], ["Paul", "#5b3a6e"], ["Sophie", "#2f5d50"], ["Jonas", "#7d5a22"], ["Mira", "#3f6f93"], ["Ben", "#6e1733"], ["Clara", "#4f6b3a"], ["Ali", "#5a4a8a"]];
+  const answers = ["yes", "yes", "no", "yes", "yes", "open", "yes", "yes"];
+  const rsvp = $("#rsvp");
+  rsvp.innerHTML = GUESTS.map(([n, c]) => `<li><span class="av" style="background:${c}">${n[0]}</span><span>${n}</span><span class="rs open">offen</span></li>`).join("");
+  const counts = () => {
+    const s = $$(".rs", rsvp).map(x => x.className.split(" ")[1]);
+    $("#cYes").textContent = s.filter(x => x === "yes").length;
+    $("#cNo").textContent = s.filter(x => x === "no").length;
+    $("#cOpen").textContent = s.filter(x => x === "open").length;
+  };
+  let sent = false;
+  $("#sendInvite").addEventListener("click", () => {
+    if (sent) return; sent = true;
+    $("#sendInvite").textContent = "Verschickt ✓"; $("#sendInvite").disabled = true;
+    const order = [3, 0, 6, 2, 4, 1, 7];
+    order.forEach((idx, k) => setTimeout(() => {
+      const a = answers[idx]; if (a === "open") return;
+      const el = $$(".rs", rsvp)[idx];
+      el.className = "rs " + a; el.textContent = a === "yes" ? "dabei" : "leider nicht";
+      counts();
+      if (k < 3) toast(`${GUESTS[idx][0]} ${a === "yes" ? "hat zugesagt" : "hat abgesagt"}`);
+    }, (reduced ? 50 : 700) * (k + 1)));
+  });
+  $$("[data-toast]").forEach(b => b.addEventListener("click", () => toast(b.dataset.toast)));
+  // QR-Code-Muster (nur Beispiel, nicht scanbar)
+  (() => {
+    let s = 7, cells = "";
+    const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    const finder = (x, y) => `<rect x="${x}" y="${y}" width="7" height="7" fill="#140b10"/><rect x="${x + 1}" y="${y + 1}" width="5" height="5" fill="#fff"/><rect x="${x + 2}" y="${y + 2}" width="3" height="3" fill="#140b10"/>`;
+    for (let y = 0; y < 25; y++) for (let x = 0; x < 25; x++) {
+      const inF = (x < 8 && y < 8) || (x > 16 && y < 8) || (x < 8 && y > 16);
+      if (!inF && rnd() > .52) cells += `<rect x="${x}" y="${y}" width="1" height="1" fill="#140b10"/>`;
+    }
+    $("#qr").innerHTML = cells + finder(0, 0) + finder(18, 0) + finder(0, 18) + `<rect x="10" y="10" width="5" height="5" fill="#8c2547"/>`;
+  })();
+
+  /* ---------- 3 Raten & Aufdecken ---------- */
+  const AROMAS = [["Pfirsich", "#efb98a"], ["Zitrone", "#e6d27a"], ["Grüner Apfel", "#bfd38a"], ["Schiefer", "#b5c0c8"], ["Honig", "#dfbd7c"], ["Petrol", "#dfbd7c"], ["Holunder", "#e9b5cd"], ["Vanille", "#cdae8e"], ["Maracuja", "#f0cd72"], ["Gras", "#9fcaa8"]];
+  $("#aromas").innerHTML = AROMAS.map(([a, c]) => `<button type="button" class="chip aroma-chip" aria-pressed="false" style="--ac:${c}" data-a="${a}">${a}</button>`).join("");
+  const picked = new Set();
+  $("#aromas").addEventListener("click", e => {
+    const b = e.target.closest("[data-a]"); if (!b) return;
+    const a = b.dataset.a;
+    if (picked.has(a)) picked.delete(a); else if (picked.size < 5) picked.add(a); else return toast("Höchstens 5 Aromen");
+    b.setAttribute("aria-pressed", picked.has(a));
+    $("#aromaCount").textContent = picked.size + " gewählt";
+  });
+  const single = {};
+  $$("[data-single]").forEach(g => g.addEventListener("click", e => {
+    const b = e.target.closest("[data-v]"); if (!b) return;
+    single[g.dataset.single] = b.dataset.v;
+    $$("[data-v]", g).forEach(x => x.setAttribute("aria-pressed", x === b));
+  }));
+  let vint = 2020;
+  $("#vMinus").addEventListener("click", () => { vint = Math.max(2000, vint - 1); $("#vint").textContent = vint; });
+  $("#vPlus").addEventListener("click", () => { vint = Math.min(2025, vint + 1); $("#vint").textContent = vint; });
+  const comma = v => (+v).toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const bind = (id, out, f) => { const r = $("#" + id); const u = () => ($("#" + out).textContent = f(r.value)); r.addEventListener("input", u); u(); };
+  bind("price", "priceOut", v => v + " €"); bind("sweet", "sweetOut", comma); bind("acid", "acidOut", comma); bind("body", "bodyOut", comma); bind("rating", "ratingOut", comma);
+
+  const TRUTH = { grape: "Riesling", country: "DE", region: "Mosel", site: "Schieferkopf", vintage: 2019, price: 34, sweet: 2, acid: 8.6, body: 4.2, aromas: ["Pfirsich", "Zitrone", "Grüner Apfel", "Schiefer"], pirate: false };
+  const COUNTRY = { Mosel: "DE", Rheingau: "DE", Pfalz: "DE", Wachau: "AT" };
+  $("#bottleBox").innerHTML = veiledBottle("schlegel", 3);
+  const stage = $("#stage");
+  let revealed = false;
+  const others = [["Lena", 258, 63, "#8c2547"], ["Paul", 231, 41, "#5b3a6e"], ["Sophie", 214, 70, "#2f5d50"]];
+
+  function score() {
+    const rows = [];
+    const g = single.grape, r = single.region, s = single.site;
+    rows.push(["Rebsorte", g || "–", g === TRUTH.grape ? 30 : 0]);
+    rows.push(["Land", r ? (COUNTRY[r] === "DE" ? "Deutschland" : "Österreich") : "–", r && COUNTRY[r] === TRUTH.country ? 10 : 0]);
+    rows.push(["Region", r || "–", r === TRUTH.region ? 10 : 0]);
+    rows.push(["Lage", s && s !== "?" ? s : "–", s === TRUTH.site ? 15 : 0]);
+    const dv = Math.abs(vint - TRUTH.vintage);
+    rows.push(["Jahrgang", String(vint), dv === 0 ? 15 : dv === 1 ? 8 : dv === 2 ? 3 : 0]);
+    const p = +$("#price").value, dp = Math.abs(p - TRUTH.price) / TRUTH.price;
+    rows.push(["Preis", p + " €", dp <= .15 ? 10 : dp <= .30 ? 5 : 0]);
+    const st = v => Math.max(0, Math.round(5 * (1 - v / 3)));
+    const sv = st(Math.abs($("#sweet").value - TRUTH.sweet)) + st(Math.abs($("#acid").value - TRUTH.acid)) + st(Math.abs($("#body").value - TRUTH.body));
+    rows.push(["Struktur", "Süße, Säure, Körper", sv]);
+    const hits = [...picked].filter(a => TRUTH.aromas.includes(a)).length;
+    rows.push(["Aromen", `${hits} von ${picked.size} getroffen`, Math.min(10, hits * 2)]);
+    if ($("#isPirate").getAttribute("aria-checked") === "true") rows.push(["Pirat", "markiert – war keiner", 0]);
+    return rows;
+  }
+
+  $("#revealBtn").addEventListener("click", () => {
+    const table = $("#scoreTable"), name = $("#stageName"), board = $("#board");
+    if (revealed) {
+      revealed = false; stage.classList.remove("revealed");
+      const bag = stage.querySelector(".bag"); bag.style.animation = "none"; bag.getBoundingClientRect(); bag.style.animation = "";
+      table.innerHTML = ""; $("#totalBox").hidden = true; board.hidden = true;
+      name.innerHTML = `<div class="t">Glas 3</div><div class="s">Was meinst du?</div>`;
+      $("#revealBtn").textContent = "Aufdecken";
+      return;
+    }
+    if (!single.grape) { toast("Wähl zuerst eine Rebsorte"); $("#guessForm").scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" }); return; }
+    revealed = true; stage.classList.add("revealed");
+    $("#revealBtn").textContent = "Nochmal raten";
+    const rows = score(), total = rows.reduce((a, r) => a + r[2], 0);
+    setTimeout(() => {
+      name.innerHTML = `<div class="t">Riesling Großes Gewächs</div><div class="s">Lage Schieferkopf · Mosel · 2019 · 34 € · kein Pirat</div>`;
+      table.innerHTML = rows.map(([k, y, p]) => `<li><span>${k}</span><span class="yours">${y}</span><span class="p ${p ? "up" : "muted"}">${p ? "+" + p : "0"}</span></li>`).join("");
+      $$("li", table).forEach((li, i) => setTimeout(() => li.classList.add("in"), reduced ? 0 : 120 * i));
+      $("#totalBox").hidden = false;
+      setTimeout(() => countUp($("#total"), total, { ms: 900 }), reduced ? 0 : rows.length * 120);
+      // Leaderboard nach Glas 3
+      const before = 222;
+      const ppl = [...others.map(([n, b, add, c]) => ({ n, b, a: b + add, c })), { n: "Du", b: before, a: before + total, c: "var(--accent)", me: true }];
+      board.hidden = false; board.style.height = ppl.length * 56 + "px";
+      board.innerHTML = ppl.map(p => `<div class="row${p.me ? " me" : ""}"><span class="rank"></span><span class="av" style="background:${p.c};${p.me ? "color:var(--accent-fg)" : ""}">${p.n[0]}</span><span>${p.n}</span><span class="num"><b class="sc">${p.b}</b></span></div>`).join("");
+      const els = $$(".row", board);
+      const place = key => [...ppl].map((p, i) => ({ ...p, el: els[i] })).sort((x, y) => y[key] - x[key]).forEach((p, i) => { p.el.style.top = i * 56 + "px"; p.el.querySelector(".rank").textContent = i + 1; });
+      place("b");
+      setTimeout(() => { ppl.forEach((p, i) => countUp(els[i].querySelector(".sc"), p.a, { from: p.b, ms: 900 })); setTimeout(() => place("a"), reduced ? 0 : 500); }, reduced ? 0 : 1200);
+    }, reduced ? 0 : 1100);
+  });
+
+  /* ---------- 4 Punkte-Tabelle ---------- */
+  $("#pointsTable").innerHTML = [["Rebsorte exakt", "30"], ["Land richtig", "10"], ["Region richtig", "+10"], ["Lage richtig", "+15"], ["Jahrgang exakt / ±1 / ±2", "15 / 8 / 3"], ["Preis ±15 % / ±30 %", "10 / 5"], ["Süße, Säure, Körper, Tannin", "je bis 5"], ["Aromen – je Treffer", "2 (max. 10)"], ["Pirat erkannt", "20"]]
+    .map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join("");
+
+  /* ---------- 5 Rückblick ---------- */
+  const WR = [["Glas 3 · GG ’19", 93.5, true], ["Glas 5 · Spätlese ’17", 91], ["Glas 6 · Auslese ’11", 90.5], ["Glas 1 · trocken ’23", 86], ["Glas 2 · Kabinett ’21", 85.5], ["Glas 4 · Pirat", 83]];
+  $("#wineBars").innerHTML = WR.map(([n, v, fav]) => `<li class="${fav ? "fav" : ""}"><span>${n}</span><span class="track"><i style="--w:${(v - 75) / 25 * 100}%"></i></span><span class="num">${comma(v)}</span></li>`).join("");
+})();
+</script>
+</body>
+</html>

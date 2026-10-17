@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wein-App – Die App im Rundgang</title>
+<meta name="description" content="Ein Rundgang durch die App: Abende, Rate-Bogen, Aufdecken, Keller, Lernen und Profil – Screen für Screen erklärt.">
+<script>try{var t=localStorage.getItem("weinapp-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .tour-hero .phone { --pw: 300px; }
+  .hint { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; font-size: .82rem; color: var(--muted); }
+  .hint::before { content: "↑"; color: var(--accent); animation: nudge 1.6s ease-in-out infinite; }
+  @keyframes nudge { 50% { transform: translateY(-4px); } }
+  .jump { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 26px; }
+
+  .tour { display: grid; gap: 28px; align-items: center; }
+  @media (min-width: 960px) { .tour { grid-template-columns: 340px 1fr; gap: 64px; } .tour.rev { grid-template-columns: 1fr 340px; } .tour.rev .tour-phone { order: 2; } }
+  .tour-phone { position: relative; }
+  .tour-phone .phone { --pw: 300px; }
+  .tour h2 { margin: 14px 0 14px; }
+  .tour .callouts li { cursor: pointer; }
+
+  .principles { display: grid; gap: 12px; }
+  @media (min-width: 700px) { .principles { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1000px) { .principles { grid-template-columns: repeat(3, 1fr); } }
+  .principle { padding: 22px; display: flex; flex-direction: column; gap: 8px; }
+  .principle .ico { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); margin-bottom: 6px; }
+  .principle .ico svg { width: 22px; height: 22px; }
+  .principle h3 { font-size: 1.45rem; }
+  .principle p { color: var(--muted); font-size: .9rem; }
+  .touch-demo { display: flex; gap: 8px; margin-top: 8px; }
+  .touch-demo button { flex: 1; min-height: 48px; border-radius: 14px; border: 1px solid var(--border-strong); background: var(--surface-2); transition: transform .15s, background .2s; }
+  .touch-demo button:active { transform: scale(.94); background: var(--accent); color: var(--accent-fg); }
+  .theme-preview { display: flex; gap: 8px; margin-top: 8px; }
+  .theme-preview span { flex: 1; height: 54px; border-radius: 12px; border: 1px solid var(--border-strong); display: grid; place-items: center; font-family: var(--serif); font-size: 1.1rem; }
+</style>
+</head>
+<body>
+<header id="site-header"></header>
+
+<main>
+  <section class="page-hero tour-hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow">Die App · Rundgang</span>
+        <h1 class="display">Gemacht für den Tisch – mit dem Glas in der Hand.</h1>
+        <p class="lead">Vier Bereiche, unten in der Tab-Leiste: <b style="color:var(--fg);font-weight:500">Abende</b>, <b style="color:var(--fg);font-weight:500">Keller</b>, <b style="color:var(--fg);font-weight:500">Lernen</b> und <b style="color:var(--fg);font-weight:500">Profil</b>. Große Touch-Flächen, wenige Eingaben, Hell und Dunkel. Das Handy rechts ist echt bedienbar.</p>
+        <div class="jump" aria-label="Zu den Screens springen">
+          <a class="chip" href="#t-abende">Abende</a><a class="chip" href="#t-raten">Rate-Bogen</a><a class="chip" href="#t-aufdecken">Aufdecken</a>
+          <a class="chip" href="#t-keller">Keller</a><a class="chip" href="#t-lernen">Lernen</a><a class="chip" href="#t-profil">Profil</a>
+        </div>
+      </div>
+      <div>
+        <div id="heroPhone"></div>
+        <p class="hint">Tippe unten im Handy auf die Tabs</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="t-abende">
+    <div class="wrap tour">
+      <div class="tour-phone fade"><div data-phone="abende"></div></div>
+      <div class="fade d1">
+        <span class="eyebrow">Tab 1 · Abende</span>
+        <h2 class="h2">Der nächste Lagenabend auf einen Blick.</h2>
+        <p class="lead">Die Startseite der App gehört dem nächsten Abend. Von hier aus lädst du ein, startest Runden und schaust dir vergangene Abende noch einmal an.</p>
+        <ol class="callouts" data-for="abende">
+          <li><span><b>Einladung mit Countdown</b>Thema, Lage, Datum, Ort und wer schon zugesagt hat – live.</span></li>
+          <li><span><b>Runde starten</b>Ein Tipp öffnet das erste Glas auf allen Handys gleichzeitig.</span></li>
+          <li><span><b>Rückblick</b>Gewinner, Lieblingswein der Runde, auffällige Beobachtungen – zum Teilen.</span></li>
+        </ol>
+        <div class="actions"><a class="btn btn-ghost btn-sm" href="abende.html">Mehr zu Abenden →</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="t-raten">
+    <div class="wrap tour rev">
+      <div class="tour-phone fade"><div data-phone="raten"></div></div>
+      <div class="fade d1">
+        <span class="eyebrow">Während der Runde · Rate-Bogen</span>
+        <h2 class="h2">Raten mit dem Daumen, nicht mit der Tastatur.</h2>
+        <p class="lead">Jeder Gast füllt pro Glas einen kurzen Bogen aus. Alles ist auf eine Hand ausgelegt.</p>
+        <ol class="callouts" data-for="raten">
+          <li><span><b>Strich-Skalen</b>Wie beim Timer des Handys: wischen, Kommazahl ablesen, fertig. Auf Android vibriert jeder Strich.</span></li>
+          <li><span><b>Aromarad</b>12 Familien, 48 Aromen – antippen statt beschreiben.</span></li>
+          <li><span><b>Herkunft &amp; Preis</b>Rebsorte, Region, Lage, Jahrgang und Preis als Auswahl.</span></li>
+          <li><span><b>Eigene Bewertung</b>100-Punkte-Skala in halben Schritten, praktisch 50 bis 100.</span></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="t-aufdecken">
+    <div class="wrap tour">
+      <div class="tour-phone fade"><div data-phone="aufdecken"></div><div class="actions" style="justify-content:center;margin-top:16px"><button class="btn btn-ghost btn-sm" id="replay" type="button">Aufdecken wiederholen</button></div></div>
+      <div class="fade d1">
+        <span class="eyebrow">Der große Moment · Aufdecken</span>
+        <h2 class="h2">Der Samtbeutel fällt – auf allen Handys zugleich.</h2>
+        <p class="lead">Der schwarze Samtbeutel mit Messingkordel wird nach oben von der Flasche gezogen und kippt nach hinten weg. Dann zählen die Punkte hoch.</p>
+        <ol class="callouts" data-for="aufdecken">
+          <li><span><b>Die Enthüllung</b>Schlegelflasche für Weiß und Rosé, Burgunderflasche für Rot.</span></li>
+          <li><span><b>Leaderboard live</b>Auf jedem Handy, kein Beamer nötig. Wer wie viele Punkte für dieses Glas geholt hat.</span></li>
+          <li><span><b>Sammelkarte</b>Jede aufgedeckte Flasche schaltet eine Karte frei – Region, Lage oder Rebsorte.</span></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="t-keller">
+    <div class="wrap tour rev">
+      <div class="tour-phone fade"><div data-phone="keller"></div></div>
+      <div class="fade d1">
+        <span class="eyebrow">Tab 2 · Keller</span>
+        <h2 class="h2">Dein Keller als Portfolio.</h2>
+        <p class="lead">Jede Flasche mit Lagerplatz, Kaufpreis und Trinkfenster. Daraus werden Wert, Verlauf und Empfehlungen.</p>
+        <ol class="callouts" data-for="keller">
+          <li><span><b>Kellerwert &amp; Verlauf</b>Gesamtwert und Veränderung seit Kauf – deutlich als Schätzung gekennzeichnet.</span></li>
+          <li><span><b>Filter</b>Nach Trinkreife, Farbe, Region oder Rebsorte.</span></li>
+          <li><span><b>Kartei mit Ampel</b>Noch warten, jetzt perfekt, dringend trinken – plus Plus/Minus pro Flasche.</span></li>
+          <li><span><b>„Was trinke ich heute?“</b>Ein Vorschlag aus dem eigenen Keller, passend zur Trinkreife.</span></li>
+        </ol>
+        <div class="actions"><a class="btn btn-ghost btn-sm" href="keller.html">Beispielkeller ausprobieren →</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="t-lernen">
+    <div class="wrap tour">
+      <div class="tour-phone fade"><div data-phone="lernen"></div></div>
+      <div class="fade d1">
+        <span class="eyebrow">Tab 3 · Lernen</span>
+        <h2 class="h2">Kurz, visuell, verspielt.</h2>
+        <p class="lead">Zwölf Kapitel von drei bis fünf Minuten. Jedes hat eine Interaktion oder ein kleines Spiel.</p>
+        <ol class="callouts" data-for="lernen">
+          <li><span><b>Fortschritt</b>Wie viele Kapitel du schon geschafft hast.</span></li>
+          <li><span><b>Kapitel-Kacheln</b>Mit Dauer und Haken für Erledigtes.</span></li>
+          <li><span><b>Sammelalbum</b>Karten aus Kapiteln und Lagenabenden – „12 von 40 Lagen“.</span></li>
+        </ol>
+        <div class="actions"><a class="btn btn-ghost btn-sm" href="lernen.html">Ein Kapitel ausprobieren →</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="t-profil">
+    <div class="wrap tour rev">
+      <div class="tour-phone fade"><div data-phone="profil"></div></div>
+      <div class="fade d1">
+        <span class="eyebrow">Tab 4 · Profil · bald</span>
+        <h2 class="h2">Deine Geschmacks-DNA.</h2>
+        <p class="lead">Aus allen Bewertungen und Rate-Bögen entsteht ein persönliches Profil. Es steuert später Empfehlungen, Weinbegleitung und den Weinkarten-Scan im Restaurant.</p>
+        <ol class="callouts" data-for="profil">
+          <li><span><b>Radar statt Raten</b>Säure, Frucht, Körper, Holz, Süße, Mineralik – plus ein kurzer Satz, was dir gefällt.</span></li>
+          <li><span><b>Abzeichen</b>Im Stil von Aktivitätsmedaillen: „Riesling-Nase“, „Gastgeber“, „10 Regionen“.</span></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Unsere Regeln fürs Design</span>
+        <h2 class="h2">Hochwertig, ruhig, schnell bedienbar.</h2>
+      </div>
+      <div class="principles">
+        <div class="card principle fade">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M10 18.5h4"/></svg></span>
+          <h3>Mobile first</h3><p>Große Touch-Flächen (mindestens 44 Punkte), damit man sie auch mit dem Glas in der anderen Hand trifft.</p>
+          <div class="touch-demo"><button type="button" aria-label="Probe-Knopf 1">Tipp</button><button type="button" aria-label="Probe-Knopf 2">mich</button><button type="button" aria-label="Probe-Knopf 3">an</button></div>
+        </div>
+        <div class="card principle fade d1">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16Z" fill="currentColor"/></svg></span>
+          <h3>Hell &amp; Dunkel</h3><p>Aubergine, warmes Off-White, Messing. Beide Varianten sind gleich wertig – nicht nur invertiert.</p>
+          <div class="theme-preview"><span style="background:#140b10;color:#f4ede5">Dunkel</span><span style="background:#f7f1ea;color:#2a1520">Hell</span></div>
+          <button class="btn btn-ghost btn-sm" type="button" id="themeDemo" style="margin-top:6px">Diese Seite umschalten</button>
+        </div>
+        <div class="card principle fade d2">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span>
+          <h3>Auf den Homescreen</h3><p>Eine Web-App, die man installieren kann. Später als echte App für iPhone und Android – ohne Neubau.</p>
+        </div>
+        <div class="card principle fade">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span>
+          <h3>Gäste ohne Hürde</h3><p>Link oder QR-Code öffnen, Namen eingeben, mitraten. Ein Konto braucht nur, wer Ergebnisse behalten will.</p>
+        </div>
+        <div class="card principle fade d1">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h3l2-6 4 12 2-6h5"/></svg></span>
+          <h3>Spürbar</h3><p>Sanftes Klicken beim Wischen über die Skalen, kleine Animationen an den großen Momenten – sparsam, aber wertig.</p>
+        </div>
+        <div class="card principle fade d2">
+          <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="5" r="2"/><path d="M5 9h14M12 9v12M8 21l4-7 4 7"/></svg></span>
+          <h3>Für alle lesbar</h3><p>Geprüfte Kontraste, Beschriftungen für Screenreader, Diagrammfarben, die auch bei Farbsehschwäche funktionieren.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head fade"><span class="eyebrow">Tiefer eintauchen</span><h2 class="h2">Jeder Bereich zum Ausprobieren.</h2></div>
+      <div class="next-grid four">
+        <a class="card next-card fade" href="abende.html"><span class="k">Abende</span><h3>Einen Abend planen</h3><p>Thema wählen, Reihenfolge vorschlagen lassen, raten, aufdecken.</p><span class="go">Öffnen →</span></a>
+        <a class="card next-card fade d1" href="keller.html"><span class="k">Keller</span><h3>Beispielkeller</h3><p>Filtern, sortieren, Regale bauen, Trinkreife verstehen.</p><span class="go">Öffnen →</span></a>
+        <a class="card next-card fade d2" href="lernen.html"><span class="k">Lernen</span><h3>Ein Kapitel</h3><p>Der Boden-Explorer – Schritt für Schritt bis zur Sammelkarte.</p><span class="go">Öffnen →</span></a>
+        <a class="card next-card fade d3" href="boerse.html"><span class="k">Vision</span><h3>Wein-Börse</h3><p>Wie Lagerung und digitaler Handel funktionieren würden.</p><span class="go">Öffnen →</span></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer"></footer>
+<script src="assets/site.js"></script>
+<script src="assets/screens.js"></script>
+<script>
+(() => {
+  const { $, $$ } = Site;
+  Screens.mount($("#heroPhone"), { start: "abende" });
+
+  // Je Abschnitt ein Handy mit festem Screen und nummerierten Markierungen
+  const phones = {};
+  $$("[data-phone]").forEach(el => {
+    const id = el.dataset.phone;
+    const p = Screens.mount(el, { start: id });
+    phones[id] = p;
+    const list = $(`.callouts[data-for="${id}"]`);
+    const screen = el.querySelector(`.ap[data-screen="${id}"]`);
+    const targets = $$("[data-call]", screen).sort((a, b) => a.dataset.call - b.dataset.call);
+    const dots = targets.map((t, i) => {
+      const d = document.createElement("span");
+      d.className = "callout-dot"; d.textContent = i + 1; d.setAttribute("aria-hidden", "true");
+      el.appendChild(d); return d;
+    });
+    const place = () => {
+      const pr = el.getBoundingClientRect();
+      targets.forEach((t, i) => {
+        const r = t.getBoundingClientRect();
+        dots[i].style.top = (r.top - pr.top + Math.min(r.height / 2, 30) - 13) + "px";
+        dots[i].style.left = (i % 2 ? -8 : pr.width - 18) + "px";
+      });
+    };
+    place(); addEventListener("resize", place); document.fonts?.ready.then(place);
+    // Tab-Wechsel im Abschnittshandy: Punkte nur auf dem passenden Screen zeigen
+    p.onChange(cur => dots.forEach(d => (d.style.opacity = cur === id ? 1 : 0)));
+    const items = list ? [...list.children] : [];
+    const hot = i => {
+      items.forEach((li, j) => li.classList.toggle("hot", j === i));
+      dots.forEach((d, j) => d.classList.toggle("hot", j === i));
+      targets.forEach((t, j) => { t.style.outline = j === i ? "2px solid var(--accent)" : ""; t.style.outlineOffset = "2px"; });
+    };
+    items.forEach((li, i) => {
+      li.addEventListener("mouseenter", () => hot(i));
+      li.addEventListener("click", () => hot(i));
+    });
+    list?.addEventListener("mouseleave", () => hot(-1));
+  });
+
+  $("#replay").addEventListener("click", () => {
+    const p = phones.aufdecken; p.show("keller"); p.show("aufdecken");
+  });
+  $("#themeDemo").addEventListener("click", () => $("#themeBtn").click());
+})();
+</script>
+</body>
+</html>
