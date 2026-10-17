@@ -9,6 +9,7 @@ import { useSession } from "@/components/app/session-provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TextField } from "@/components/ui/field";
+import { InviteDetails } from "@/components/event/invite-details";
 import { InvitationTicket } from "@/components/event/invitation-ticket";
 import { getSupabase } from "@/lib/supabase";
 
@@ -37,6 +38,22 @@ function readStoredName() {
   }
 }
 
+async function loadParticipants(eventId: string, userId: string) {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+  const { data } = await supabase
+    .from("event_participants")
+    .select("display_name, rsvp, user_id")
+    .eq("event_id", eventId)
+    .order("joined_at");
+  if (!data?.length) return null;
+  return {
+    own: data.find((p) => p.user_id === userId) as
+      { display_name: string; rsvp: Rsvp | "pending" } | undefined,
+    guests: data.filter((p) => p.rsvp === "yes").map((p) => p.display_name as string),
+  };
+}
+
 export function Invitation() {
   const { code } = useParams<{ code: string }>();
   const { configured, session, ready } = useSession();
@@ -45,6 +62,7 @@ export function Invitation() {
   const [busy, setBusy] = useState<Rsvp | null>(null);
   const [answered, setAnswered] = useState<Rsvp | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [guests, setGuests] = useState<string[] | null>(null);
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -56,22 +74,18 @@ export function Invitation() {
     });
   }, [code]);
 
-  // Already answered on this device? Show it instead of the form.
+  // Already answered on this device? Show it instead of the form. Participants
+  // may also see who else is coming (RLS returns nothing to everyone else).
   useEffect(() => {
-    const supabase = getSupabase();
-    if (!supabase || !ready || !session || !preview) return;
-    supabase
-      .from("event_participants")
-      .select("display_name, rsvp")
-      .eq("event_id", preview.event_id)
-      .eq("user_id", session.user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data && data.rsvp !== "pending") {
-          setName(data.display_name);
-          setAnswered(data.rsvp);
-        }
-      });
+    if (!ready || !session || !preview) return;
+    loadParticipants(preview.event_id, session.user.id).then((result) => {
+      if (!result) return;
+      setGuests(result.guests);
+      if (result.own && result.own.rsvp !== "pending") {
+        setName(result.own.display_name);
+        setAnswered(result.own.rsvp);
+      }
+    });
   }, [ready, session, preview]);
 
   async function answer(rsvp: Rsvp) {
@@ -96,6 +110,11 @@ export function Invitation() {
         localStorage.setItem(NAME_KEY, name.trim());
       } catch {}
       setAnswered(rsvp);
+      const { data } = await supabase.auth.getUser();
+      if (preview && data.user) {
+        const result = await loadParticipants(preview.event_id, data.user.id);
+        if (result) setGuests(result.guests);
+      }
     } catch (e) {
       const message = e instanceof Error ? e.message : "";
       setError(
@@ -144,7 +163,18 @@ export function Invitation() {
           isBlind={preview.is_blind}
           confirmed={preview.confirmed_count}
           limit={preview.participant_limit}
-        />
+        >
+          <InviteDetails
+            eventId={preview.event_id}
+            title={preview.title}
+            startsAt={preview.starts_at}
+            location={preview.location}
+            description={preview.invitation_text}
+            invitePath={`/e/${code}`}
+            guests={guests}
+            confirmed={preview.confirmed_count}
+          />
+        </InvitationTicket>
       </div>
 
       {preview.invitation_text && (

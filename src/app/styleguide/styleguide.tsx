@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useAppearance } from "@/components/app/appearance-provider";
+import { InviteDetails } from "@/components/event/invite-details";
 import { InvitationTicket } from "@/components/event/invitation-ticket";
 import { AromaWheel } from "@/components/tasting/aroma-wheel";
 import { CountUp } from "@/components/tasting/count-up";
-import { VeiledBottle } from "@/components/tasting/veiled-bottle";
+import { VeiledBottle, type RevealedBottle } from "@/components/tasting/veiled-bottle";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/card";
@@ -38,12 +39,48 @@ const LEADERBOARD = [
   { name: "Ben", points: 254 },
 ];
 
-const SAMPLE_LABEL = { producer: "Egon Müller", name: "Scharzhofberger Riesling", vintage: 2021 };
+const SAMPLE_WINES: { id: string; chip: string; bottle: RevealedBottle }[] = [
+  {
+    id: "riesling",
+    chip: "Riesling",
+    bottle: {
+      shape: "flute",
+      label: { producer: "Egon Müller", name: "Scharzhofberger Riesling", vintage: 2021 },
+    },
+  },
+  {
+    id: "silvaner",
+    chip: "Silvaner (Pirat)",
+    bottle: {
+      shape: "bocksbeutel",
+      label: { producer: "Horst Sauer", name: "Escherndorfer Lump Silvaner", vintage: 2022 },
+    },
+  },
+  {
+    id: "pinot",
+    chip: "Spätburgunder",
+    bottle: {
+      shape: "burgundy",
+      label: { producer: "Rudolf Fürst", name: "Bürgstadter Centgrafenberg", vintage: 2019 },
+    },
+  },
+  {
+    id: "bordeaux",
+    chip: "Lemberger",
+    bottle: {
+      shape: "bordeaux",
+      label: { producer: "Aldinger", name: "Lemberger Fellbacher Lämmler", vintage: 2020 },
+    },
+  },
+];
+
+const SAMPLE_GUESTS = ["Tim", "Jonas", "Matti", "Sophie", "Ben", "Lena", "Paul"];
 
 export function Styleguide() {
   const { theme, setTheme } = useAppearance();
   const [sheet, setSheet] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  const [wine, setWine] = useState(SAMPLE_WINES[0]);
 
   return (
     <main className="mx-auto w-full max-w-5xl px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-16">
@@ -83,7 +120,18 @@ export function Styleguide() {
               isBlind
               confirmed={7}
               limit={12}
-            />
+            >
+              <InviteDetails
+                eventId="demo"
+                title="Riesling quer durch die Lagen"
+                startsAt="2026-10-23T17:00:00Z"
+                location="Bei uns im Wohnzimmer"
+                description="Acht Gläser, acht Lagen, ein Abend."
+                invitePath="/e/demo"
+                guests={SAMPLE_GUESTS}
+                confirmed={7}
+              />
+            </InvitationTicket>
             <div className="grid grid-cols-2 gap-3">
               <Button size="lg">Ich bin dabei</Button>
               <Button size="lg" variant="secondary">
@@ -105,7 +153,21 @@ export function Styleguide() {
                     "radial-gradient(70% 55% at 50% 15%, color-mix(in oklab, var(--accent) 14%, transparent), transparent 70%), var(--surface-2)",
                 }}
               >
-                <VeiledBottle revealed={revealed} glass={3} label={SAMPLE_LABEL} className="h-80" />
+                <VeiledBottle revealed={revealed} glass={3} bottle={wine.bottle} className="h-80" />
+              </div>
+              <div className="flex flex-wrap gap-2" aria-label="Beispielwein">
+                {SAMPLE_WINES.map((sample) => (
+                  <Chip
+                    key={sample.id}
+                    selected={sample.id === wine.id}
+                    onClick={() => {
+                      setRevealed(false);
+                      setWine(sample);
+                    }}
+                  >
+                    {sample.chip}
+                  </Chip>
+                ))}
               </div>
               <div className="flex items-center justify-between rounded-control bg-surface-2 px-4 py-3">
                 <span className="text-sm text-muted">Deine Punkte</span>
@@ -240,7 +302,9 @@ function RatingSheetPreview() {
             )}
           >
             {STRUCTURE_SCALES[key].label}
-            <span className="font-display text-lg leading-none">{structure[key]}</span>
+            <span className="font-display text-lg leading-none">
+              {structure[key].toLocaleString("de-DE")}
+            </span>
           </button>
         ))}
       </div>
@@ -252,8 +316,9 @@ function RatingSheetPreview() {
         onChange={(value) => setStructure((current) => ({ ...current, [active]: value }))}
         min={0}
         max={10}
-        labelEvery={1}
-        minorTicks={4}
+        step={0.1}
+        majorEvery={1}
+        mediumEvery={0.5}
         describe={(value) => describeStructure(active, value)}
       />
 
@@ -270,6 +335,9 @@ function RatingSheetPreview() {
           onChange={setRating}
           min={50}
           max={100}
+          step={0.5}
+          majorEvery={5}
+          mediumEvery={1}
           describe={describeRating}
         />
       </div>

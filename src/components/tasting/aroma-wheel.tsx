@@ -10,9 +10,13 @@ const INNER = 60;
 const OUTER = 140;
 const DOTS = 152;
 
+// Rounded so server and browser produce identical markup (their trig
+// functions can differ in the last digit, which breaks hydration).
+const round = (n: number) => Math.round(n * 100) / 100;
+
 function polar(radius: number, angle: number) {
   const rad = (angle * Math.PI) / 180;
-  return [radius * Math.sin(rad), -radius * Math.cos(rad)] as const;
+  return [round(radius * Math.sin(rad)), round(-radius * Math.cos(rad))] as const;
 }
 
 function sector(r0: number, r1: number, a0: number, a1: number) {

@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef } from "react";
+import { useEffect, useId, useMemo, useRef } from "react";
 import { cn } from "@/lib/cn";
+import { tick, type Haptic } from "@/lib/haptics";
 
 const TICK = 12; // px between two ticks
 
@@ -11,20 +12,25 @@ type TickDialProps = {
   onChange: (value: number) => void;
   min: number;
   max: number;
+  /** Smallest selectable step, e.g. 0.1 or 0.5. */
   step?: number;
-  /** Show a number above every n-th value tick. */
-  labelEvery?: number;
-  /** Extra, non-selectable ticks between two values (finer look on short scales). */
-  minorTicks?: number;
+  /** Numbered, tallest ticks - and the strongest haptic click. */
+  majorEvery?: number;
+  /** Mid-height ticks with a medium click (e.g. whole numbers between labels). */
+  mediumEvery?: number;
   format?: (value: number) => string;
   /** Word for the current value, shown in the pill, e.g. "rassig". */
   describe?: (value: number) => string;
   className?: string;
 };
 
+const isMultiple = (value: number, of: number) => Math.abs(value / of - Math.round(value / of)) < 1e-6;
+const decimalsOf = (n: number) => (String(n).split(".")[1] ?? "").length;
+
 /**
  * Horizontal tick ruler you swipe like the iOS timer: the value under the
- * pointer is selected, ticks up to it light up, the edges fade out.
+ * pointer is selected, ticks up to it light up, the edges fade out, and every
+ * tick you pass clicks - harder on whole numbers / labelled values.
  * Native scrolling with snap points keeps momentum and feels right on phones.
  */
 export function TickDial({
@@ -34,58 +40,81 @@ export function TickDial({
   min,
   max,
   step = 1,
-  labelEvery = 5,
-  minorTicks = 0,
-  format = String,
+  majorEvery = 5,
+  mediumEvery,
+  format,
   describe,
   className,
 }: TickDialProps) {
   const id = useId();
   const scroller = useRef<HTMLDivElement>(null);
-  const lastValue = useRef(value);
+  const lastIndex = useRef<number | null>(null);
   const frame = useRef(0);
 
-  const slot = TICK * (minorTicks + 1);
   const count = Math.round((max - min) / step);
-  const indexOf = useCallback((v: number) => Math.round((v - min) / step), [min, step]);
-  const clamp = useCallback((v: number) => Math.min(max, Math.max(min, v)), [min, max]);
+  const valueAt = (i: number) => Math.round((min + i * step) * 1e6) / 1e6;
+  const indexOf = (v: number) => Math.min(count, Math.max(0, Math.round((v - min) / step)));
 
-  // Keep the ruler in place when the value is changed from outside.
+  const levelAt = (i: number): Haptic => {
+    const v = valueAt(i);
+    if (isMultiple(v, majorEvery)) return "major";
+    if (mediumEvery && isMultiple(v, mediumEvery)) return "medium";
+    return "minor";
+  };
+
+  const show = useMemo(() => {
+    if (format) return format;
+    const nf = new Intl.NumberFormat("de-DE", { maximumFractionDigits: decimalsOf(step) });
+    return (v: number) => nf.format(v);
+  }, [format, step]);
+
+  // Put the ruler at the current value (on mount and when changed from outside).
   useEffect(() => {
     const node = scroller.current;
-    // Skip values that came from scrolling itself (already in place).
-    if (!node || (value === lastValue.current && node.scrollLeft !== 0)) return;
-    lastValue.current = value;
-    node.scrollTo({ left: indexOf(value) * slot });
-  }, [value, indexOf, slot]);
+    const index = indexOf(value);
+    if (!node || index === lastIndex.current) return;
+    lastIndex.current = index;
+    node.scrollTo({ left: index * TICK });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   function onScroll() {
     cancelAnimationFrame(frame.current);
     frame.current = requestAnimationFrame(() => {
       const node = scroller.current;
       if (!node) return;
-      const next = clamp(min + Math.round(node.scrollLeft / slot) * step);
-      if (next !== lastValue.current) {
-        lastValue.current = next;
-        navigator.vibrate?.(4);
-        onChange(next);
+      const next = Math.min(count, Math.max(0, Math.round(node.scrollLeft / TICK)));
+      const previous = lastIndex.current ?? next;
+      if (next === previous) return;
+
+      // Click with the strongest level among all ticks passed since last frame.
+      const [from, to] = next > previous ? [previous + 1, next] : [next, previous - 1];
+      let level: Haptic = "minor";
+      for (let i = from; i <= to; i++) {
+        const l = levelAt(i);
+        if (l === "major") level = "major";
+        else if (l === "medium" && level === "minor") level = "medium";
       }
+      tick(level);
+
+      lastIndex.current = next;
+      onChange(valueAt(next));
     });
   }
 
   function jumpTo(next: number) {
-    const clamped = clamp(next);
-    scroller.current?.scrollTo({ left: indexOf(clamped) * slot, behavior: "smooth" });
+    scroller.current?.scrollTo({ left: indexOf(next) * TICK, behavior: "smooth" });
   }
 
   function onKeyDown(event: React.KeyboardEvent) {
+    const big = mediumEvery ?? majorEvery;
     const keys: Record<string, number> = {
       ArrowRight: value + step,
       ArrowUp: value + step,
       ArrowLeft: value - step,
       ArrowDown: value - step,
-      PageUp: value + step * labelEvery,
-      PageDown: value - step * labelEvery,
+      PageUp: value + big,
+      PageDown: value - big,
       Home: min,
       End: max,
     };
@@ -98,56 +127,42 @@ export function TickDial({
   const selected = indexOf(value);
   const ticks = [];
   for (let i = 0; i <= count; i++) {
-    const tickValue = min + i * step;
+    const level = levelAt(i);
     const active = i <= selected;
-    const labelled = i % labelEvery === 0;
     ticks.push(
       <button
-        key={`v${i}`}
+        key={i}
         type="button"
         tabIndex={-1}
         aria-hidden
-        onClick={() => jumpTo(tickValue)}
+        onClick={() => jumpTo(valueAt(i))}
         className="relative flex h-full shrink-0 snap-center items-end justify-center"
         style={{ width: TICK }}
       >
-        {labelled && (
+        {level === "major" && (
           <span
             className={cn(
               "absolute top-0 text-[0.95rem] font-semibold tabular-nums transition-colors",
               active ? "text-accent" : "text-accent/35",
             )}
           >
-            {format(tickValue)}
+            {show(valueAt(i))}
           </span>
         )}
         <span
-          className={cn("w-[3px] rounded-full transition-colors", active ? "bg-accent" : "bg-accent/30")}
-          style={{ height: 46 }}
+          className={cn(
+            "rounded-full transition-colors",
+            level === "minor" ? "w-[2px]" : "w-[3px]",
+            active ? "bg-accent" : level === "minor" ? "bg-accent/20" : "bg-accent/30",
+          )}
+          style={{ height: level === "major" ? 46 : level === "medium" ? 34 : 22 }}
         />
       </button>,
     );
-    if (i < count) {
-      for (let m = 0; m < minorTicks; m++) {
-        ticks.push(
-          <span
-            key={`m${i}-${m}`}
-            aria-hidden
-            className="flex h-full shrink-0 items-end justify-center"
-            style={{ width: TICK }}
-          >
-            <span
-              className={cn("w-[2px] rounded-full", i < selected ? "bg-accent/80" : "bg-accent/20")}
-              style={{ height: 30 }}
-            />
-          </span>,
-        );
-      }
-    }
   }
 
   return (
-    <div className={cn("rounded-[1.75rem] bg-surface-2/70 px-0 pt-4 pb-4", className)}>
+    <div className={cn("rounded-[1.75rem] bg-surface-2/70 pt-4 pb-4", className)}>
       <p id={`${id}-label`} className="px-5 text-sm font-medium text-muted">
         {label}
       </p>
@@ -160,7 +175,7 @@ export function TickDial({
           aria-valuemin={min}
           aria-valuemax={max}
           aria-valuenow={value}
-          aria-valuetext={describe ? `${format(value)} – ${describe(value)}` : format(value)}
+          aria-valuetext={describe ? `${show(value)} – ${describe(value)}` : show(value)}
           onScroll={onScroll}
           onKeyDown={onKeyDown}
           className="flex h-20 snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto overscroll-x-contain outline-none focus-visible:ring-2 focus-visible:ring-accent/60 [&::-webkit-scrollbar]:hidden"
@@ -173,7 +188,6 @@ export function TickDial({
         >
           {ticks}
         </div>
-        {/* Pointer */}
         <div
           aria-hidden
           className="mx-auto mt-2 h-3 w-4 bg-accent"
@@ -185,7 +199,7 @@ export function TickDial({
           {describe ? describe(value) : label}
         </span>
         <span className="font-display text-6xl leading-none text-accent tabular-nums" aria-hidden>
-          {format(value)}
+          {show(value)}
         </span>
       </div>
     </div>
