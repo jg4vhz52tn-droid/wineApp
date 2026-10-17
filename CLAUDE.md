@@ -200,7 +200,7 @@ Etikett-Scan, Bewertung + Sprachnotiz, Weintagebuch mit Erinnerungskarte, Keller
 **Phase 3 – KI & Geschmacks-DNA**
 Geschmacks-DNA, KI-Sommelier, Weinbegleitung, Weinkarten-Scan, Geschenkfinder.
 
-**Phase 4 – Lernen & Gamification**
+**Phase 4 – Lernen & Gamification** — *Teil 1 gebaut 2026-10-17 (vorgezogen): Boden-Explorer, Rebsorten-Vergleich, Aromen, Lagern, Etikett, Weinfehler, Sammelkarten. Offen: Cuvée-Baukasten, Weinatlas, Badges/Level, Liga, Statistik*
 Lernmodule (Boden, Rebsorten, Cuvée-Baukasten, Aromarad, Atlas, Lagerung, Wein finden, Weinfehler), Sammelkarten-Album, Badges/Level, Saison-Liga, Verkostungs-Statistik.
 
 **Phase 5 – Preise & Markt**
@@ -241,6 +241,8 @@ Live-Preis + Kauflink, Wunschliste, Preisalarm, Preisverlauf, Kellerwert-Portfol
 - 2026-10-17: Aufdecken = schwarzer Samtbeutel mit Messingkordel wird nach oben von der Flasche gezogen und kippt nach hinten weg. Nur zwei Flaschenformen (`src/config/bottles.ts`): Schlegelflasche (Weiß/Rosé) und Burgunder (Rot) – Bocksbeutel/Bordeaux verworfen.
 - 2026-10-17: Skalen mit Kommazahlen: Struktur 0–10 in 0,1-Schritten, Bewertung 50–100 in 0,5-Schritten. Haptik in drei Stufen (`src/lib/haptics.ts`): Android über Vibration bei jedem Strich. iPhone-Safari erlaubt Webseiten nur beim Antippen/Loslassen ein Klicken (kein Klacken während des Wischens) – volle Taptic-Engine erst in der nativen App (Capacitor).
 - 2026-10-17: Einladungs-Ticket mit abreißbarem Abschnitt → Countdown, Gästeliste (nur für Zugesagte), Kalender (.ics), Route, Teilen.
+- 2026-10-17: Lernen vor Phase 1 gezogen. Fortschritt/Sammelkarten vorerst nur im Browser (`src/lib/learn-progress.ts`), später in `user_cards`. Lerninhalte in `src/config/learn/` – selbst geschrieben, **von der Weinrunde gegenlesen lassen**.
+- 2026-10-17: Diagrammfarben `--series-1/2` (Messing/Wein) mit dem Farbsehschwäche-Prüfer validiert, für Hell und Dunkel getrennt.
 - Offen: finaler Name, Zeitpunkt Vercel-Deployment, Apple Wallet für Einladungen (braucht Apple Developer Program, 99 $/Jahr).
 
 ## 9. Technische Notizen
@@ -252,4 +254,5 @@ Live-Preis + Kauflink, Wunschliste, Preisalarm, Preisverlauf, Kellerwert-Portfol
 - **Datenbank-Test (offline):** `npm run db:test` – spielt alle Migrationen + Seed in eine In-Memory-Datenbank und prüft die Zugriffsregeln (u. a.: Gäste sehen die Glas-Zuordnung erst nach dem Aufdecken).
 - **Migrationen:** `supabase/migrations/`, Seed: `supabase/seed.sql`, Supabase-CLI: `./.bin/supabase`.
 - **Rundenstatus** (`event_wines.status`) ist für Clients nicht direkt änderbar – Öffnen/Aufdecken laufen ab Phase 1 über Datenbank-Funktionen, die gleichzeitig die Punkte berechnen.
+- **Dev-Server zeigt alte Styles?** Server stoppen, `rm -rf .next/dev .next/cache`, neu starten (Turbopack-Cache hing einmal an `globals.css`).
 - **Node im Terminal:** `~/.local/node/bin` steht in `~/.zprofile`; neue Terminal-Fenster finden `node`/`npm` automatisch.

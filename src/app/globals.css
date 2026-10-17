@@ -27,6 +27,9 @@
   --warning: #e5b85c;
   --danger: #ef7d7d;
   --curtain: #4a1428;
+  /* Chart series - validated for colour-blind separation on --surface */
+  --series-1: #bb8526;
+  --series-2: #d9557f;
   --radius-card: 1.25rem;
   --radius-control: 0.875rem;
   --font-display: var(--font-serif-face);
@@ -51,6 +54,8 @@
   --warning: #9a6a10;
   --danger: #b3261e;
   --curtain: #5a1730;
+  --series-1: #b8801a;
+  --series-2: #9e1f50;
   color-scheme: light;
 }
 
@@ -72,6 +77,8 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-curtain: var(--curtain);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
   --radius-card: var(--radius-card);
   --radius-control: var(--radius-control);
   --font-display: var(--font-display);
