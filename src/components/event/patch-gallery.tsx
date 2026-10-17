@@ -54,7 +54,9 @@ function PatchLink({
       <EventPatch
         title={patch.title}
         startsAt={patch.startsAt}
-        winner={patch.winner}
+        location={patch.location}
+        podium={patch.podium}
+        guests={patch.guests}
         photoUrl={patch.photoPath ? (urls[patch.photoPath] ?? null) : null}
         className="w-full"
       />

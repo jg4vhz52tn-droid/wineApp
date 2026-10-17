@@ -201,7 +201,11 @@ function Live({
       {data.glasses.some((g) => g.status !== "pending") && (
         <PatchCard
           event={data.event}
-          winner={finished && board[0]?.total ? board[0].participant.name : null}
+          podium={board
+            .filter((r) => r.total > 0)
+            .slice(0, 3)
+            .map((r) => r.participant.name)}
+          guests={data.participants.filter((p) => p.rsvp === "yes").map((p) => p.name)}
           canEdit
           onChange={reload}
         />

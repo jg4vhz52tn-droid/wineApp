@@ -183,7 +183,11 @@ export function RecapContent({
 
       <PatchCard
         event={data.event}
-        winner={winner && winner.total > 0 ? winner.participant.name : null}
+        podium={board
+          .filter((r) => r.total > 0)
+          .slice(0, 3)
+          .map((r) => r.participant.name)}
+        guests={data.participants.filter((p) => p.rsvp === "yes").map((p) => p.name)}
         canEdit={Boolean(onChange)}
         onChange={onChange ?? (async () => {})}
       />

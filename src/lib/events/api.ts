@@ -452,7 +452,11 @@ export type PatchInfo = {
   eventId: string;
   title: string;
   startsAt: string | null;
-  winner: string | null;
+  location: string | null;
+  /** Places 1-3 by points. */
+  podium: string[];
+  /** Everyone who said yes. */
+  guests: string[];
   photoPath: string | null;
 };
 
@@ -463,7 +467,7 @@ export async function fetchPatches(): Promise<PatchInfo[]> {
   const { data } = await supabase
     .from("events")
     .select(
-      "id, title, starts_at, photo_path, event_participants(id, display_name), scores(participant_id, points)",
+      "id, title, starts_at, location, photo_path, event_participants(id, display_name, rsvp), scores(participant_id, points)",
     )
     .eq("status", "finished")
     .order("starts_at", { ascending: false });
@@ -474,15 +478,22 @@ export async function fetchPatches(): Promise<PatchInfo[]> {
         s.participant_id as string,
         (totals.get(s.participant_id as string) ?? 0) + Number(s.points),
       );
-    const best = [...totals.entries()].sort((a, b) => b[1] - a[1])[0];
-    const winner = best
-      ? (((e.event_participants as Row[]) ?? []).find((p) => p.id === best[0])?.display_name as string)
-      : null;
+    const people = (e.event_participants as Row[]) ?? [];
+    const podium = [...totals.entries()]
+      .filter(([, points]) => points > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .flatMap(([id]) => {
+        const name = people.find((p) => p.id === id)?.display_name as string | undefined;
+        return name ? [name] : [];
+      });
     return {
       eventId: e.id as string,
       title: e.title as string,
       startsAt: (e.starts_at as string) ?? null,
-      winner: winner ?? null,
+      location: (e.location as string) ?? null,
+      podium,
+      guests: people.filter((p) => p.rsvp === "yes").map((p) => p.display_name as string),
       photoPath: (e.photo_path as string) ?? null,
     };
   });

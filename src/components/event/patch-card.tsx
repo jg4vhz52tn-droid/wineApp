@@ -11,12 +11,14 @@ import { EventPatch } from "./event-patch";
 /** The evening's patch with a button to take (or change) the photo. */
 export function PatchCard({
   event,
-  winner,
+  podium,
+  guests,
   canEdit,
   onChange,
 }: {
   event: EventInfo;
-  winner: string | null;
+  podium: string[];
+  guests: string[];
   canEdit: boolean;
   onChange: () => Promise<void>;
 }) {
@@ -57,10 +59,14 @@ export function PatchCard({
         key={url ?? "none"}
         title={event.title}
         startsAt={event.startsAt}
-        winner={winner}
+        location={event.location}
+        podium={podium}
+        guests={guests}
         photoUrl={event.photoPath ? url : null}
         className="mx-auto w-full max-w-64"
+        flippable
       />
+      <p className="text-xs text-muted">↻ Antippen oder zur Seite ziehen – hinten stehen Datum und Gäste.</p>
       <p className="text-sm text-muted">
         {event.photoPath
           ? "Liegt jetzt in der Sammlung von allen, die dabei waren."

@@ -7,6 +7,7 @@ import { InviteDetails } from "@/components/event/invite-details";
 import { InvitationTicket } from "@/components/event/invitation-ticket";
 import { CostsPanel } from "@/components/event/costs-panel";
 import { EventForm } from "@/components/event/event-form";
+import { EventPatch } from "@/components/event/event-patch";
 import { GlassList } from "@/components/event/glass-list";
 import { PatchCapsule, PatchCrest, PatchSticker, SAMPLE_PHOTO } from "@/components/event/patch-designs";
 import { GuestPanel } from "@/components/event/guest-panel";
@@ -266,6 +267,22 @@ export function Styleguide() {
             </Button>
           </Section>
         </div>
+      </div>
+
+      <h2 id="patch-drehen" className="mt-16 mb-2 text-4xl">
+        Abend-Patch · zum Drehen
+      </h2>
+      <p className="mb-6 text-muted">Antippen oder zur Seite ziehen.</p>
+      <div className="mx-auto mb-4 max-w-64">
+        <EventPatch
+          title="Riesling vom Schiefer"
+          startsAt="2026-11-14T18:00:00Z"
+          location="bei Tim, Weinbergstraße 3"
+          podium={["Jonas", "Lea", "Matti"]}
+          guests={["Tim", "Jonas", "Lea", "Matti", "Sophie", "Ben", "Paul"]}
+          photoUrl={SAMPLE_PHOTO}
+          flippable
+        />
       </div>
 
       <h2 id="patch-entwuerfe" className="mt-16 mb-2 text-4xl">
