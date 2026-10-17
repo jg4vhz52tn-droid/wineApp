@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { NotConfigured } from "@/components/app/not-configured";
 import { useSession } from "@/components/app/session-provider";
+import { PatchCard } from "@/components/event/patch-card";
 import { GuessForm } from "@/components/live/guess-form";
 import { Leaderboard } from "@/components/live/leaderboard";
 import { RevealResult } from "@/components/live/reveal-result";
@@ -195,6 +196,15 @@ function Live({
           <NewCard wine={wine} catalog={catalog} />
           <Leaderboard rows={board} me={meId} />
         </>
+      )}
+
+      {data.glasses.some((g) => g.status !== "pending") && (
+        <PatchCard
+          event={data.event}
+          winner={finished && board[0]?.total ? board[0].participant.name : null}
+          canEdit
+          onChange={reload}
+        />
       )}
 
       {finished && (

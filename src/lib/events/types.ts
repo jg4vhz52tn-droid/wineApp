@@ -18,6 +18,8 @@ export type EventInfo = {
   pirateMode: boolean;
   inviteCode: string;
   organizerId: string;
+  /** Storage path of the evening's photo (for the patch). */
+  photoPath: string | null;
 };
 
 export type Participant = {

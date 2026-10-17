@@ -12,7 +12,7 @@ export function TextField({
   error,
   className,
   ...props
-}: FieldProps & React.InputHTMLAttributes<HTMLInputElement>) {
+}: FieldProps & React.ComponentProps<"input">) {
   const id = useId();
   return (
     <div className={cn("space-y-1.5", className)}>
@@ -21,7 +21,13 @@ export function TextField({
       </label>
       <input
         id={id}
-        className={cn(control, "h-12")}
+        className={cn(
+          control,
+          "h-12 min-w-0",
+          // iOS gives date/time inputs a wide intrinsic size and centres them - keep them in their column.
+          (props.type === "date" || props.type === "time") &&
+            "appearance-none text-left [&::-webkit-date-and-time-value]:text-left",
+        )}
         aria-invalid={error ? true : undefined}
         aria-describedby={hint || error ? `${id}-desc` : undefined}
         {...props}

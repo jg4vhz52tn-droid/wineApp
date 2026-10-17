@@ -15,6 +15,7 @@ import { tick } from "@/lib/haptics";
 import { StepButton } from "./add-bottles";
 import { location } from "./cellar-list";
 import { DrinkBadge } from "./drink-badge";
+import { ItemChart } from "./item-chart";
 
 const dateFmt = new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "short", year: "numeric" });
 const SOURCE: Record<string, string> = {
@@ -77,6 +78,7 @@ function Content({
   const [count, setCount] = useState(1);
   const [cheers, setCheers] = useState<number | null>(null);
   const [busy, setBusy] = useState<"value" | "open" | null>(null);
+  const [chart, setChart] = useState(true);
 
   const parsed = value.trim() ? Number(value.replace(",", ".")) : NaN;
 
@@ -132,12 +134,46 @@ function Content({
       <dl className="grid grid-cols-3 gap-2 text-center">
         <Box label="Bezahlt" value={item.purchasePrice !== null ? euro.format(item.purchasePrice) : "–"} />
         <Box label={estimated ? "Wert (geschätzt)" : "Wert heute"} value={euro.format(now)} />
-        <Box
-          label="Veränderung"
-          value={`${change >= 0 ? "▲" : "▼"} ${percent.format(change)}`}
-          tone={change >= 0 ? "text-success" : "text-danger"}
-        />
+        <button
+          type="button"
+          aria-expanded={chart}
+          onClick={() => {
+            tick("minor");
+            setChart(!chart);
+          }}
+          className={cn(
+            "rounded-control px-2 py-2.5 transition",
+            chart ? "bg-accent/15 ring-1 ring-accent/50" : "bg-surface-2/70",
+          )}
+        >
+          <dt className="text-[0.65rem] leading-tight text-muted">Veränderung {chart ? "▴" : "▾"}</dt>
+          <dd
+            className={cn(
+              "mt-0.5 font-display text-lg tabular-nums",
+              change >= 0 ? "text-success" : "text-danger",
+            )}
+          >
+            {change >= 0 ? "▲" : "▼"} {percent.format(change)}
+          </dd>
+        </button>
       </dl>
+
+      <AnimatePresence>
+        {chart && (
+          <motion.div
+            key="chart"
+            initial={{ height: 0, opacity: 0, scale: 0.96 }}
+            animate={{ height: "auto", opacity: 1, scale: 1 }}
+            exit={{ height: 0, opacity: 0, scale: 0.96 }}
+            transition={{ type: "spring", damping: 26, stiffness: 260, delay: 0.15 }}
+            className="origin-top overflow-hidden"
+          >
+            <div className="rounded-[1.75rem] bg-surface-2/70 p-4">
+              <ItemChart item={item} valuations={data.valuations} asOf={data.asOf} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {cheers !== null && (

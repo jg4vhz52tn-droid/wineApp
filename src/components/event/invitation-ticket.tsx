@@ -1,6 +1,13 @@
 "use client";
 
-import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
+import {
+  animate,
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useTransform,
+} from "motion/react";
 import { useRef, useState } from "react";
 import { ArrowRightIcon, PinIcon } from "@/components/ui/icons";
 import { eventDateParts } from "@/lib/format";
@@ -38,6 +45,15 @@ const TORN = (() => {
   return `polygon(${points.join(",")})`;
 })();
 
+// The matching edge on top of the stub, so both pieces look torn apart.
+const TORN_STUB = (() => {
+  const teeth = 22;
+  const points: string[] = [];
+  for (let i = 0; i <= teeth; i++) points.push(`${(i / teeth) * 100}% ${i % 2 ? "7px" : "0"}`);
+  points.push("100% 100%", "0 100%");
+  return `polygon(${points.join(",")})`;
+})();
+
 /**
  * The invitation as a printed ticket: deep wine card, brass hairline, big
  * date and a perforated stub you tear off (swipe right, or tap) to open it.
@@ -58,22 +74,39 @@ export function InvitationTicket({
   const Title = asPageTitle ? "h1" : "h2";
   const reduce = useReducedMotion();
   const date = eventDateParts(startsAt);
-  const [torn, setTorn] = useState(false);
+  const [phase, setPhase] = useState<"intact" | "ripping" | "torn">("intact");
+  const torn = phase === "torn";
   const x = useMotionValue(0);
-  const rotate = useTransform(x, [0, 200], [0, 7]);
+  // Peeling: the stub turns around its left notch and sags a little as you pull.
+  const rotate = useTransform(x, [0, 220], [0, 9]);
+  const y = useTransform(x, [0, 220], [0, 12]);
+  // How far the perforation has ripped open, left to right.
+  const rip = useMotionValue(0);
+  const dragRip = useTransform(x, [0, TEAR_DISTANCE], [0, 0.85], { clamp: true });
+  const ripWidth = useTransform(() => `${Math.max(rip.get(), dragRip.get()) * 100}%`);
   const passedThreshold = useRef(false);
 
   function tear() {
-    if (torn) return;
-    tick("major");
-    setTorn(true);
+    if (phase !== "intact") return;
+    if (reduce) {
+      tick("major");
+      setPhase("torn");
+      return;
+    }
+    setPhase("ripping");
+    // The rip runs along the perforation with a few small clicks, then the stub drops.
+    [0, 70, 140].forEach((delay) => setTimeout(() => tick("minor"), delay));
+    animate(rip, 1, { duration: 0.22, ease: "easeIn" }).then(() => {
+      tick("major");
+      setPhase("torn");
+    });
   }
 
   return (
     <div className="relative">
       <motion.article
         className="relative z-10 overflow-hidden rounded-t-[1.75rem] shadow-[0_30px_80px_-30px_rgb(0_0_0/0.7)]"
-        style={{ color: INK, background: CARD_BG, clipPath: torn ? TORN : undefined }}
+        style={{ color: INK, background: CARD_BG, clipPath: phase !== "intact" ? TORN : undefined }}
         initial={reduce ? false : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
@@ -152,8 +185,8 @@ export function InvitationTicket({
           <motion.div
             key="stub"
             className="relative z-20 touch-pan-y"
-            style={{ x, rotate, originX: 0, originY: 0 }}
-            drag={reduce ? false : "x"}
+            style={{ x, y, rotate, originX: 0, originY: 0 }}
+            drag={reduce || phase !== "intact" ? false : "x"}
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={{ left: 0, right: 0.9 }}
             onDrag={(_, info) => {
@@ -166,12 +199,19 @@ export function InvitationTicket({
             onDragEnd={(_, info) => {
               if (info.offset.x > TEAR_DISTANCE || info.velocity.x > 500) tear();
             }}
+            animate={phase === "ripping" ? { x: [null, 6, 3, 8], rotate: [null, 2, 1.5, 3] } : undefined}
+            transition={{ duration: 0.22 }}
             exit={{
-              x: "115%",
-              y: 90,
-              rotate: 20,
-              opacity: 0,
-              transition: { duration: reduce ? 0 : 0.55, ease: [0.4, 0, 1, 1] },
+              // Gravity: a short flick to the side, then it falls and tumbles away.
+              x: [null, 40, 90],
+              y: [null, 24, 560],
+              rotate: [null, 14, 42],
+              opacity: [1, 1, 0],
+              transition: {
+                duration: reduce ? 0 : 1,
+                times: [0, 0.22, 1],
+                ease: ["easeOut", "easeIn"],
+              },
             }}
           >
             {/* Perforation with notches */}
@@ -182,10 +222,23 @@ export function InvitationTicket({
                 className="absolute inset-x-6 -top-px z-20 border-t-2 border-dashed"
                 style={{ borderColor: `${BRASS}55` }}
               />
+              <motion.span
+                className="absolute -top-0.5 left-3 z-30 h-1 rounded-full"
+                style={{
+                  width: ripWidth,
+                  maxWidth: "calc(100% - 1.5rem)",
+                  background: `linear-gradient(90deg, transparent, ${BRASS})`,
+                  boxShadow: `0 0 12px ${BRASS}`,
+                }}
+              />
             </div>
             <div
               className="rounded-b-[1.75rem] px-7 pt-5 pb-4 shadow-[0_30px_60px_-30px_rgb(0_0_0/0.7)]"
-              style={{ color: INK, background: STUB_BG }}
+              style={{
+                color: INK,
+                background: STUB_BG,
+                clipPath: phase !== "intact" ? TORN_STUB : undefined,
+              }}
             >
               <dl className="grid grid-cols-3 text-center">
                 <Stub label="Format" value={isBlind ? "Blind" : "Offen"} />

@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 import { useMemo, useRef, useState } from "react";
 import { Segmented } from "@/components/ui/segmented";
-import { euro, firstPurchase, portfolioSeries } from "@/lib/cellar/value";
+import { euro, firstPurchase, percent, portfolioSeries } from "@/lib/cellar/value";
 import type { CellarData } from "@/lib/cellar/types";
 import { tick } from "@/lib/haptics";
 
@@ -19,11 +19,16 @@ const r1 = (n: number) => Math.round(n * 10) / 10;
 /**
  * Portfolio value over time: 2px line with a soft area, the purchase cost as
  * a dashed reference line, and a scrubbable crosshair with a readout.
+ * Two fingers (or dragging with the mouse) mark a period and show how the
+ * value and the return developed in it.
  */
 export function ValueChart({ data }: { data: CellarData }) {
   const [range, setRange] = useState<Range>("alles");
   const [hover, setHover] = useState<number | null>(null);
+  const [selection, setSelection] = useState<[number, number] | null>(null);
   const svg = useRef<SVGSVGElement>(null);
+  const pointers = useRef(new Map<number, number>());
+  const mouseStart = useRef<number | null>(null);
 
   const series = useMemo(() => {
     const now = data.asOf;
@@ -43,31 +48,122 @@ export function ValueChart({ data }: { data: CellarData }) {
   const point = hover === null ? series[series.length - 1] : series[hover];
   const index = hover ?? series.length - 1;
 
-  function scrub(clientX: number) {
+  function indexAt(clientX: number) {
     const rect = svg.current?.getBoundingClientRect();
-    if (!rect) return;
+    if (!rect) return 0;
     const rel = ((clientX - rect.left) / rect.width) * W;
     const i = Math.round(((rel - PAD.left) / (W - PAD.left - PAD.right)) * (series.length - 1));
-    const next = Math.min(series.length - 1, Math.max(0, i));
+    return Math.min(series.length - 1, Math.max(0, i));
+  }
+
+  function scrub(clientX: number) {
+    const next = indexAt(clientX);
     if (next !== hover) {
       if (next % 6 === 0) tick("minor");
       setHover(next);
     }
   }
 
+  function select(a: number, b: number) {
+    const next: [number, number] = [Math.min(a, b), Math.max(a, b)];
+    if (!selection || next[0] !== selection[0] || next[1] !== selection[1]) {
+      if (!selection) tick("medium");
+      else if ((next[1] - next[0]) % 6 === 0) tick("minor");
+      setSelection(next);
+    }
+  }
+
+  function onDown(e: React.PointerEvent) {
+    pointers.current.set(e.pointerId, e.clientX);
+    if (e.pointerType === "mouse") {
+      mouseStart.current = indexAt(e.clientX);
+      setSelection(null);
+      scrub(e.clientX);
+      return;
+    }
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Not every browser allows capture for every pointer - the chart works without it.
+    }
+    const xs = [...pointers.current.values()];
+    if (xs.length >= 2) {
+      setHover(null);
+      select(indexAt(xs[0]), indexAt(xs[1]));
+    } else {
+      setSelection(null);
+      scrub(e.clientX);
+    }
+  }
+
+  function onMove(e: React.PointerEvent) {
+    if (pointers.current.has(e.pointerId)) pointers.current.set(e.pointerId, e.clientX);
+    const xs = [...pointers.current.values()];
+    if (e.pointerType === "mouse" && mouseStart.current !== null && e.buttons === 1) {
+      const i = indexAt(e.clientX);
+      if (i !== mouseStart.current) {
+        setHover(null);
+        select(mouseStart.current, i);
+        return;
+      }
+    }
+    if (xs.length >= 2) select(indexAt(xs[0]), indexAt(xs[1]));
+    else if (!selection) scrub(e.clientX);
+  }
+
+  function onUp(e: React.PointerEvent) {
+    pointers.current.delete(e.pointerId);
+    mouseStart.current = null;
+    if (pointers.current.size === 0 && e.pointerType !== "mouse") setHover(null);
+  }
+
+  const sel = selection && selection[1] - selection[0] >= 1 ? selection : null;
+  const span = sel ? { a: series[sel[0]], b: series[sel[1]] } : null;
+  const gain = span ? span.b.value - span.b.cost - (span.a.value - span.a.cost) : 0;
+  // Money put in during the period (new bottles) is not a gain: return = value gain / (start value + purchases).
+  const bought = span ? Math.max(0, span.b.cost - span.a.cost) : 0;
+  const base = span ? span.a.value + bought : 0;
+
   return (
     <div className="space-y-3">
-      <div className="flex items-end justify-between gap-3" aria-live="polite">
-        <div>
-          <p className="text-xs text-muted">{hover === null ? "Heute" : dateFmt.format(point.t)}</p>
-          <p className="font-display text-2xl tabular-nums">{euro.format(point.value)}</p>
+      {span ? (
+        <div className="flex items-end justify-between gap-3" aria-live="polite">
+          <div>
+            <p className="text-xs text-muted">
+              {dateFmt.format(span.a.t)} – {dateFmt.format(span.b.t)}
+            </p>
+            <p className="font-display text-2xl tabular-nums">
+              {span.b.value - span.a.value >= 0 ? "+" : "−"}
+              {euro.format(Math.abs(span.b.value - span.a.value))}
+            </p>
+            <p className="text-xs text-muted tabular-nums">
+              {euro.format(span.a.value)} → {euro.format(span.b.value)}
+              {bought > 0 && ` · davon ${euro.format(bought)} Zukäufe`}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-muted">Rendite im Zeitraum</p>
+            <p className={`font-display text-2xl tabular-nums ${gain >= 0 ? "text-success" : "text-danger"}`}>
+              {base ? percent.format(gain / base) : "–"}
+            </p>
+            <button type="button" className="text-xs text-accent" onClick={() => setSelection(null)}>
+              Auswahl aufheben
+            </button>
+          </div>
         </div>
-        <p className="text-right text-xs text-muted">
-          Einkaufswert
-          <br />
-          <span className="text-sm text-fg tabular-nums">{euro.format(point.cost)}</span>
-        </p>
-      </div>
+      ) : (
+        <div className="flex items-end justify-between gap-3" aria-live="polite">
+          <div>
+            <p className="text-xs text-muted">{hover === null ? "Heute" : dateFmt.format(point.t)}</p>
+            <p className="font-display text-2xl tabular-nums">{euro.format(point.value)}</p>
+          </div>
+          <p className="text-right text-xs text-muted">
+            Einkaufswert
+            <br />
+            <span className="text-sm text-fg tabular-nums">{euro.format(point.cost)}</span>
+          </p>
+        </div>
+      )}
 
       <svg
         ref={svg}
@@ -75,9 +171,13 @@ export function ValueChart({ data }: { data: CellarData }) {
         className="block w-full touch-pan-y select-none"
         role="img"
         aria-label={`Kellerwert von ${euro.format(series[0].value)} auf ${euro.format(series[series.length - 1].value)}`}
-        onPointerMove={(e) => scrub(e.clientX)}
-        onPointerDown={(e) => scrub(e.clientX)}
-        onPointerLeave={() => setHover(null)}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+        onPointerLeave={(e) => {
+          if (e.pointerType === "mouse" && !selection) setHover(null);
+        }}
       >
         <defs>
           <linearGradient id="value-area" x1="0" y1="0" x2="0" y2="1">
@@ -92,6 +192,29 @@ export function ValueChart({ data }: { data: CellarData }) {
           y2={H - PAD.bottom}
           stroke="var(--border)"
         />
+        {sel && (
+          <g>
+            <rect
+              x={x(sel[0])}
+              y={PAD.top}
+              width={x(sel[1]) - x(sel[0])}
+              height={H - PAD.top - PAD.bottom}
+              fill="var(--series-1)"
+              fillOpacity="0.12"
+            />
+            {[sel[0], sel[1]].map((i) => (
+              <line
+                key={i}
+                x1={x(i)}
+                x2={x(i)}
+                y1={PAD.top}
+                y2={H - PAD.bottom}
+                stroke="var(--series-1)"
+                strokeWidth="1.5"
+              />
+            ))}
+          </g>
+        )}
         <motion.path initial={false} animate={{ d: area }} fill="url(#value-area)" />
         <motion.path
           initial={false}
@@ -117,16 +240,19 @@ export function ValueChart({ data }: { data: CellarData }) {
           y1={PAD.top}
           y2={H - PAD.bottom}
           stroke="var(--fg)"
-          strokeOpacity={hover === null ? 0 : 0.35}
+          strokeOpacity={hover === null || sel ? 0 : 0.35}
         />
-        <circle
-          cx={x(index)}
-          cy={y(point.value)}
-          r="4.5"
-          fill="var(--series-1)"
-          stroke="var(--surface)"
-          strokeWidth="2"
-        />
+        {(sel ? [sel[0], sel[1]] : [index]).map((i) => (
+          <circle
+            key={i}
+            cx={x(i)}
+            cy={y(series[i].value)}
+            r="4.5"
+            fill="var(--series-1)"
+            stroke="var(--surface)"
+            strokeWidth="2"
+          />
+        ))}
         <text x={PAD.left} y={H - 6} fontSize="10" fill="var(--muted)">
           {shortFmt.format(series[0].t)}
         </text>
@@ -135,6 +261,7 @@ export function ValueChart({ data }: { data: CellarData }) {
         </text>
       </svg>
 
+      {!sel && <p className="text-xs text-muted">Tipp: Mit zwei Fingern einen Zeitraum markieren.</p>}
       <div className="flex items-center justify-between gap-3">
         <span className="flex items-center gap-3 text-xs text-muted">
           <span className="flex items-center gap-1.5">
@@ -151,6 +278,7 @@ export function ValueChart({ data }: { data: CellarData }) {
             onChange={(r) => {
               tick("minor");
               setHover(null);
+              setSelection(null);
               setRange(r);
             }}
             options={[

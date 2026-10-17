@@ -92,6 +92,7 @@ export const DEMO_EVENT: EventData = {
     pirateMode: true,
     inviteCode: "demo",
     organizerId: "u-tim",
+    photoPath: null,
   },
   participants: people,
   glasses: [

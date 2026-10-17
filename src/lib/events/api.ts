@@ -35,6 +35,7 @@ function toEvent(r: Row): EventInfo {
     pirateMode: Boolean(r.pirate_mode),
     inviteCode: r.invite_code as string,
     organizerId: r.organizer_id as string,
+    photoPath: (r.photo_path as string) ?? null,
   };
 }
 
@@ -401,4 +402,88 @@ export async function fetchWineChoices(): Promise<WineChoice[]> {
   const byName = (a: WineChoice, b: WineChoice) =>
     `${a.producer} ${a.name}`.localeCompare(`${b.producer} ${b.name}`, "de");
   return [...fromCellar.sort(byName), ...fromCatalogue.sort(byName)];
+}
+
+// --- evening photo ----------------------------------------------------------------
+
+const PHOTO_BUCKET = "event-photos";
+
+/** Shrinks a camera photo to max. 1600 px JPEG - small uploads, and the location data is gone. */
+async function shrink(file: File): Promise<Blob> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("image"))), "image/jpeg", 0.85),
+  );
+}
+
+const randomId = () =>
+  Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => b.toString(16).padStart(2, "0")).join("");
+
+export async function uploadEventPhoto(eventId: string, file: File) {
+  const supabase = getSupabase()!;
+  const blob = await shrink(file);
+  const path = `${eventId}/${randomId()}.jpg`;
+  const { error } = await supabase.storage
+    .from(PHOTO_BUCKET)
+    .upload(path, blob, { contentType: "image/jpeg" });
+  if (error) throw error;
+  const { error: setError } = await supabase.rpc("set_event_photo", { p_event_id: eventId, p_path: path });
+  if (setError) throw setError;
+  return path;
+}
+
+/** Short-lived links to private photos (they expire after an hour). */
+export async function photoUrls(paths: string[]): Promise<Record<string, string>> {
+  const supabase = getSupabase();
+  if (!supabase || paths.length === 0) return {};
+  const { data } = await supabase.storage.from(PHOTO_BUCKET).createSignedUrls(paths, 3600);
+  return Object.fromEntries(
+    (data ?? []).flatMap((d) => (d.path && d.signedUrl ? [[d.path, d.signedUrl]] : [])),
+  );
+}
+
+export type PatchInfo = {
+  eventId: string;
+  title: string;
+  startsAt: string | null;
+  winner: string | null;
+  photoPath: string | null;
+};
+
+/** Every finished evening you were part of - the patches for the collection. */
+export async function fetchPatches(): Promise<PatchInfo[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from("events")
+    .select(
+      "id, title, starts_at, photo_path, event_participants(id, display_name), scores(participant_id, points)",
+    )
+    .eq("status", "finished")
+    .order("starts_at", { ascending: false });
+  return ((data ?? []) as unknown as Row[]).map((e) => {
+    const totals = new Map<string, number>();
+    for (const s of (e.scores as Row[]) ?? [])
+      totals.set(
+        s.participant_id as string,
+        (totals.get(s.participant_id as string) ?? 0) + Number(s.points),
+      );
+    const best = [...totals.entries()].sort((a, b) => b[1] - a[1])[0];
+    const winner = best
+      ? (((e.event_participants as Row[]) ?? []).find((p) => p.id === best[0])?.display_name as string)
+      : null;
+    return {
+      eventId: e.id as string,
+      title: e.title as string,
+      startsAt: (e.starts_at as string) ?? null,
+      winner: winner ?? null,
+      photoPath: (e.photo_path as string) ?? null,
+    };
+  });
 }

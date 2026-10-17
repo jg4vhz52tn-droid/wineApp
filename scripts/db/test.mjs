@@ -423,6 +423,38 @@ await as(guestD, async (tx) => {
   );
 });
 
+// --- evening photos ------------------------------------------------------------
+
+console.log("\nEvening photos");
+await as(guestC, async (tx) => {
+  await tx.query("insert into storage.objects (bucket_id, name) values ('event-photos', $1)", [
+    `${live.id}/gruppe.jpg`,
+  ]);
+  await tx.query("select public.set_event_photo($1, $2)", [live.id, `${live.id}/gruppe.jpg`]);
+  const [event] = await rows(tx, "select photo_path from public.events where id = $1", [live.id]);
+  check("a guest can add the photo of the evening", event?.photo_path === `${live.id}/gruppe.jpg`);
+});
+await as(guestD, async (tx) => {
+  const files = await rows(tx, "select name from storage.objects where bucket_id = 'event-photos'");
+  check("everyone of the evening sees the photo", files.length === 1, `${files.length}`);
+});
+await as(stranger, async (tx) => {
+  const files = await rows(tx, "select name from storage.objects where bucket_id = 'event-photos'");
+  check("others cannot see the photo", files.length === 0, `${files.length}`);
+});
+await as(stranger, async (tx) => {
+  const error = await fails(
+    tx.query("insert into storage.objects (bucket_id, name) values ('event-photos', $1)", [
+      `${live.id}/fremd.jpg`,
+    ]),
+  );
+  check("others cannot upload to an evening", error !== null, error ?? "succeeded");
+});
+await as(guestC, async (tx) => {
+  const error = await fails(tx.query("select public.set_event_photo($1, $2)", [live.id, `${eventId}/x.jpg`]));
+  check("a photo path must belong to the evening", error !== null, error ?? "succeeded");
+});
+
 // --- upgrade ---------------------------------------------------------------
 
 console.log("\nGuest upgrade");

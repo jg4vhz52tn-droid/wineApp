@@ -8,7 +8,6 @@ import { Chip } from "@/components/ui/chip";
 import { TickDial } from "@/components/ui/tick-dial";
 import type { CellarData, CellarWine } from "@/lib/cellar/types";
 import { drinkStatus, DRINK_STATUS_LABEL, euro, valueAt, type DrinkStatus } from "@/lib/cellar/value";
-import { cn } from "@/lib/cn";
 import { tick } from "@/lib/haptics";
 import { DrinkBadge } from "./drink-badge";
 import { RackEditor } from "./rack-editor";
@@ -162,61 +161,18 @@ export function ShelfGrid({
               Bearbeiten
             </button>
           </div>
-          <div className="-mx-1 overflow-x-auto px-1 pb-1">
-            <div
-              className="grid gap-1.5"
-              style={{ gridTemplateColumns: `1.75rem repeat(${rack.compartments}, minmax(2.75rem, 1fr))` }}
-            >
-              <span className="text-[0.65rem] text-muted" aria-hidden>
-                R/F
-              </span>
-              {Array.from({ length: rack.compartments }, (_, c) => (
-                <span key={c} className="text-center text-xs text-muted">
-                  {c + 1}
-                </span>
-              ))}
-              {Array.from({ length: rack.rows }, (_, r) => (
-                <Fragment key={r}>
-                  <span className="flex items-center text-xs text-muted">{r + 1}</span>
-                  {Array.from({ length: rack.compartments }, (_, c) => {
-                    const items = slotItems(c + 1, r + 1);
-                    const bottles = items.reduce((s, i) => s + i.quantity, 0);
-                    const key = `${c + 1}-${r + 1}`;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        disabled={!bottles}
-                        aria-label={`Fach ${c + 1}, Reihe ${r + 1}: ${bottles} Flaschen`}
-                        aria-pressed={slot === key}
-                        onClick={() => {
-                          tick("minor");
-                          setSlot(slot === key ? null : key);
-                        }}
-                        className={cn(
-                          "flex aspect-square flex-wrap content-center items-center justify-center gap-0.5 rounded-control border p-1 transition",
-                          slot === key ? "border-accent bg-accent/10" : "border-border bg-surface-2/50",
-                          !bottles && "opacity-40",
-                        )}
-                      >
-                        {Array.from({ length: Math.min(bottles, 9) }, (_, b) => (
-                          <span
-                            key={b}
-                            className={cn(
-                              "size-2 rounded-full",
-                              items[0]?.color === "red" ? "bg-wine" : "bg-[#c9b26a]",
-                            )}
-                            aria-hidden
-                          />
-                        ))}
-                      </button>
-                    );
-                  })}
-                </Fragment>
-              ))}
-            </div>
-          </div>
-          <p className="text-xs text-muted">Spalten = Fächer, Zeilen = Reihen</p>
+          <RackView
+            key={rack.id}
+            compartments={rack.compartments}
+            rows={rack.rows}
+            slotItems={slotItems}
+            selected={slot}
+            onSelect={(key) => {
+              tick("minor");
+              setSlot(slot === key ? null : key);
+            }}
+          />
+          <p className="text-xs text-muted">Spalten = Fächer, Zeilen = Reihen · Fach antippen</p>
           <AnimatePresence mode="wait">
             {(selected.length > 0 || (slot === null && loose.length > 0)) && (
               <motion.ul
@@ -328,5 +284,195 @@ export function TonightPicker({ data, onOpen }: { data: CellarData; onOpen: (ite
         </div>
       )}
     </Card>
+  );
+}
+
+const WOOD =
+  "linear-gradient(180deg, rgb(255 255 255 / 0.04), transparent 40%), repeating-linear-gradient(90deg, rgb(0 0 0 / 0.06) 0 2px, transparent 2px 9px), #2a1418";
+const BRASS = "#d1ad72";
+
+/** Front view of a wooden wine rack: every compartment shows the bottle bases lying in it. */
+function RackView({
+  compartments,
+  rows,
+  slotItems,
+  selected,
+  onSelect,
+}: {
+  compartments: number;
+  rows: number;
+  slotItems: (c: number, r: number) => CellarWine[];
+  selected: string | null;
+  onSelect: (key: string) => void;
+}) {
+  return (
+    <div className="-mx-1 overflow-x-auto px-1 pb-1">
+      <motion.div
+        className="relative min-w-fit rounded-[1.25rem] p-2.5 shadow-[inset_0_2px_10px_rgb(0_0_0/0.5),0_14px_30px_-18px_rgb(0_0_0/0.7)]"
+        style={{ background: WOOD }}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-1 rounded-[1rem] border"
+          style={{ borderColor: `${BRASS}33` }}
+        />
+        <div
+          className="relative grid gap-1.5"
+          style={{ gridTemplateColumns: `1.1rem repeat(${compartments}, minmax(3.25rem, 1fr))` }}
+        >
+          <span aria-hidden />
+          {Array.from({ length: compartments }, (_, c) => (
+            <span
+              key={c}
+              className="pb-0.5 text-center text-[0.65rem] font-medium"
+              style={{ color: `${BRASS}b0` }}
+            >
+              {c + 1}
+            </span>
+          ))}
+          {Array.from({ length: rows }, (_, r) => (
+            <Fragment key={r}>
+              <span className="flex items-center text-[0.65rem] font-medium" style={{ color: `${BRASS}b0` }}>
+                {r + 1}
+              </span>
+              {Array.from({ length: compartments }, (_, c) => {
+                const items = slotItems(c + 1, r + 1);
+                const bottles = items.reduce((sum, i) => sum + i.quantity, 0);
+                const key = `${c + 1}-${r + 1}`;
+                const active = selected === key;
+                return (
+                  <motion.button
+                    key={key}
+                    type="button"
+                    disabled={!bottles}
+                    aria-label={`Fach ${c + 1}, Reihe ${r + 1}: ${bottles} ${bottles === 1 ? "Flasche" : "Flaschen"}`}
+                    aria-pressed={active}
+                    onClick={() => onSelect(key)}
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: active ? 1.06 : 1 }}
+                    whileTap={bottles ? { scale: 0.96 } : undefined}
+                    transition={{
+                      opacity: { delay: (r * compartments + c) * 0.025, duration: 0.25 },
+                      scale: { type: "spring", damping: 20, stiffness: 320 },
+                    }}
+                    className="relative flex aspect-square items-center justify-center rounded-[0.85rem]"
+                    style={{
+                      background: "radial-gradient(80% 80% at 50% 40%, #12070a, #1d0d11 70%)",
+                      boxShadow: active
+                        ? `inset 0 0 0 1.5px ${BRASS}, 0 0 18px -4px ${BRASS}`
+                        : "inset 0 3px 8px rgb(0 0 0 / 0.75), inset 0 -1px 0 rgb(255 255 255 / 0.05)",
+                    }}
+                  >
+                    <BottleEnds
+                      count={bottles}
+                      red={items[0]?.color === "red"}
+                      delay={(r * compartments + c) * 0.025}
+                    />
+                    {bottles > 1 && (
+                      <span
+                        className="absolute right-1 bottom-0.5 text-[0.6rem] font-semibold tabular-nums"
+                        style={{ color: BRASS }}
+                      >
+                        {bottles}
+                      </span>
+                    )}
+                  </motion.button>
+                );
+              })}
+            </Fragment>
+          ))}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// Bottle bases as seen lying in the rack: up to 7 in a honeycomb.
+const SPOTS: [number, number][][] = [
+  [],
+  [[50, 50]],
+  [
+    [34, 50],
+    [66, 50],
+  ],
+  [
+    [34, 36],
+    [66, 36],
+    [50, 66],
+  ],
+  [
+    [34, 34],
+    [66, 34],
+    [34, 66],
+    [66, 66],
+  ],
+  [
+    [30, 32],
+    [70, 32],
+    [50, 50],
+    [30, 68],
+    [70, 68],
+  ],
+  [
+    [28, 34],
+    [50, 34],
+    [72, 34],
+    [28, 66],
+    [50, 66],
+    [72, 66],
+  ],
+  [
+    [50, 50],
+    [50, 22],
+    [50, 78],
+    [26, 36],
+    [74, 36],
+    [26, 64],
+    [74, 64],
+  ],
+];
+
+function BottleEnds({ count, red, delay }: { count: number; red: boolean; delay: number }) {
+  const spots = SPOTS[Math.min(count, 7)];
+  const size = count <= 1 ? 54 : count <= 4 ? 36 : 28;
+  const glass = red
+    ? "radial-gradient(circle at 38% 34%, #8a3a50 0%, #4a1022 38%, #1c050c 75%)"
+    : "radial-gradient(circle at 38% 34%, #b9a868 0%, #4f5a26 40%, #1a200c 78%)";
+  if (!count) {
+    return (
+      <span
+        aria-hidden
+        className="size-[42%] rounded-full border border-dashed"
+        style={{ borderColor: `${BRASS}2e` }}
+      />
+    );
+  }
+  return (
+    <span aria-hidden className="absolute inset-0">
+      {spots.map(([x, y], i) => (
+        <motion.span
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            left: `${x}%`,
+            top: `${y}%`,
+            width: `${size}%`,
+            height: `${size}%`,
+            translate: "-50% -50%",
+            background: glass,
+            boxShadow: "0 2px 3px rgb(0 0 0 / 0.6), inset 0 0 0 1px rgb(255 255 255 / 0.08)",
+          }}
+          initial={{ scale: 0.4, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: delay + 0.12 + i * 0.04, type: "spring", damping: 16, stiffness: 300 }}
+        >
+          {/* the punt in the middle of the base */}
+          <span className="absolute inset-[32%] rounded-full bg-black/45 shadow-[inset_0_1px_2px_rgb(255_255_255/0.15)]" />
+        </motion.span>
+      ))}
+    </span>
   );
 }

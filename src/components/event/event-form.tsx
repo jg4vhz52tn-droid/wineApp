@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { TextArea, TextField } from "@/components/ui/field";
@@ -66,6 +66,9 @@ export function EventForm({
   const [blind, setBlind] = useState(initial?.isBlind ?? true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const preset = THEMES.find((t) => t.title === title);
+  const [custom, setCustom] = useState(Boolean(initial && !preset));
+  const titleRef = useRef<HTMLInputElement>(null);
 
   const startsAt = date ? new Date(`${date}T${time || "19:00"}`).toISOString() : null;
   const valid = title.trim().length > 0;
@@ -100,8 +103,9 @@ export function EventForm({
           {THEMES.map((t) => (
             <Chip
               key={t.label}
-              selected={title === t.title}
+              selected={!custom && title === t.title}
               onClick={() => {
+                setCustom(false);
                 setTitle(t.title);
                 setTheme(t.theme);
               }}
@@ -109,15 +113,30 @@ export function EventForm({
               {t.label}
             </Chip>
           ))}
+          <Chip
+            selected={custom}
+            className={custom ? undefined : "border-dashed"}
+            onClick={() => {
+              if (!custom && preset) {
+                setTitle("");
+                setTheme("");
+              }
+              setCustom(true);
+              requestAnimationFrame(() => titleRef.current?.focus());
+            }}
+          >
+            ✎ Eigenes Thema
+          </Chip>
         </div>
       </div>
 
       <TextField
-        label="Titel des Abends"
+        ref={titleRef}
+        label={custom ? "Dein Thema" : "Titel des Abends"}
         value={title}
         maxLength={120}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="z. B. Riesling vom Roten Hang"
+        placeholder={custom ? "z. B. Chenin Blanc von der Loire" : "z. B. Riesling vom Roten Hang"}
       />
       <TextField
         label="Untertitel / Lage (optional)"
@@ -126,9 +145,21 @@ export function EventForm({
         onChange={(e) => setTheme(e.target.value)}
         placeholder="z. B. Nierstein, sechs Jahrgänge"
       />
-      <div className="grid grid-cols-2 gap-3">
-        <TextField label="Datum" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <TextField label="Uhrzeit" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+      <div className="grid grid-cols-[3fr_2fr] gap-3">
+        <TextField
+          className="min-w-0"
+          label="Datum"
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+        <TextField
+          className="min-w-0"
+          label="Uhrzeit"
+          type="time"
+          value={time}
+          onChange={(e) => setTime(e.target.value)}
+        />
       </div>
       <TextField
         label="Ort"

@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { NotConfigured } from "@/components/app/not-configured";
 import { useSession } from "@/components/app/session-provider";
+import { PatchCard } from "@/components/event/patch-card";
 import { Leaderboard } from "@/components/live/leaderboard";
 import { Bottle } from "@/components/tasting/bottle";
 import { Avatar } from "@/components/ui/avatar";
@@ -33,7 +34,7 @@ const euro = (n: number) => n.toLocaleString("de-DE", { style: "currency", curre
 export function Recap() {
   const { id } = useParams<{ id: string }>();
   const { configured, ready, session } = useSession();
-  const { data, catalog } = useEvent(session ? id : null);
+  const { data, catalog, reload } = useEvent(session ? id : null);
 
   if (!configured) return <NotConfigured />;
   if (!ready || (session && data === undefined))
@@ -51,6 +52,7 @@ export function Recap() {
       data={data}
       catalog={catalog}
       meId={data.participants.find((p) => p.userId === session.user.id)?.id}
+      onChange={reload}
     />
   );
 }
@@ -59,10 +61,13 @@ export function RecapContent({
   data,
   catalog,
   meId,
+  onChange,
 }: {
   data: EventData;
   catalog: Catalog | null;
   meId?: string;
+  /** Without it (styleguide) there is no photo button. */
+  onChange?: () => Promise<void>;
 }) {
   const board = leaderboard(data);
   const ranking = wineRanking(data);
@@ -175,6 +180,13 @@ export function RecapContent({
       ))}
 
       <Leaderboard rows={board} me={meId} title="Endstand" />
+
+      <PatchCard
+        event={data.event}
+        winner={winner && winner.total > 0 ? winner.participant.name : null}
+        canEdit={Boolean(onChange)}
+        onChange={onChange ?? (async () => {})}
+      />
 
       {costs.total > 0 && (
         <Card className="space-y-2">
