@@ -291,14 +291,14 @@
     <div class="wrap">
       <div class="section-head fade">
         <span class="eyebrow">Ein Handel, Schritt für Schritt</span>
-        <h2 class="h2">Anna verkauft, Ben kauft – die Flasche bleibt liegen.</h2>
+        <h2 class="h2">Lea verkauft, Ben kauft – die Flasche bleibt liegen.</h2>
         <p class="lead">Spiel es durch oder lass es automatisch laufen. Achte darauf, was sich bewegt: das Besitzrecht und das Geld – nicht die Flasche.</p>
       </div>
       <div class="card trade fade" id="trade">
         <nav class="trade-steps" id="tSteps" aria-label="Schritte"></nav>
         <div class="stage" id="stage">
           <div class="party" id="pA">
-            <div class="top"><span class="av" style="background:#8c2547">A</span><div><b>Anna</b><div class="role">verkauft</div></div></div>
+            <div class="top"><span class="av" style="background:#8c2547">L</span><div><b>Lea</b><div class="role">verkauft</div></div></div>
             <dl><dt>Konto</dt><dd id="cashA"></dd><dt>Im Lager</dt><dd id="depA"></dd></dl>
             <div class="home" id="homeA" data-l="Zuhause"></div>
             <div class="fee" id="feeA">Lagergebühr 4 Fl. × 4 €/Jahr</div>
@@ -467,7 +467,7 @@
     tabs.forEach((x, j) => x.setAttribute("aria-selected", i === j));
     $$(".way").forEach((p, j) => { p.classList.toggle("on", i === j); p.hidden = i !== j; });
   }));
-  const L1 = [["Lena", "Spätburgunder GG 2015", "Hab zwei – eine ist abzugeben. Tausch gegen einen guten Riesling?", true, "Tausch"], ["Jonas", "Riesling Auslese 2011", "Zu süß für mich, zu schade zum Stehenlassen.", false, "40 €"]];
+  const L1 = [["Mira", "Spätburgunder GG 2015", "Hab zwei – eine ist abzugeben. Tausch gegen einen guten Riesling?", true, "Tausch"], ["Jonas", "Riesling Auslese 2011", "Zu süß für mich, zu schade zum Stehenlassen.", false, "40 €"]];
   $("#l1").innerHTML = L1.map(([who, w, note, red, p], i) => `<div class="offer-card">${bottle(red)}<div><span class="who">${who} · in eurer Weinrunde</span><div style="font-weight:500;margin:2px 0">${w}</div><p class="muted" style="font-size:.84rem">„${note}“</p><div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap"><span class="chip">${p}</span><button class="btn btn-primary btn-sm" type="button" data-int="${who}">Interesse</button></div></div></div>`).join("");
   const L2 = [["Riesling GG Schieferkopf 2019", "Mosel · Füllstand: in den Hals · Klimaschrank seit Kauf", "62 €", "4,9 ★ · 31 Verkäufe", false], ["Lemberger GG 2018", "Württemberg · in den Hals · Naturkeller", "49 €", "4,7 ★ · 8 Verkäufe", true]];
   $("#l2").innerHTML = L2.map(([w, d, p, r, red]) => `<div class="offer-card">${bottle(red)}<div><div style="display:flex;justify-content:space-between;gap:10px"><span style="font-weight:500">${w}</span><b class="num">${p}</b></div><p class="muted" style="font-size:.8rem;margin-top:2px">${d}</p><div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;gap:8px;flex-wrap:wrap"><span class="who">Verkäufer: ${r}</span><button class="btn btn-ghost btn-sm" type="button" data-toast="Kaufanfrage gesendet (Beispiel)">Kaufen</button></div></div></div>`).join("");
@@ -572,12 +572,12 @@
   const A = "#8c2547", B = "#3f6f93";
   const bt = '<svg class="bt" viewBox="0 0 120 330" aria-hidden="true"><use href="#schlegel" width="120" height="320"/></svg>';
   const STEPS = [
-    ["Einlagern", "Anna schickt ihre sechs Flaschen ins Weinlager. Jede bekommt eine Nummer und einen festen Platz – ab jetzt liegen sie bei 12 °C, dunkel und ruhig.", ["↓", "6 Flaschen eingelagert", "#0041–#0046 · Eigentümerin Anna"]],
+    ["Einlagern", "Lea schickt ihre sechs Flaschen ins Weinlager. Jede bekommt eine Nummer und einen festen Platz – ab jetzt liegen sie bei 12 °C, dunkel und ruhig.", ["↓", "6 Flaschen eingelagert", "#0041–#0046 · Eigentümerin Lea"]],
     ["Prüfen", "Bei der Ankunft wird jede Flasche geprüft: Füllstand, Kapsel, Korken, Etikett, Echtheit. Alles wird fotografiert – und ab jetzt ist sie versichert.", ["⛨", "Eingangsprüfung bestanden", "Zustand dokumentiert · versichert"]],
-    ["Anbieten", "Anna will zwei Flaschen verkaufen und stellt sie für 62 € pro Flasche ins Orderbuch. Ihr Angebot erscheint bei den anderen Angeboten.", ["€", "Angebot: 2 Fl. zu 62,00 €", "#0045, #0046"]],
+    ["Anbieten", "Lea will zwei Flaschen verkaufen und stellt sie für 62 € pro Flasche ins Orderbuch. Ihr Angebot erscheint bei den anderen Angeboten.", ["€", "Angebot: 2 Fl. zu 62,00 €", "#0045, #0046"]],
     ["Gebot & Handel", "Ben bietet erst 60 € – zu wenig. Dann erhöht er auf 62 €. Gebot und Angebot treffen sich: Der Handel ist ausgeführt.", ["✦", "Handel ausgeführt", "2 Fl. zu 62,00 € · letzter Preis 62,00 €"]],
-    ["Besitzwechsel", "Das Besitzrecht wandert von Anna zu Ben, das Geld von Ben zu Anna – über einen Zahlungsdienst. Die Flaschen selbst bewegen sich keinen Zentimeter.", ["⇄", "#0045, #0046: Anna → Ben", "124 € an Anna (abzgl. 2 % Gebühr)"]],
-    ["Lagern", "Ab jetzt zahlt jeder für seine Flaschen die Jahresgebühr: Lagerung, Kontrolle, Versicherung. Ben kann jederzeit weiterverkaufen – oder warten.", ["⌛", "Lagergebühr läuft", "Anna 4 Fl. · Ben 2 Fl. · je 4 €/Jahr"]],
+    ["Besitzwechsel", "Das Besitzrecht wandert von Lea zu Ben, das Geld von Ben zu Lea – über einen Zahlungsdienst. Die Flaschen selbst bewegen sich keinen Zentimeter.", ["⇄", "#0045, #0046: Lea → Ben", "124 € an Lea (abzgl. 2 % Gebühr)"]],
+    ["Lagern", "Ab jetzt zahlt jeder für seine Flaschen die Jahresgebühr: Lagerung, Kontrolle, Versicherung. Ben kann jederzeit weiterverkaufen – oder warten.", ["⌛", "Lagergebühr läuft", "Lea 4 Fl. · Ben 2 Fl. · je 4 €/Jahr"]],
     ["Liefern", "Ben hat Lust auf einen Riesling: ein Tap auf „Liefern“, und Flasche #0046 kommt zu ihm nach Hause. Damit ist sie aus dem Handel – und landet im Glas.", ["🚚", "#0046 an Ben ausgeliefert", "Aus dem Handel genommen"]],
   ];
   $("#tSteps").innerHTML = `<button type="button" data-step="0"><b>0</b>Start</button>` + STEPS.map(([t], i) => `<button type="button" data-step="${i + 1}"><b>${i + 1}</b>${t}</button>`).join("");
@@ -601,8 +601,8 @@
     $$("#checks span").forEach(c => c.classList.toggle("on", s >= 2));
     // Orderbuch
     const asks = [[64.5, 1, "M."], [66, 3, "K."]], bids = [[58, 2, "S."], [57.5, 1, "J."]];
-    if (s >= 3 && s < 4) asks.unshift([62, 2, "Anna", "mine"]);
-    if (s === 4) { asks.unshift([62, 2, "Anna", "mine"]); bids.unshift([62, 2, "Ben", "mine"]); }
+    if (s >= 3 && s < 4) asks.unshift([62, 2, "Lea", "mine"]);
+    if (s === 4) { asks.unshift([62, 2, "Lea", "mine"]); bids.unshift([62, 2, "Ben", "mine"]); }
     $("#asks").innerHTML = asks.map(([p, q, w, m]) => `<div class="ord ask ${m || ""}" data-o="${w}"><span>${q} × ${w}</span><b>${e2.format(p)}</b></div>`).join("");
     $("#bids").innerHTML = bids.map(([p, q, w, m]) => `<div class="ord bid ${m || ""}" data-o="${w}"><span>${q} × ${w}</span><b>${e2.format(p)}</b></div>`).join("");
     $("#lastPx").textContent = s >= 4 ? "62,00 €" : "61,50 €";
@@ -610,7 +610,7 @@
     $("#pA").classList.toggle("hot", [1, 3].includes(s)); $("#pB").classList.toggle("hot", [4, 7].includes(s));
     const st = STEPS[s - 1];
     $("#nT").textContent = s ? `${s} · ${st[0]}` : "Ausgangslage";
-    $("#nP").textContent = s ? st[1] : "Anna hat sechs Flaschen Riesling GG Schieferkopf 2019 zu Hause. Ben möchte genau diesen Wein. Drück auf „Weiter“.";
+    $("#nP").textContent = s ? st[1] : "Lea hat sechs Flaschen Riesling GG Schieferkopf 2019 zu Hause. Ben möchte genau diesen Wein. Drück auf „Weiter“.";
     $("#ledger").innerHTML = STEPS.slice(0, s).map(([, , l]) => `<li><i>${l[0]}</i><span>${l[1]}<small>${l[2]}</small></span></li>`).reverse().join("") || '<li style="grid-template-columns:1fr" class="muted">Noch keine Einträge.</li>';
     $("#tBack").disabled = s === 0;
     $("#tNext").textContent = s === STEPS.length ? "Nochmal von vorn" : "Weiter →";
