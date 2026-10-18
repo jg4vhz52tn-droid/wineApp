@@ -62,6 +62,22 @@ export function Profile() {
           </Card>
         )}
 
+        {ready && session && !isGuest && (
+          <Link
+            href="/profil/dna"
+            className="flex items-center justify-between gap-3 rounded-card border border-accent/40 p-4"
+            style={{ background: "linear-gradient(150deg, var(--curtain), var(--surface) 75%)" }}
+          >
+            <span>
+              <span className="block font-display text-xl">Deine Geschmacks-DNA</span>
+              <span className="block text-sm text-muted">
+                Was du wirklich magst – und was deine Nase kann
+              </span>
+            </span>
+            <span className="text-accent">→</span>
+          </Link>
+        )}
+
         {ready && session && isGuest && <UpgradeCard />}
         {ready && session && !isGuest && <EmailCard current={session.user.email ?? ""} />}
 

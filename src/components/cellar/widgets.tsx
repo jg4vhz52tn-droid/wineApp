@@ -9,6 +9,7 @@ import { TickDial } from "@/components/ui/tick-dial";
 import type { CellarData, CellarWine } from "@/lib/cellar/types";
 import { drinkStatus, DRINK_STATUS_LABEL, euro, valueAt, type DrinkStatus } from "@/lib/cellar/value";
 import { tick } from "@/lib/haptics";
+import { matchScore, type Dna } from "@/lib/dna";
 import { DrinkBadge } from "./drink-badge";
 import { RackEditor } from "./rack-editor";
 
@@ -211,19 +212,30 @@ export function ShelfGrid({
   );
 }
 
-type Occasion = "alltag" | "besonders" | "muss-weg";
+type Occasion = "alltag" | "besonders" | "muss-weg" | "geschmack";
 const OCCASIONS: { value: Occasion; label: string }[] = [
   { value: "alltag", label: "Einfach so" },
   { value: "besonders", label: "Besonderer Abend" },
   { value: "muss-weg", label: "Muss weg" },
+  { value: "geschmack", label: "Nach meinem Geschmack" },
 ];
 
 /** Suggests a bottle for tonight - drinkable ones only, picked by occasion. */
-export function TonightPicker({ data, onOpen }: { data: CellarData; onOpen: (item: CellarWine) => void }) {
+export function TonightPicker({
+  data,
+  dna = null,
+  onOpen,
+}: {
+  data: CellarData;
+  dna?: Dna | null;
+  onOpen: (item: CellarWine) => void;
+}) {
   const [occasion, setOccasion] = useState<Occasion>("alltag");
   const [skip, setSkip] = useState(0);
   const drinkable = data.items.filter((i) => i.quantity > 0 && drinkStatus(i) !== "wait");
+  const match = (i: CellarWine) => matchScore(dna, i) ?? 0;
   const ranked = [...drinkable].sort((a, b) => {
+    if (occasion === "geschmack") return match(b) - match(a);
     if (occasion === "muss-weg") return (a.drinkUntil ?? 9999) - (b.drinkUntil ?? 9999);
     const va = valueAt(a, data.valuations);
     const vb = valueAt(b, data.valuations);
@@ -235,7 +247,7 @@ export function TonightPicker({ data, onOpen }: { data: CellarData; onOpen: (ite
     <Card className="space-y-4">
       <Eyebrow>Was trinke ich heute?</Eyebrow>
       <div className="flex flex-wrap gap-2">
-        {OCCASIONS.map((o) => (
+        {OCCASIONS.filter((o) => o.value !== "geschmack" || dna?.ready).map((o) => (
           <Chip
             key={o.value}
             selected={occasion === o.value}
@@ -264,11 +276,15 @@ export function TonightPicker({ data, onOpen }: { data: CellarData; onOpen: (ite
               {pick.producer} · {pick.vintage} · {euro.format(valueAt(pick, data.valuations))}
             </p>
             <p className="text-sm">
-              {occasion === "muss-weg"
-                ? `Trinkfenster bis ${pick.drinkUntil ?? "?"} – jetzt ist ein guter Moment.`
-                : occasion === "besonders"
-                  ? "Dein wertvollster trinkreifer Wein. Wenn nicht heute, wann dann?"
-                  : `${DRINK_STATUS_LABEL[drinkStatus(pick)]} – und kein Wein, um den es schade wäre.`}
+              {occasion === "geschmack"
+                ? matchScore(dna, pick) !== null
+                  ? `Passt zu ${matchScore(dna, pick)} % zu deiner Geschmacks-DNA.`
+                  : "Trinkreif – zu diesem Wein kennt deine DNA noch nichts."
+                : occasion === "muss-weg"
+                  ? `Trinkfenster bis ${pick.drinkUntil ?? "?"} – jetzt ist ein guter Moment.`
+                  : occasion === "besonders"
+                    ? "Dein wertvollster trinkreifer Wein. Wenn nicht heute, wann dann?"
+                    : `${DRINK_STATUS_LABEL[drinkStatus(pick)]} – und kein Wein, um den es schade wäre.`}
             </p>
           </motion.div>
         ) : (

@@ -528,6 +528,48 @@ await as(guestD, async (tx) => {
   check("guests get no AI requests", ok === false);
 });
 
+// --- taste DNA ---------------------------------------------------------------
+
+console.log("\nGeschmacks-DNA");
+await as(guestC, async (tx) => {
+  const [{ dna }] = await rows(tx, "select public.taste_dna() as dna");
+  check("too few ratings: the DNA says how many are missing", dna.ready === false && dna.needed === 4, JSON.stringify(dna));
+  check(
+    "the nose counts revealed glasses and grape hits",
+    dna.nose.glasses === 2 && dna.nose.grape_hits === 2,
+    JSON.stringify(dna.nose),
+  );
+});
+await as(host, async (tx) => {
+  for (const [rating, sweet, acid, aromas] of [
+    [95, 1, 9, "{Feuerstein,Zitrone}"],
+    [91, 2, 8, "{Pfirsich,Feuerstein}"],
+    [84, 4, 5, "{Honig}"],
+    [89, 1.5, 8.5, "{Zitrone}"],
+  ]) {
+    await tx.query(
+      `insert into public.tasting_notes (vintage_id, rating, structure, aromas)
+       values ($1, $2, jsonb_build_object('sweetness', $3::numeric, 'acidity', $4::numeric), $5)`,
+      [someVintage.id, rating, sweet, acid, aromas],
+    );
+  }
+  const [{ dna }] = await rows(tx, "select public.taste_dna() as dna");
+  check("with 5+ ratings the DNA is ready", dna.ready === true && dna.ratings >= 5, `${dna.ratings}`);
+  check(
+    "it knows what you like: high acidity, little sweetness",
+    dna.structure.acidity.value >= 8 && dna.structure.sweetness.value <= 2,
+    JSON.stringify(dna.structure),
+  );
+  check("favourite aromas come first", dna.aromas[0]?.aroma === "Feuerstein", JSON.stringify(dna.aromas));
+  await tx.query("select public.set_taste_summary('Du magst es rassig.')");
+  const [profile] = await rows(tx, "select summary from public.taste_profiles");
+  check("the text is stored with the profile", profile?.summary === "Du magst es rassig.");
+});
+await as(stranger, async (tx) => {
+  const profiles = await rows(tx, "select * from public.taste_profiles");
+  check("nobody else sees your DNA", profiles.every((p) => p.user_id === stranger.id), `${profiles.length}`);
+});
+
 // --- upgrade ---------------------------------------------------------------
 
 console.log("\nGuest upgrade");

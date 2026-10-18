@@ -8,6 +8,8 @@ import { Bottle } from "@/components/tasting/bottle";
 import { buttonClasses } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { bottleShapeFor } from "@/config/bottles";
+import { matchScore, type Dna } from "@/lib/dna";
+import { fetchDna } from "@/lib/dna-client";
 import { fetchMyWines, type WineSummary } from "@/lib/wines";
 
 type Filter = "alle" | "keller" | "geoeffnet" | "gescannt" | "bewertet" | "offen";
@@ -27,11 +29,13 @@ export function MyWines() {
   const { ready, session, isGuest } = useSession();
   const [wines, setWines] = useState<WineSummary[] | null>(null);
   const [filter, setFilter] = useState<Filter>("alle");
+  const [dna, setDna] = useState<Dna | null>(null);
 
   useEffect(() => {
     if (!session || isGuest) return;
     let active = true;
     fetchMyWines(session.user.id).then((list) => active && setWines(list));
+    fetchDna().then((r) => active && setDna(r?.dna ?? null));
     return () => {
       active = false;
     };
@@ -100,6 +104,9 @@ export function MyWines() {
                       {w.inCellar > 0 && <span>{w.inCellar} im Keller</span>}
                       {w.opened > 0 && <span>{w.opened} geöffnet</span>}
                       {w.scanned && <span>📷 gescannt</span>}
+                      {matchScore(dna, w) !== null && (
+                        <span className="font-medium text-accent">Passt zu dir {matchScore(dna, w)} %</span>
+                      )}
                       {w.avgRating !== null && (
                         <span>
                           Ø {fmt(w.avgRating)} · {w.ratings} {w.ratings === 1 ? "Bewertung" : "Bewertungen"}

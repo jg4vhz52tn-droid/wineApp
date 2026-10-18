@@ -8,7 +8,7 @@ export type { LabelScan, PriceOffer };
 
 const LABEL_BUCKET = "wine-labels";
 
-async function post<T>(path: string, body: unknown): Promise<T> {
+export async function post<T>(path: string, body: unknown): Promise<T> {
   const supabase = getSupabase();
   const { data } = (await supabase?.auth.getSession()) ?? { data: { session: null } };
   const token = data.session?.access_token;

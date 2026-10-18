@@ -7,7 +7,9 @@ import { InviteDetails } from "@/components/event/invite-details";
 import { InvitationTicket } from "@/components/event/invitation-ticket";
 import { CostsPanel } from "@/components/event/costs-panel";
 import { EventForm } from "@/components/event/event-form";
+import { DnaView } from "@/components/dna/dna-view";
 import { EventPatch } from "@/components/event/event-patch";
+import { DEMO_DNA } from "@/lib/dna-demo";
 import { GlassList } from "@/components/event/glass-list";
 import { PatchCapsule, PatchCrest, PatchSticker, SAMPLE_PHOTO } from "@/components/event/patch-designs";
 import { GuestPanel } from "@/components/event/guest-panel";
@@ -267,6 +269,16 @@ export function Styleguide() {
             </Button>
           </Section>
         </div>
+      </div>
+
+      <h2 id="dna" className="mt-16 mb-6 text-4xl">
+        Geschmacks-DNA · Beispiel
+      </h2>
+      <div className="mx-auto mb-4 max-w-[390px]">
+        <DnaView
+          dna={DEMO_DNA}
+          summary="Du liebst rassige, fast trockene Rieslinge mit Feuerstein und Pfirsich – am liebsten von der Nahe. Mehr als 30 € musst du dafür selten ausgeben."
+        />
       </div>
 
       <h2 id="patch-drehen" className="mt-16 mb-2 text-4xl">

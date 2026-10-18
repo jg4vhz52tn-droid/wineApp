@@ -52,8 +52,8 @@ export async function requireUser(request: Request): Promise<{ supabase: Supabas
   return { supabase, userId: data.user.id };
 }
 
-/** Counts the request against the daily limit (25 scans / 20 price searches). */
-export async function claimCredit(supabase: SupabaseClient, kind: "scan" | "prices") {
+/** Counts the request against the daily limit (25 scans / 20 price searches / 10 DNA texts). */
+export async function claimCredit(supabase: SupabaseClient, kind: "scan" | "prices" | "dna") {
   const { data, error } = await supabase.rpc("claim_ai_credit", { p_kind: kind });
   if (error) throw error;
   if (!data) throw new HttpError(429, "Für heute ist das Limit erreicht – morgen geht’s weiter.");

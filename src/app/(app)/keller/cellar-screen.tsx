@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { AddBottlesSheet } from "@/components/cellar/add-bottles";
 import { BottleSheet } from "@/components/cellar/bottle-sheet";
 import { CellarList } from "@/components/cellar/cellar-list";
 import { Allocation, Movers, PortfolioHeader } from "@/components/cellar/portfolio";
 import { DrinkTimeline, ShelfGrid, TonightPicker } from "@/components/cellar/widgets";
+import type { Dna } from "@/lib/dna";
+import { fetchDna } from "@/lib/dna-client";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -45,6 +47,15 @@ function Header() {
 
 function CellarContent() {
   const cellar = useCellar();
+  const [dna, setDna] = useState<Dna | null>(null);
+  useEffect(() => {
+    if (cellar.mode !== "live") return;
+    let active = true;
+    fetchDna().then((r) => active && setDna(r?.dna ?? null));
+    return () => {
+      active = false;
+    };
+  }, [cellar.mode]);
   const { data, mode } = cellar;
   const [adding, setAdding] = useState(false);
   const [opened, setOpened] = useState<CellarWine | null>(null);
@@ -117,7 +128,7 @@ function CellarContent() {
                 </Link>
               )}
               <PortfolioHeader data={data} estimated={anyEstimated} />
-              <TonightPicker data={data} onOpen={setOpened} />
+              <TonightPicker data={data} dna={dna} onOpen={setOpened} />
               <Movers data={data} onOpen={setOpened} />
               <Allocation
                 data={data}
