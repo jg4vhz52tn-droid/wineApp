@@ -77,22 +77,30 @@ export async function askGemini(body: {
   schema?: Record<string, unknown>;
   googleSearch?: boolean;
 }): Promise<string> {
-  const payload = JSON.stringify({
-    contents: [{ role: "user", parts: body.parts }],
-    ...(body.googleSearch ? { tools: [{ google_search: {} }] } : {}),
-    generationConfig: {
-      temperature: 0.1,
-      ...(body.schema ? { responseMimeType: "application/json", responseSchema: body.schema } : {}),
-    },
-  });
+  const request = (thinking: boolean) =>
+    JSON.stringify({
+      contents: [{ role: "user", parts: body.parts }],
+      ...(body.googleSearch ? { tools: [{ google_search: {} }] } : {}),
+      generationConfig: {
+        temperature: 0.1,
+        // Reading a label needs no long "thinking" - it only makes the answer slow.
+        ...(thinking ? { thinkingConfig: { thinkingLevel: "low" } } : {}),
+        ...(body.schema ? { responseMimeType: "application/json", responseSchema: body.schema } : {}),
+      },
+    });
   let res: Response | null = null;
   // A retired or unknown model answers 404 - then the next one is tried.
   for (const name of candidates()) {
-    res = await fetch(`${API}/models/${name}:generateContent`, {
-      method: "POST",
-      headers: { "x-goog-api-key": apiKey(), "content-type": "application/json" },
-      body: payload,
-    });
+    const call = (thinking: boolean) =>
+      fetch(`${API}/models/${name}:generateContent`, {
+        method: "POST",
+        headers: { "x-goog-api-key": apiKey(), "content-type": "application/json" },
+        body: request(thinking),
+        signal: AbortSignal.timeout(50_000),
+      });
+    res = await call(true);
+    // Older models don't know thinkingLevel - then without it.
+    if (res.status === 400) res = await call(false);
     // Search can be blocked for one model in the free tier but allowed for another.
     if (res.status === 429 && body.googleSearch) {
       console.warn("Gemini search quota exhausted for", name);

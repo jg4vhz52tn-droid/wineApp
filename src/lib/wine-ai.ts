@@ -19,7 +19,16 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   });
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((json as { error?: string }).error ?? "Das hat nicht geklappt.");
+  if (!res.ok) {
+    const reason =
+      (json as { error?: string }).error ??
+      (res.status === 504
+        ? "Die KI hat zu lange gebraucht. Bitte noch einmal versuchen."
+        : res.status === 413
+          ? "Das Foto ist zu groß."
+          : "Der Server hat nicht geantwortet.");
+    throw new Error(`${reason} (Fehler ${res.status})`);
+  }
   return json as T;
 }
 
@@ -55,9 +64,14 @@ export type ScanResult = { scan: LabelScan; label: Blob; preview: string };
 
 /** Photo → Claude reads the label → fields + the cropped label for the bottle. */
 export async function scanLabel(file: File): Promise<ScanResult> {
-  const bitmap = await createImageBitmap(file);
+  let bitmap: ImageBitmap;
   try {
-    const photo = await toJpeg(bitmap, 1400);
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error("Das Foto konnte nicht geöffnet werden – bitte als JPEG oder ein neues Foto versuchen.");
+  }
+  try {
+    const photo = await toJpeg(bitmap, 1280);
     const scan = await post<LabelScan>("/api/scan", { image: await asDataUrl(photo) });
     const box =
       scan.label_box && scan.label_box.width > 0.15 && scan.label_box.height > 0.1

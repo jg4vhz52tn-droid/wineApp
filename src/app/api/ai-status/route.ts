@@ -1,6 +1,9 @@
 import { connection } from "next/server";
+
+export const maxDuration = 60;
 import { askGemini, checkGemini } from "@/lib/server/ai";
 import { LABEL_SCHEMA } from "@/lib/server/label-schema";
+import { TEST_LABEL_JPEG } from "@/lib/server/test-label";
 
 // Health check for the AI features: is the key set, does Google accept it,
 // is the model there? With ?test=1 it also runs two tiny requests (same
@@ -10,11 +13,12 @@ import { LABEL_SCHEMA } from "@/lib/server/label-schema";
 let cache: { at: number; body: Record<string, unknown> } | null = null;
 
 async function attempt(run: () => Promise<string>) {
+  const start = Date.now();
   try {
     const text = await run();
-    return { ok: true, sample: text.slice(0, 160) };
+    return { ok: true, ms: Date.now() - start, sample: text.slice(0, 160) };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    return { ok: false, ms: Date.now() - start, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -31,7 +35,8 @@ export async function GET(request: Request) {
         askGemini({
           schema: LABEL_SCHEMA,
           parts: [
-            { text: "Test ohne Foto: Das Etikett lautet 'Dönnhoff Hermannshöhle Riesling GG 2020, Nahe'." },
+            { inline_data: { mime_type: "image/jpeg", data: TEST_LABEL_JPEG } },
+            { text: "Lies dieses Weinetikett. Unbekanntes ist null." },
           ],
         }),
       ),

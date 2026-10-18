@@ -1,7 +1,7 @@
 import { askGemini, claimCredit, errorResponse, HttpError, parseJson, requireUser } from "@/lib/server/ai";
 import { LABEL_SCHEMA as SCHEMA } from "@/lib/server/label-schema";
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 export type LabelScan = {
   is_wine_label: boolean;
