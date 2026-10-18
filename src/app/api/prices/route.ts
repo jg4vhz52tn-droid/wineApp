@@ -29,19 +29,32 @@ export async function POST(request: Request) {
     await claimCredit(supabase, "prices");
 
     const wine = [body.producer, body.name, body.vintage].filter(Boolean).join(" ");
-    const answer = await askGemini({
-      googleSearch: true,
-      parts: [
-        {
-          text:
-            `Suche aktuelle Online-Angebote für diesen Wein: „${wine}“ (0,75 l, bevorzugt Händler in Deutschland/EU). ` +
-            "Nur echte Produktseiten von Weinhändlern mit Preis pro Flasche inkl. MwSt. – keine Preisvergleich-Startseiten. " +
-            "Nenne den Jahrgang des Angebots. Antworte NUR mit JSON in dieser Form: " +
-            '{"offers":[{"shop":"…","price":34.9,"currency":"EUR","url":"https://…","bottle_ml":750,"vintage":2021}],"note":"…"} ' +
-            "Höchstens 6 Angebote. Wenn du nichts Verlässliches findest: offers leer und note mit einem kurzen Satz.",
-        },
-      ],
-    });
+    let answer: string;
+    try {
+      answer = await askGemini({
+        googleSearch: true,
+        parts: [
+          {
+            text:
+              `Suche aktuelle Online-Angebote für diesen Wein: „${wine}“ (0,75 l, bevorzugt Händler in Deutschland/EU). ` +
+              "Nur echte Produktseiten von Weinhändlern mit Preis pro Flasche inkl. MwSt. – keine Preisvergleich-Startseiten. " +
+              "Nenne den Jahrgang des Angebots. Antworte NUR mit JSON in dieser Form: " +
+              '{"offers":[{"shop":"…","price":34.9,"currency":"EUR","url":"https://…","bottle_ml":750,"vintage":2021}],"note":"…"} ' +
+              "Höchstens 6 Angebote. Wenn du nichts Verlässliches findest: offers leer und note mit einem kurzen Satz.",
+          },
+        ],
+      });
+    } catch (error) {
+      // Google only offers its built-in search in paid plans - the free tier answers 429.
+      if (error instanceof HttpError && error.status === 429) {
+        return Response.json({
+          offers: [],
+          note: "Die automatische Preissuche ist im kostenlosen Google-Tarif nicht enthalten – nutze die Such-Links unten.",
+          unavailable: true,
+        });
+      }
+      throw error;
+    }
     const result = parseJson<{ offers?: PriceOffer[]; note?: string | null }>(answer) ?? {};
     const offers = (result.offers ?? [])
       .filter((o) => typeof o.url === "string" && /^https:\/\//.test(o.url) && Number(o.price) > 0)

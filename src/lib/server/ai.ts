@@ -16,7 +16,6 @@ const MODELS = [
   "gemini-3.8-flash",
   "gemini-3-flash-preview",
   "gemini-flash-lite-latest",
-  "gemini-2.5-flash-lite",
 ];
 let working: string | null = null;
 
