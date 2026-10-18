@@ -39,6 +39,23 @@ export function LearnHub() {
         </Card>
       </Link>
 
+      <Link
+        href="/keller/verkosten"
+        className="flex items-center gap-4 rounded-card border border-accent/40 p-4"
+        style={{ background: "linear-gradient(150deg, var(--curtain), var(--surface) 75%)" }}
+      >
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-control bg-wine text-2xl">
+          🍷
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-xl leading-tight">Verkoste deine eigene Flasche</span>
+          <span className="block text-sm text-muted">
+            Geführt Schritt für Schritt: sehen, riechen, schmecken – und vergleichen, was Kenner finden.
+          </span>
+        </span>
+        <span className="text-accent">→</span>
+      </Link>
+
       <ul className="grid grid-cols-2 gap-3">
         {LEARN_MODULES.map((item) => {
           const isDone = completed.includes(item.id);

@@ -13,6 +13,7 @@ import { GoogleIcon } from "@/components/ui/icons";
 import { Segmented } from "@/components/ui/segmented";
 import type { ThemePreference } from "@/lib/appearance";
 import { authErrorMessage, callbackUrl, sendMagicLink, signInWithGoogle } from "@/lib/auth";
+import { EXPERIENCE_LABEL, useExperience, type Experience } from "@/lib/experience";
 import { tick } from "@/lib/haptics";
 import { getSupabase } from "@/lib/supabase";
 
@@ -77,6 +78,8 @@ export function Profile() {
             <span className="text-accent">→</span>
           </Link>
         )}
+
+        {ready && session && !isGuest && <ExperienceCard />}
 
         {ready && session && isGuest && <UpgradeCard />}
         {ready && session && !isGuest && <EmailCard current={session.user.email ?? ""} />}
@@ -336,6 +339,38 @@ function EmailCard({ current }: { current: string }) {
           {error}
         </p>
       )}
+    </Card>
+  );
+}
+
+/** "Deine Erfahrung": beginners get the guided tasting offered first. */
+function ExperienceCard() {
+  const { experience, setExperience } = useExperience();
+  const text: Record<Experience, string> = {
+    beginner:
+      "Beim Öffnen einer Flasche schlagen wir dir die geführte Verkostung vor – mit Tipps zu jedem Schritt.",
+    intermediate: "Die geführte Verkostung gibt es auf Wunsch, Bewerten geht direkt.",
+    pro: "Alles direkt, ohne Hilfen.",
+  };
+  return (
+    <Card className="space-y-3">
+      <h2 className="text-xl">Deine Erfahrung</h2>
+      <Segmented<Experience>
+        label="Deine Erfahrung"
+        value={experience}
+        onChange={(v) => {
+          tick("minor");
+          void setExperience(v);
+        }}
+        options={(["beginner", "intermediate", "pro"] as Experience[]).map((v) => ({
+          value: v,
+          label: EXPERIENCE_LABEL[v],
+        }))}
+      />
+      <p className="text-sm text-muted">{text[experience]}</p>
+      <Link href="/keller/verkosten" className="text-sm font-medium text-accent">
+        🍷 Geführte Verkostung starten →
+      </Link>
     </Card>
   );
 }

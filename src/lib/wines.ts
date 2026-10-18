@@ -164,6 +164,8 @@ export async function saveReview(input: {
   aromas: string[];
   structure: Partial<Record<StructureKey, number>>;
   isPublic: boolean;
+  /** Results of a guided tasting (colour, aromas found, finish seconds). */
+  guided?: Record<string, unknown>;
 }) {
   const { error } = await getSupabase()!
     .from("tasting_notes")
@@ -174,6 +176,7 @@ export async function saveReview(input: {
       aromas: input.aromas,
       structure: Object.keys(input.structure).length ? input.structure : null,
       is_public: input.isPublic,
+      guided: input.guided ?? null,
     });
   if (error) throw error;
 }

@@ -19,6 +19,8 @@ import { DrinkBadge } from "./drink-badge";
 import { ItemChart } from "./item-chart";
 import { PriceCheck } from "./price-check";
 import { marketSeries, usePriceHistory } from "@/lib/prices";
+import { useExperience } from "@/lib/experience";
+import { buttonClasses } from "@/components/ui/button";
 
 const dateFmt = new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "short", year: "numeric" });
 const SOURCE: Record<string, string> = {
@@ -90,6 +92,8 @@ function Content({
   const [editPaid, setEditPaid] = useState(false);
   const [paid, setPaid] = useState("");
   const prices = usePriceHistory(item.vintageId);
+  const { experience } = useExperience();
+  const guidedHref = item.vintageId ? `/keller/verkosten/${item.vintageId}` : null;
 
   const parsed = value.trim() ? Number(value.replace(",", ".")) : NaN;
 
@@ -258,6 +262,14 @@ function Content({
             {cheers >= 0
               ? `Getrunken mit ${euro.format(cheers)} Wertzuwachs.`
               : `Getrunken – ${euro.format(-cheers)} unter Einkauf.`}
+            {guidedHref && (
+              <Link href={guidedHref} className="mt-3 block font-medium text-accent">
+                🍷{" "}
+                {experience === "beginner"
+                  ? "Jetzt geführt verkosten – Schritt für Schritt →"
+                  : "Geführt verkosten →"}
+              </Link>
+            )}
           </motion.p>
         )}
       </AnimatePresence>
@@ -344,6 +356,18 @@ function Content({
             )}
           </ul>
         </section>
+      )}
+
+      {guidedHref && (
+        <Link
+          href={guidedHref}
+          className={buttonClasses({
+            block: true,
+            variant: experience === "beginner" ? "wine" : "secondary",
+          })}
+        >
+          🍷 Geführt verkosten
+        </Link>
       )}
 
       {item.wineId && (

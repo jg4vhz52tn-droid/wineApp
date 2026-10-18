@@ -570,6 +570,33 @@ await as(stranger, async (tx) => {
   check("nobody else sees your DNA", profiles.every((p) => p.user_id === stranger.id), `${profiles.length}`);
 });
 
+// --- guided tasting -------------------------------------------------------------
+
+console.log("\nGuided tasting");
+await as(host, async (tx) => {
+  await tx.query("update public.profiles set experience = 'beginner' where id = $1", [host.id]);
+  const [p] = await rows(tx, "select experience from public.profiles where id = $1", [host.id]);
+  check("you can set your experience level", p?.experience === "beginner");
+  await tx.query("select public.save_wine_profile($1, $2)", [someVintage.id, JSON.stringify({ aromas: ["Pfirsich"] })]);
+});
+await as(stranger, async (tx) => {
+  await tx.query("select public.save_wine_profile($1, $2)", [someVintage.id, JSON.stringify({ aromas: ["Fake"] })]);
+  const [wp] = await rows(tx, "select profile from public.wine_profiles where vintage_id = $1", [someVintage.id]);
+  check("a stored wine profile is shared and not overwritten", wp?.profile.aromas[0] === "Pfirsich");
+});
+await as(guestD, async (tx) => {
+  const error = await fails(tx.query("select public.save_wine_profile($1, '{}')", [someVintage.id]));
+  check("guests cannot write wine profiles", error !== null, error ?? "succeeded");
+});
+await as(host, async (tx) => {
+  await tx.query(
+    `insert into public.tasting_notes (vintage_id, rating, guided) values ($1, 90, '{"found": ["Pfirsich"], "finish_seconds": 12}')`,
+    [someVintage.id],
+  );
+  const [{ ok }] = await rows(tx, "select public.claim_ai_credit('profile') as ok");
+  check("guided results are stored and the profile has its own limit", ok === true);
+});
+
 // --- upgrade ---------------------------------------------------------------
 
 console.log("\nGuest upgrade");

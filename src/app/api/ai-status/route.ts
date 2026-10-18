@@ -4,6 +4,7 @@ export const maxDuration = 60;
 import { askGemini, checkGemini } from "@/lib/server/ai";
 import { LABEL_SCHEMA } from "@/lib/server/label-schema";
 import { TEST_LABEL_JPEG } from "@/lib/server/test-label";
+import { generateWineProfile } from "@/lib/server/wine-profile";
 
 // Health check for the AI features: is the key set, does Google accept it,
 // is the model there? With ?test=1 it also runs two tiny requests (same
@@ -16,7 +17,7 @@ async function attempt(run: () => Promise<string>) {
   const start = Date.now();
   try {
     const text = await run();
-    return { ok: true, ms: Date.now() - start, sample: text.slice(0, 160) };
+    return { ok: true, ms: Date.now() - start, sample: text.slice(0, 600) };
   } catch (e) {
     return { ok: false, ms: Date.now() - start, error: e instanceof Error ? e.message : String(e) };
   }
@@ -27,6 +28,19 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const test = params.has("test");
   const only = params.get("model");
+  // Test the typical wine profile for the guided tasting: ?profile=1
+  if (params.has("profile")) {
+    return Response.json({
+      profileTest: await attempt(async () =>
+        JSON.stringify(
+          await generateWineProfile(
+            "Dönnhoff, Hermannshöhle Riesling, 2020, Rebsorte Riesling, Region Nahe, GG",
+            "white",
+          ),
+        ),
+      ),
+    });
+  }
   // Compare one model's speed on the test label: ?model=gemini-flash-lite-latest
   if (only && /^[a-z0-9.-]{3,60}$/.test(only)) {
     return Response.json({

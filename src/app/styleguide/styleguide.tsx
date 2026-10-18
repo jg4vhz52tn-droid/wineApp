@@ -8,6 +8,7 @@ import { InvitationTicket } from "@/components/event/invitation-ticket";
 import { CostsPanel } from "@/components/event/costs-panel";
 import { EventForm } from "@/components/event/event-form";
 import { DnaView } from "@/components/dna/dna-view";
+import { GuidedTasting } from "@/components/guided/guided-tasting";
 import { EventPatch } from "@/components/event/event-patch";
 import { DEMO_DNA } from "@/lib/dna-demo";
 import { GlassList } from "@/components/event/glass-list";
@@ -269,6 +270,40 @@ export function Styleguide() {
             </Button>
           </Section>
         </div>
+      </div>
+
+      <h2 id="gefuehrt" className="mt-16 mb-6 text-4xl">
+        Geführte Verkostung · Beispiel
+      </h2>
+      <div className="mx-auto mb-4 max-w-[390px] rounded-[2rem] border border-border bg-bg p-5">
+        <GuidedTasting
+          wine={{
+            vintageId: "demo",
+            wineId: "demo",
+            producer: "Dönnhoff",
+            name: "Hermannshöhle Riesling GG",
+            vintage: 2020,
+            color: "white",
+            grape: "Riesling",
+            region: "Nahe",
+            labelUrl: null,
+          }}
+          expected={{
+            shade: "w-green",
+            colorNote: "Junges Großes Gewächs: hell mit grünen Reflexen, erst mit den Jahren wird es golden.",
+            aromas: [
+              { aroma: "Pfirsich", note: "reife Steinobstfrucht der Nahe-Rieslinge" },
+              { aroma: "Zitrone", note: "die frische Säure zeigt sich als Zitrus" },
+              { aroma: "Feuerstein", note: "typisch für das vulkanische Gestein der Hermannshöhle" },
+              { aroma: "Schiefer", note: "der Boden schmeckt mit" },
+            ],
+            structure: { sweetness: 1.5, acidity: 8.5, body: 6 },
+            finishSeconds: 14,
+            note: "Ein großer trockener Riesling: viel Säure, viel Mineralik, sehr langer Abgang.",
+            source: "ai",
+          }}
+          onSave={async () => {}}
+        />
       </div>
 
       <h2 id="dna" className="mt-16 mb-6 text-4xl">

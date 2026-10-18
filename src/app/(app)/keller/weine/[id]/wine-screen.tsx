@@ -140,6 +140,15 @@ export function WineScreen() {
       )}
 
       {vintageId && (
+        <Link
+          href={`/keller/verkosten/${vintageId}`}
+          className="flex items-center justify-between rounded-control bg-surface-2/70 px-4 py-3 text-sm font-medium"
+        >
+          🍷 Geführt verkosten – mit Tipps zu jedem Schritt <span className="text-accent">→</span>
+        </Link>
+      )}
+
+      {vintageId && (
         <ReviewForm
           key={vintageId}
           vintageId={vintageId}
