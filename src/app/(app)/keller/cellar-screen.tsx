@@ -172,6 +172,7 @@ function CellarContent() {
         onClose={() => setOpened(null)}
         onSetValue={cellar.setValue}
         onOpenBottles={cellar.openBottles}
+        onSetPurchasePrice={cellar.setPurchasePrice}
       />
     </>
   );

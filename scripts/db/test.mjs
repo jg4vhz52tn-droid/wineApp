@@ -602,6 +602,26 @@ await as(host, async (tx) => {
   check("bottles can be placed in a named rack", placed?.rack_id === rack.id);
 });
 
+await as(host, async (tx) => {
+  const [item] = await rows(tx, "select id from public.cellar_items order by purchased_on limit 1");
+  await tx.query("select public.set_purchase_price($1, 27.5)", [item.id]);
+  const [after] = await rows(tx, "select purchase_price from public.cellar_items where id = $1", [item.id]);
+  const [event] = await rows(
+    tx,
+    "select unit_price from public.cellar_events where cellar_item_id = $1 and kind = 'purchase'",
+    [item.id],
+  );
+  check(
+    "the purchase price can be fixed afterwards",
+    Number(after?.purchase_price) === 27.5 && Number(event?.unit_price) === 27.5,
+  );
+});
+const [anyItem] = (await db.query("select id from public.cellar_items limit 1")).rows;
+await as(stranger, async (tx) => {
+  const error = await fails(tx.query("select public.set_purchase_price($1, 1)", [anyItem.id]));
+  check("others cannot change your purchase price", error !== null, error ?? "succeeded");
+});
+
 const [{ total }] = (await db.query("select count(*)::int as total from public.cellar_items")).rows;
 check("the owner's cellar really exists (so the next checks mean something)", total >= 11, `${total}`);
 

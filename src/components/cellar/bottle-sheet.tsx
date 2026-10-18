@@ -34,12 +34,14 @@ export function BottleSheet({
   onClose,
   onSetValue,
   onOpenBottles,
+  onSetPurchasePrice,
 }: {
   item: CellarWine | null;
   data: CellarData;
   onClose: () => void;
   onSetValue: (id: string, value: number) => Promise<boolean>;
   onOpenBottles: (id: string, count: number, value: number) => Promise<boolean>;
+  onSetPurchasePrice: (id: string, price: number | null) => Promise<boolean>;
 }) {
   return (
     <Sheet open={!!item} onClose={onClose} title={item ? item.name || item.producer : ""}>
@@ -50,6 +52,7 @@ export function BottleSheet({
           data={data}
           onSetValue={onSetValue}
           onOpenBottles={onOpenBottles}
+          onSetPurchasePrice={onSetPurchasePrice}
           onClose={onClose}
         />
       )}
@@ -62,12 +65,14 @@ function Content({
   data,
   onSetValue,
   onOpenBottles,
+  onSetPurchasePrice,
   onClose,
 }: {
   item: CellarWine;
   data: CellarData;
   onSetValue: (id: string, value: number) => Promise<boolean>;
   onOpenBottles: (id: string, count: number, value: number) => Promise<boolean>;
+  onSetPurchasePrice: (id: string, price: number | null) => Promise<boolean>;
   onClose: () => void;
 }) {
   const item = data.items.find((i) => i.id === initial.id) ?? initial;
@@ -82,6 +87,8 @@ function Content({
   const [cheers, setCheers] = useState<number | null>(null);
   const [busy, setBusy] = useState<"value" | "open" | null>(null);
   const [chart, setChart] = useState(true);
+  const [editPaid, setEditPaid] = useState(false);
+  const [paid, setPaid] = useState("");
   const prices = usePriceHistory(item.vintageId);
 
   const parsed = value.trim() ? Number(value.replace(",", ".")) : NaN;
@@ -137,7 +144,24 @@ function Content({
       </div>
 
       <dl className="grid grid-cols-3 gap-2 text-center">
-        <Box label="Bezahlt" value={item.purchasePrice !== null ? euro.format(item.purchasePrice) : "–"} />
+        <button
+          type="button"
+          aria-expanded={editPaid}
+          onClick={() => {
+            tick("minor");
+            setPaid(item.purchasePrice !== null ? String(item.purchasePrice).replace(".", ",") : "");
+            setEditPaid(!editPaid);
+          }}
+          className={cn(
+            "rounded-control px-2 py-2.5 transition",
+            editPaid ? "bg-accent/15 ring-1 ring-accent/50" : "bg-surface-2/70",
+          )}
+        >
+          <dt className="text-[0.65rem] leading-tight text-muted">Bezahlt ✎</dt>
+          <dd className="mt-0.5 font-display text-lg tabular-nums">
+            {item.purchasePrice !== null ? euro.format(item.purchasePrice) : "eintragen"}
+          </dd>
+        </button>
         <Box label={estimated ? "Wert (geschätzt)" : "Wert heute"} value={euro.format(now)} />
         <button
           type="button"
@@ -162,6 +186,42 @@ function Content({
           </dd>
         </button>
       </dl>
+
+      <AnimatePresence initial={false}>
+        {editPaid && (
+          <motion.form
+            key="paid"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const parsed = paid.trim() ? Number(paid.replace(",", ".")) : null;
+              if (parsed !== null && (Number.isNaN(parsed) || parsed < 0)) return;
+              if (await onSetPurchasePrice(item.id, parsed)) {
+                tick("medium");
+                setEditPaid(false);
+              }
+            }}
+          >
+            <div className="flex items-end gap-2 rounded-[1.75rem] bg-surface-2/70 p-4">
+              <TextField
+                label="Bezahlt pro Flasche (€)"
+                inputMode="decimal"
+                autoFocus
+                value={paid}
+                onChange={(e) => setPaid(e.target.value)}
+                placeholder="z. B. 24,50"
+                className="flex-1"
+              />
+              <Button type="submit" className="h-12">
+                Speichern
+              </Button>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {chart && (

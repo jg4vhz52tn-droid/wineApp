@@ -199,6 +199,29 @@ export function useCellar() {
     return true;
   }
 
+  /** Fixes the price paid per bottle afterwards. */
+  async function setPurchasePrice(itemId: string, price: number | null) {
+    if (mode !== "live") {
+      setDemoData((d) => ({
+        ...d,
+        items: d.items.map((i) => (i.id === itemId ? { ...i, purchasePrice: price } : i)),
+        events: d.events.map((e) =>
+          e.itemId === itemId && e.kind === "purchase" ? { ...e, unitPrice: price } : e,
+        ),
+      }));
+      return true;
+    }
+    const supabase = getSupabase();
+    if (!supabase) return false;
+    const { error } = await supabase.rpc("set_purchase_price", { p_item_id: itemId, p_price: price });
+    if (error) {
+      setError("Der Kaufpreis konnte nicht gespeichert werden.");
+      return false;
+    }
+    await reload();
+    return true;
+  }
+
   /** Creates a named rack; returns its id. */
   async function addRack(name: string, compartments: number, rows: number) {
     const clean = name.trim();
@@ -259,7 +282,18 @@ export function useCellar() {
     return true;
   }
 
-  return { mode, data, error, addBottles, openBottles, setValue, addRack, updateRack, loadDemoIntoAccount };
+  return {
+    mode,
+    data,
+    error,
+    addBottles,
+    openBottles,
+    setValue,
+    setPurchasePrice,
+    addRack,
+    updateRack,
+    loadDemoIntoAccount,
+  };
 }
 
 type Loaded = { orgId: string | null; data: CellarData } | { error: string };

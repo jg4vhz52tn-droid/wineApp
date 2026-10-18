@@ -13,11 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Card, Eyebrow } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { TextArea } from "@/components/ui/field";
+import { Sheet } from "@/components/ui/sheet";
 import { SwitchRow } from "@/components/ui/switch";
 import { TickDial } from "@/components/ui/tick-dial";
 import { AROMA_COLOR } from "@/config/aromas";
 import { bottleShapeFor } from "@/config/bottles";
-import { describeRating, STRUCTURE_SCALES, type StructureKey } from "@/config/tasting";
+import { describeRating, describeStructure, STRUCTURE_SCALES, type StructureKey } from "@/config/tasting";
 import { tick } from "@/lib/haptics";
 import { usePriceHistory } from "@/lib/prices";
 import { deleteReview, fetchReviews, fetchWine, saveReview, type Review, type WineDetail } from "@/lib/wines";
@@ -31,6 +32,7 @@ export function WineScreen() {
   const [wine, setWine] = useState<WineDetail | null | undefined>(undefined);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [vintageId, setVintageId] = useState<string | null>(null);
+  const [openReview, setOpenReview] = useState<Review | null>(null);
 
   const loadReviews = useCallback(() => fetchReviews(id).then(setReviews), [id]);
 
@@ -156,18 +158,20 @@ export function WineScreen() {
         ) : (
           <ul className="space-y-3">
             {reviews.map((r) => (
-              <ReviewCard
-                key={r.id}
-                review={r}
-                onDelete={async () => {
-                  await deleteReview(r.id).catch(() => null);
-                  await loadReviews();
-                }}
-              />
+              <ReviewCard key={r.id} review={r} onOpen={() => setOpenReview(r)} />
             ))}
           </ul>
         )}
       </section>
+
+      <ReviewSheet
+        review={openReview}
+        onClose={() => setOpenReview(null)}
+        onDelete={async (r) => {
+          await deleteReview(r.id).catch(() => null);
+          await loadReviews();
+        }}
+      />
     </div>
   );
 }
@@ -287,48 +291,167 @@ function ReviewForm({
   );
 }
 
-function ReviewCard({ review: r, onDelete }: { review: Review; onDelete: () => Promise<void> }) {
-  const structure = Object.entries(r.structure ?? {}) as [StructureKey, number][];
+/** Compact card in the list; tapping it opens the full tasting note. */
+function ReviewCard({ review: r, onOpen }: { review: Review; onOpen: () => void }) {
+  const details = Object.keys(r.structure ?? {}).length + r.aromas.length;
   return (
-    <li className="space-y-2.5 rounded-card border border-border bg-surface p-4">
-      <div className="flex items-center gap-3">
-        <Avatar name={r.author} className="size-9" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-medium">{r.isMine ? "Du" : r.author}</p>
-          <p className="text-xs text-muted">
-            {dateFmt.format(new Date(`${r.tastedOn}T12:00:00`))}
-            {r.vintage ? ` · Jahrgang ${r.vintage}` : ""}
-            {r.isMine && !r.isPublic ? " · nur für dich" : ""}
-          </p>
-        </div>
-        {r.rating !== null && (
-          <span className="font-display text-3xl text-accent tabular-nums">{fmt(r.rating)}</span>
-        )}
-      </div>
-      {r.note && <p className="leading-relaxed whitespace-pre-line">{r.note}</p>}
-      {r.aromas.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {r.aromas.map((a) => (
-            <span
-              key={a}
-              className="rounded-full px-2.5 py-0.5 text-xs font-medium text-[#1a0f12]"
-              style={{ background: AROMA_COLOR.get(a) ?? "var(--surface-2)" }}
-            >
-              {a}
+    <li>
+      <button
+        type="button"
+        onClick={() => {
+          tick("minor");
+          onOpen();
+        }}
+        className="block w-full space-y-2.5 rounded-card border border-border bg-surface p-4 text-left transition active:scale-[0.99]"
+      >
+        <span className="flex items-center gap-3">
+          <Avatar name={r.author} className="size-9" />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-medium">{r.isMine ? "Du" : r.author}</span>
+            <span className="block text-xs text-muted">
+              {dateFmt.format(new Date(`${r.tastedOn}T12:00:00`))}
+              {r.vintage ? ` · Jahrgang ${r.vintage}` : ""}
+              {r.isMine && !r.isPublic ? " · nur für dich" : ""}
             </span>
-          ))}
+          </span>
+          {r.rating !== null && (
+            <span className="font-display text-3xl text-accent tabular-nums">{fmt(r.rating)}</span>
+          )}
+        </span>
+        {r.note && <span className="line-clamp-2 block leading-relaxed">{r.note}</span>}
+        {r.aromas.length > 0 && (
+          <span className="flex flex-wrap gap-1.5">
+            {r.aromas.slice(0, 5).map((a) => (
+              <span
+                key={a}
+                className="rounded-full px-2.5 py-0.5 text-xs font-medium text-[#1a0f12]"
+                style={{ background: AROMA_COLOR.get(a) ?? "var(--surface-2)" }}
+              >
+                {a}
+              </span>
+            ))}
+            {r.aromas.length > 5 && <span className="text-xs text-muted">+{r.aromas.length - 5}</span>}
+          </span>
+        )}
+        {details > 0 && (
+          <span className="block text-xs font-medium text-accent">Ganze Verkostung ansehen →</span>
+        )}
+      </button>
+    </li>
+  );
+}
+
+const ORDER: StructureKey[] = ["sweetness", "acidity", "body", "tannin", "finish"];
+
+/** The full tasting note: score, structure as scales with words, all aromas, comment. */
+function ReviewSheet({
+  review: r,
+  onClose,
+  onDelete,
+}: {
+  review: Review | null;
+  onClose: () => void;
+  onDelete: (r: Review) => Promise<void>;
+}) {
+  const structure = r ? ORDER.filter((k) => r.structure?.[k] !== undefined) : [];
+  return (
+    <Sheet
+      open={r !== null}
+      onClose={onClose}
+      title={r ? (r.isMine ? "Deine Verkostung" : `Verkostung von ${r.author}`) : ""}
+    >
+      {r && (
+        <div className="space-y-6 pb-4">
+          <div className="flex items-center gap-3">
+            <Avatar name={r.author} className="size-11" />
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">{r.isMine ? "Du" : r.author}</p>
+              <p className="text-sm text-muted">
+                {dateFmt.format(new Date(`${r.tastedOn}T12:00:00`))}
+                {r.vintage ? ` · Jahrgang ${r.vintage}` : ""}
+                {r.isMine ? (r.isPublic ? " · für alle sichtbar" : " · nur für dich") : ""}
+              </p>
+            </div>
+          </div>
+
+          {r.rating !== null && (
+            <div className="flex items-baseline justify-between rounded-[1.75rem] bg-surface-2/70 px-5 py-4">
+              <span className="rounded-full bg-accent/15 px-3 py-1.5 text-sm font-semibold text-accent">
+                {describeRating(r.rating)}
+              </span>
+              <span className="font-display text-6xl leading-none text-accent tabular-nums">
+                {fmt(r.rating)}
+              </span>
+            </div>
+          )}
+
+          {structure.length > 0 && (
+            <section className="space-y-3">
+              <h3 className="text-xl">Struktur</h3>
+              <ul className="space-y-3">
+                {structure.map((key) => {
+                  const value = r.structure![key]!;
+                  return (
+                    <li key={key} className="space-y-1.5">
+                      <div className="flex items-baseline justify-between text-sm">
+                        <span className="font-medium">{STRUCTURE_SCALES[key].label}</span>
+                        <span className="text-muted">
+                          {describeStructure(key, value)} ·{" "}
+                          <b className="font-display text-base text-fg tabular-nums">{fmt(value)}</b>
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-surface-2" aria-hidden>
+                        <div
+                          className="h-full rounded-full bg-accent"
+                          style={{ width: `${(value / 10) * 100}%` }}
+                        />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
+          {r.aromas.length > 0 && (
+            <section className="space-y-3">
+              <h3 className="text-xl">Aromen</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {r.aromas.map((a) => (
+                  <span
+                    key={a}
+                    className="rounded-full px-3 py-1 text-sm font-medium text-[#1a0f12]"
+                    style={{ background: AROMA_COLOR.get(a) ?? "var(--surface-2)" }}
+                  >
+                    {a}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {r.note && (
+            <section className="space-y-2">
+              <h3 className="text-xl">Kommentar</h3>
+              <p className="leading-relaxed whitespace-pre-line">{r.note}</p>
+            </section>
+          )}
+
+          {r.isMine && (
+            <Button
+              variant="ghost"
+              block
+              onClick={async () => {
+                if (!window.confirm("Diese Bewertung löschen?")) return;
+                await onDelete(r);
+                onClose();
+              }}
+            >
+              Bewertung löschen
+            </Button>
+          )}
         </div>
       )}
-      {structure.length > 0 && (
-        <p className="text-xs text-muted">
-          {structure.map(([k, v]) => `${STRUCTURE_SCALES[k].label} ${fmt(v)}`).join(" · ")}
-        </p>
-      )}
-      {r.isMine && (
-        <button type="button" className="text-xs text-muted underline underline-offset-4" onClick={onDelete}>
-          Löschen
-        </button>
-      )}
-    </li>
+    </Sheet>
   );
 }

@@ -20,6 +20,10 @@ export type WineSummary = {
   labelUrl: string | null;
   vintages: number[];
   inCellar: number;
+  /** Bottles you have opened (from the cellar history). */
+  opened: number;
+  /** You scanned this label yourself. */
+  scanned: boolean;
   myRating: number | null;
   avgRating: number | null;
   ratings: number;
@@ -38,6 +42,8 @@ function toSummary(w: Row): WineSummary {
     labelUrl: labelUrl(w.label_path as string | null),
     vintages: [],
     inCellar: 0,
+    opened: 0,
+    scanned: false,
     myRating: null,
     avgRating: null,
     ratings: 0,
@@ -48,7 +54,9 @@ export async function fetchMyWines(userId: string): Promise<WineSummary[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
   const [cellar, notes] = await Promise.all([
-    supabase.from("cellar_items").select(`quantity, wine_vintages(vintage, wines(${WINE}))`),
+    supabase
+      .from("cellar_items")
+      .select(`quantity, cellar_events(kind, quantity), wine_vintages(vintage, wines(${WINE}))`),
     supabase
       .from("tasting_notes")
       .select(`rating, created_at, wine_vintages(vintage, wines(${WINE}))`)
@@ -60,6 +68,7 @@ export async function fetchMyWines(userId: string): Promise<WineSummary[]> {
     const w = v?.wines as Row | null;
     if (!w) return null;
     const entry = byWine.get(w.id as string) ?? toSummary(w);
+    if (typeof w.label_path === "string" && w.label_path.startsWith(`${userId}/`)) entry.scanned = true;
     byWine.set(entry.wineId, entry);
     const vintage = v?.vintage as number | null;
     if (vintage && !entry.vintages.includes(vintage)) entry.vintages.push(vintage);
@@ -67,7 +76,11 @@ export async function fetchMyWines(userId: string): Promise<WineSummary[]> {
   };
   for (const row of (cellar.data ?? []) as unknown as Row[]) {
     const entry = add(row.wine_vintages as Row | null);
-    if (entry) entry.inCellar += Number(row.quantity);
+    if (!entry) continue;
+    entry.inCellar += Number(row.quantity);
+    for (const e of (row.cellar_events as Row[]) ?? []) {
+      if (e.kind === "consume") entry.opened += Math.abs(Number(e.quantity));
+    }
   }
   for (const row of (notes.data ?? []) as unknown as Row[]) {
     const entry = add(row.wine_vintages as Row | null);

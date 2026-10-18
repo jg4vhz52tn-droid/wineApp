@@ -10,7 +10,17 @@ import { Chip } from "@/components/ui/chip";
 import { bottleShapeFor } from "@/config/bottles";
 import { fetchMyWines, type WineSummary } from "@/lib/wines";
 
-type Filter = "alle" | "keller" | "bewertet" | "offen";
+type Filter = "alle" | "keller" | "geoeffnet" | "gescannt" | "bewertet" | "offen";
+function matches(w: WineSummary, filter: Filter) {
+  if (filter === "keller") return w.inCellar > 0;
+  if (filter === "geoeffnet") return w.opened > 0;
+  if (filter === "gescannt") return w.scanned;
+  if (filter === "bewertet") return w.myRating !== null;
+  // Opened but not rated yet - the ones that still need your verdict.
+  if (filter === "offen") return w.opened > 0 && w.myRating === null;
+  return true;
+}
+
 const fmt = (n: number) => n.toLocaleString("de-DE", { maximumFractionDigits: 1 });
 
 export function MyWines() {
@@ -27,15 +37,8 @@ export function MyWines() {
     };
   }, [session, isGuest]);
 
-  const shown = (wines ?? []).filter((w) =>
-    filter === "keller"
-      ? w.inCellar > 0
-      : filter === "bewertet"
-        ? w.myRating !== null
-        : filter === "offen"
-          ? w.myRating === null
-          : true,
-  );
+  const shown = (wines ?? []).filter((w) => matches(w, filter));
+  const count = (f: Filter) => (wines ?? []).filter((w) => matches(w, f)).length;
 
   return (
     <>
@@ -63,12 +66,14 @@ export function MyWines() {
               [
                 ["alle", "Alle"],
                 ["keller", "Im Keller"],
+                ["geoeffnet", "Geöffnet"],
+                ["gescannt", "Gescannt"],
                 ["bewertet", "Bewertet"],
                 ["offen", "Noch nicht bewertet"],
               ] as const
             ).map(([key, label]) => (
               <Chip key={key} selected={filter === key} onClick={() => setFilter(key)}>
-                {label}
+                {label} <span className="ml-1 tabular-nums opacity-60">{count(key)}</span>
               </Chip>
             ))}
           </div>
@@ -93,6 +98,8 @@ export function MyWines() {
                     </span>
                     <span className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted">
                       {w.inCellar > 0 && <span>{w.inCellar} im Keller</span>}
+                      {w.opened > 0 && <span>{w.opened} geöffnet</span>}
+                      {w.scanned && <span>📷 gescannt</span>}
                       {w.avgRating !== null && (
                         <span>
                           Ø {fmt(w.avgRating)} · {w.ratings} {w.ratings === 1 ? "Bewertung" : "Bewertungen"}
@@ -116,6 +123,13 @@ export function MyWines() {
               </li>
             ))}
           </ul>
+          {shown.length === 0 && (
+            <p className="text-sm text-muted">
+              {filter === "offen"
+                ? "Alles bewertet, was du geöffnet hast. Zum Wohl!"
+                : "Hier ist gerade nichts."}
+            </p>
+          )}
         </div>
       )}
     </>
