@@ -43,7 +43,11 @@ export async function generateWineProfile(wine: string, color: string): Promise<
           },
           required: ["sweetness", "acidity", "body", "finish"],
         },
-        finish_seconds: { type: "INTEGER", nullable: true },
+        finish_seconds: {
+          type: "INTEGER",
+          nullable: true,
+          description: "Wie lange ein Einsteiger den Geschmack nach dem Schlucken bemerkt, 3-25 Sekunden",
+        },
         note: {
           type: "STRING",
           nullable: true,
@@ -77,7 +81,11 @@ export async function generateWineProfile(wine: string, color: string): Promise<
       tannin: color === "red" ? clamp(raw.structure?.tannin) : null,
       finish: clamp(raw.structure?.finish) ?? 5,
     },
-    finish_seconds: typeof raw.finish_seconds === "number" ? raw.finish_seconds : null,
+    // Experts often count very long finishes ("60 seconds"); with a stopwatch at the table 3-25 s is realistic.
+    finish_seconds:
+      typeof raw.finish_seconds === "number"
+        ? Math.max(3, Math.min(25, Math.round(raw.finish_seconds)))
+        : null,
     note: raw.note ?? null,
   };
   return profile;
