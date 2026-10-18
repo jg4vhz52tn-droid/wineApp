@@ -6,8 +6,18 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 // never reaches the app.
 
 const API = "https://generativelanguage.googleapis.com/v1beta";
-/** Override with GEMINI_MODEL if Google renames its models. */
-export const DEFAULT_MODEL = "gemini-2.5-flash";
+/**
+ * Models to try, in order. "gemini-flash-latest" always points to Google's
+ * current free Flash model; GEMINI_MODEL can put another one first.
+ * (gemini-2.5-flash is closed for new accounts.)
+ */
+const MODELS = [
+  "gemini-flash-latest",
+  "gemini-3.8-flash",
+  "gemini-3-flash-preview",
+  "gemini-flash-lite-latest",
+];
+let working: string | null = null;
 
 export class HttpError extends Error {
   constructor(
@@ -54,7 +64,10 @@ function apiKey() {
   return key;
 }
 
-export const model = () => process.env.GEMINI_MODEL || DEFAULT_MODEL;
+const candidates = () => [
+  ...new Set([working, process.env.GEMINI_MODEL, ...MODELS].filter(Boolean) as string[]),
+];
+export const model = () => candidates()[0];
 
 type Part = { text?: string; inline_data?: { mime_type: string; data: string } };
 
@@ -64,18 +77,29 @@ export async function askGemini(body: {
   schema?: Record<string, unknown>;
   googleSearch?: boolean;
 }): Promise<string> {
-  const res = await fetch(`${API}/models/${model()}:generateContent`, {
-    method: "POST",
-    headers: { "x-goog-api-key": apiKey(), "content-type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts: body.parts }],
-      ...(body.googleSearch ? { tools: [{ google_search: {} }] } : {}),
-      generationConfig: {
-        temperature: 0.1,
-        ...(body.schema ? { responseMimeType: "application/json", responseSchema: body.schema } : {}),
-      },
-    }),
+  const payload = JSON.stringify({
+    contents: [{ role: "user", parts: body.parts }],
+    ...(body.googleSearch ? { tools: [{ google_search: {} }] } : {}),
+    generationConfig: {
+      temperature: 0.1,
+      ...(body.schema ? { responseMimeType: "application/json", responseSchema: body.schema } : {}),
+    },
   });
+  let res: Response | null = null;
+  // A retired or unknown model answers 404 - then the next one is tried.
+  for (const name of candidates()) {
+    res = await fetch(`${API}/models/${name}:generateContent`, {
+      method: "POST",
+      headers: { "x-goog-api-key": apiKey(), "content-type": "application/json" },
+      body: payload,
+    });
+    if (res.status !== 404) {
+      if (res.ok) working = name;
+      break;
+    }
+    console.warn("Gemini model not available:", name);
+  }
+  if (!res) throw new HttpError(503, "Kein KI-Modell verfügbar.");
   if (!res.ok) {
     const raw = await res.text();
     console.error("Gemini API", res.status, raw);
