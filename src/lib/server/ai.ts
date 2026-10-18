@@ -1,11 +1,13 @@
 import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-// Server-side helpers for the AI routes. The Claude key lives only here
-// (Vercel environment variable ANTHROPIC_API_KEY) and never reaches the app.
+// Server-side helpers for the AI routes, using Google Gemini (free tier).
+// The key lives only here (Vercel environment variable GEMINI_API_KEY) and
+// never reaches the app.
 
-export const AI_MODEL = "claude-sonnet-5-5";
-const API = "https://api.anthropic.com/v1/messages";
+const API = "https://generativelanguage.googleapis.com/v1beta";
+/** Override with GEMINI_MODEL if Google renames its models. */
+export const DEFAULT_MODEL = "gemini-2.5-flash";
 
 export class HttpError extends Error {
   constructor(
@@ -46,35 +48,72 @@ export async function claimCredit(supabase: SupabaseClient, kind: "scan" | "pric
   if (!data) throw new HttpError(429, "Für heute ist das Limit erreicht – morgen geht’s weiter.");
 }
 
-type Block = { type: string; name?: string; input?: unknown; text?: string };
-type Reply = { content: Block[]; stop_reason: string };
-
-/** One Messages API call; continues automatically while server tools (web search) are still working. */
-export async function askClaude(body: Record<string, unknown>): Promise<Block[]> {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) throw new HttpError(503, "Die KI ist noch nicht eingerichtet (ANTHROPIC_API_KEY fehlt).");
-  const messages = [...(body.messages as unknown[])];
-  const collected: Block[] = [];
-  for (let round = 0; round < 4; round++) {
-    const res = await fetch(API, {
-      method: "POST",
-      headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      body: JSON.stringify({ model: AI_MODEL, ...body, messages }),
-    });
-    if (!res.ok) {
-      console.error("Claude API", res.status, await res.text());
-      throw new HttpError(502, "Die KI ist gerade nicht erreichbar. Bitte später noch einmal.");
-    }
-    const reply = (await res.json()) as Reply;
-    collected.push(...reply.content);
-    if (reply.stop_reason !== "pause_turn") break;
-    messages.push({ role: "assistant", content: reply.content });
-  }
-  return collected;
+function apiKey() {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new HttpError(503, "Die KI ist noch nicht eingerichtet (GEMINI_API_KEY fehlt).");
+  return key;
 }
 
-/** The input of the first call to our reporting tool, or null. */
-export function toolInput<T>(blocks: Block[], name: string): T | null {
-  const block = blocks.find((b) => b.type === "tool_use" && b.name === name);
-  return (block?.input as T) ?? null;
+export const model = () => process.env.GEMINI_MODEL || DEFAULT_MODEL;
+
+type Part = { text?: string; inline_data?: { mime_type: string; data: string } };
+
+/** One generateContent call; returns the text of the answer. */
+export async function askGemini(body: {
+  parts: Part[];
+  schema?: Record<string, unknown>;
+  googleSearch?: boolean;
+}): Promise<string> {
+  const res = await fetch(`${API}/models/${model()}:generateContent`, {
+    method: "POST",
+    headers: { "x-goog-api-key": apiKey(), "content-type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: body.parts }],
+      ...(body.googleSearch ? { tools: [{ google_search: {} }] } : {}),
+      generationConfig: {
+        temperature: 0.1,
+        ...(body.schema ? { responseMimeType: "application/json", responseSchema: body.schema } : {}),
+      },
+    }),
+  });
+  if (res.status === 429)
+    throw new HttpError(429, "Das Gratis-Kontingent ist gerade aufgebraucht. Bitte später noch einmal.");
+  if (!res.ok) {
+    console.error("Gemini API", res.status, await res.text());
+    throw new HttpError(502, "Die KI ist gerade nicht erreichbar. Bitte später noch einmal.");
+  }
+  const json = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+  return (json.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("");
+}
+
+/** The first JSON object in a text (answers with Google Search can't be forced into JSON mode). */
+export function parseJson<T>(text: string): T | null {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end <= start) return null;
+  try {
+    return JSON.parse(text.slice(start, end + 1)) as T;
+  } catch {
+    return null;
+  }
+}
+
+/** For the status page: does Google accept the key, and is the model there? */
+export async function checkGemini() {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return { configured: false, valid: false, model: model(), modelAvailable: false };
+  const res = await fetch(`${API}/models?pageSize=200`, { headers: { "x-goog-api-key": key } });
+  if (!res.ok)
+    return { configured: true, valid: false, model: model(), modelAvailable: false, status: res.status };
+  const { models } = (await res.json()) as { models: { name: string }[] };
+  return {
+    configured: true,
+    valid: true,
+    model: model(),
+    modelAvailable: models.some((m) => m.name === `models/${model()}`),
+    flashModels: models
+      .map((m) => m.name.replace("models/", ""))
+      .filter((n) => n.includes("flash"))
+      .slice(0, 8),
+  };
 }

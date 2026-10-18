@@ -1,4 +1,4 @@
-import { askClaude, claimCredit, errorResponse, HttpError, requireUser, toolInput } from "@/lib/server/ai";
+import { askGemini, claimCredit, errorResponse, HttpError, parseJson, requireUser } from "@/lib/server/ai";
 
 export const maxDuration = 60;
 
@@ -11,36 +11,10 @@ export type PriceOffer = {
   vintage: number | null;
 };
 
-const SCHEMA = {
-  type: "object",
-  properties: {
-    offers: {
-      type: "array",
-      maxItems: 8,
-      items: {
-        type: "object",
-        properties: {
-          shop: { type: "string" },
-          price: { type: "number", description: "Price per bottle incl. VAT" },
-          currency: { type: "string", description: "ISO code, usually EUR" },
-          url: { type: "string", description: "Direct https link to the product page" },
-          bottle_ml: { type: ["integer", "null"] },
-          vintage: { type: ["integer", "null"], description: "Vintage of the offer, if stated" },
-        },
-        required: ["shop", "price", "currency", "url", "bottle_ml", "vintage"],
-      },
-    },
-    note: {
-      type: ["string", "null"],
-      description: "One short German sentence, e.g. if only other vintages were found",
-    },
-  },
-  required: ["offers", "note"],
-};
-
 /**
- * Looks up current shop offers for a wine on the web (on demand) and stores
- * them in the price history. Results are "Fundstellen", not guaranteed prices.
+ * Looks up current shop offers for a wine with Gemini + Google Search (on
+ * demand, free tier) and stores them in the price history. Results are
+ * "Fundstellen", not guaranteed prices - the app also always offers search links.
  */
 export async function POST(request: Request) {
   try {
@@ -55,37 +29,32 @@ export async function POST(request: Request) {
     await claimCredit(supabase, "prices");
 
     const wine = [body.producer, body.name, body.vintage].filter(Boolean).join(" ");
-    const blocks = await askClaude({
-      max_tokens: 1500,
-      tools: [
+    const answer = await askGemini({
+      googleSearch: true,
+      parts: [
         {
-          type: "web_search_20250305",
-          name: "web_search",
-          max_uses: 4,
-          user_location: { type: "approximate", country: "DE", timezone: "Europe/Berlin" },
-        },
-        { name: "report_offers", description: "Report the shop offers you found.", input_schema: SCHEMA },
-      ],
-      messages: [
-        {
-          role: "user",
-          content:
-            `Finde aktuelle Online-Angebote für diesen Wein: „${wine}“ (0,75 l, bevorzugt Händler in Deutschland/EU). ` +
-            "Nur echte Produktseiten mit Preis, keine Preisvergleich-Startseiten. Jahrgang genau angeben, " +
-            "andere Jahrgänge nur, wenn der gesuchte nicht zu finden ist. Melde das Ergebnis mit report_offers.",
+          text:
+            `Suche aktuelle Online-Angebote für diesen Wein: „${wine}“ (0,75 l, bevorzugt Händler in Deutschland/EU). ` +
+            "Nur echte Produktseiten von Weinhändlern mit Preis pro Flasche inkl. MwSt. – keine Preisvergleich-Startseiten. " +
+            "Nenne den Jahrgang des Angebots. Antworte NUR mit JSON in dieser Form: " +
+            '{"offers":[{"shop":"…","price":34.9,"currency":"EUR","url":"https://…","bottle_ml":750,"vintage":2021}],"note":"…"} ' +
+            "Höchstens 6 Angebote. Wenn du nichts Verlässliches findest: offers leer und note mit einem kurzen Satz.",
         },
       ],
     });
-    const result = toolInput<{ offers: PriceOffer[]; note: string | null }>(blocks, "report_offers") ?? {
-      offers: [],
-      note: "Keine Angebote gefunden.",
-    };
-    const offers = result.offers.filter((o) => /^https:\/\//.test(o.url) && o.price > 0).slice(0, 8);
+    const result = parseJson<{ offers?: PriceOffer[]; note?: string | null }>(answer) ?? {};
+    const offers = (result.offers ?? [])
+      .filter((o) => typeof o.url === "string" && /^https:\/\//.test(o.url) && Number(o.price) > 0)
+      .map((o) => ({ ...o, price: Number(o.price), currency: o.currency || "EUR" }))
+      .slice(0, 6);
     const sameVintage = offers.filter((o) => !body.vintage || !o.vintage || o.vintage === body.vintage);
     if (sameVintage.length) {
       await supabase.rpc("record_price_offers", { p_vintage_id: body.vintageId, p_offers: sameVintage });
     }
-    return Response.json({ offers: offers.sort((a, b) => a.price - b.price), note: result.note });
+    return Response.json({
+      offers: offers.sort((a, b) => a.price - b.price),
+      note: result.note ?? (offers.length ? null : "Keine verlässlichen Angebote gefunden."),
+    });
   } catch (error) {
     return errorResponse(error);
   }

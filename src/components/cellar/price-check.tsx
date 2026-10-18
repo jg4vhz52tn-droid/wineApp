@@ -8,6 +8,21 @@ import { tick } from "@/lib/haptics";
 import type { PricePoint } from "@/lib/prices";
 import { findPrices, type PriceOffer } from "@/lib/wine-ai";
 
+/** Free fallbacks that always work: open the search for this wine at the big price sites. */
+function searchLinks(wine: { producer: string; name: string | null; vintage: number | null }) {
+  const q = [wine.producer, wine.name, wine.vintage].filter(Boolean).join(" ");
+  const e = encodeURIComponent(q);
+  return [
+    { label: "Google Shopping", href: `https://www.google.com/search?tbm=shop&q=${e}` },
+    { label: "idealo", href: `https://www.idealo.de/preisvergleich/MainSearchProductCategory.html?q=${e}` },
+    {
+      label: "Wine-Searcher",
+      href: `https://www.wine-searcher.com/find/${encodeURIComponent(q.toLowerCase()).replace(/%20/g, "+")}`,
+    },
+    { label: "Vivino", href: `https://www.vivino.com/search/wines?q=${e}` },
+  ];
+}
+
 const dateFmt = new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "short", year: "numeric" });
 
 /**
@@ -128,6 +143,22 @@ export function PriceCheck({
       {!wine.vintageId && (
         <p className="text-xs text-muted">Im Beispielkeller nicht verfügbar – melde dich an.</p>
       )}
+      <div className="space-y-2 border-t border-border pt-3">
+        <p className="text-xs text-muted">Selbst suchen:</p>
+        <div className="flex flex-wrap gap-2">
+          {searchLinks(wine).map((l) => (
+            <a
+              key={l.label}
+              href={l.href}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="inline-flex h-9 items-center rounded-full border border-border bg-surface px-3 text-xs font-medium"
+            >
+              {l.label} ↗
+            </a>
+          ))}
+        </div>
+      </div>
       <p className="text-xs text-muted">Fundstellen aus der Websuche, ohne Gewähr. Preise ändern sich.</p>
     </section>
   );
