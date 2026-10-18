@@ -122,6 +122,7 @@ function Live({
                         producer: wine.producer,
                         name: wine.name ?? "",
                         vintage: wine.vintage ?? undefined,
+                        photo: wine.labelUrl,
                       },
                     }
                   : null

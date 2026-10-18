@@ -102,6 +102,20 @@ function CellarContent() {
             </Card>
           ) : (
             <>
+              {mode === "live" && (
+                <Link
+                  href="/keller/weine"
+                  className="flex items-center justify-between gap-3 rounded-card border border-border bg-surface p-4"
+                >
+                  <span>
+                    <span className="block font-display text-xl">Meine Weine</span>
+                    <span className="block text-sm text-muted">
+                      Bewerten, kommentieren, sehen was andere sagen
+                    </span>
+                  </span>
+                  <span className="text-accent">→</span>
+                </Link>
+              )}
               <PortfolioHeader data={data} estimated={anyEstimated} />
               <TonightPicker data={data} onOpen={setOpened} />
               <Movers data={data} onOpen={setOpened} />

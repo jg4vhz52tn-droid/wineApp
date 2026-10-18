@@ -47,6 +47,7 @@ const wine = (
   grapeId,
   regionId,
   siteId,
+  labelUrl: null,
 });
 
 const guess = (glassId: string, participantId: string, g: Partial<Guess>): Guess => ({

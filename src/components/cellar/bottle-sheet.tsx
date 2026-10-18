@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { Bottle } from "@/components/tasting/bottle";
@@ -16,6 +17,8 @@ import { StepButton } from "./add-bottles";
 import { location } from "./cellar-list";
 import { DrinkBadge } from "./drink-badge";
 import { ItemChart } from "./item-chart";
+import { PriceCheck } from "./price-check";
+import { marketSeries, usePriceHistory } from "@/lib/prices";
 
 const dateFmt = new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "short", year: "numeric" });
 const SOURCE: Record<string, string> = {
@@ -79,6 +82,7 @@ function Content({
   const [cheers, setCheers] = useState<number | null>(null);
   const [busy, setBusy] = useState<"value" | "open" | null>(null);
   const [chart, setChart] = useState(true);
+  const prices = usePriceHistory(item.vintageId);
 
   const parsed = value.trim() ? Number(value.replace(",", ".")) : NaN;
 
@@ -112,6 +116,7 @@ function Content({
             producer: item.producer,
             name: item.name || item.producer,
             vintage: item.vintage ?? undefined,
+            photo: item.labelUrl,
           }}
           className="h-44 w-24 shrink-0"
         />
@@ -169,7 +174,12 @@ function Content({
             className="origin-top overflow-hidden"
           >
             <div className="rounded-[1.75rem] bg-surface-2/70 p-4">
-              <ItemChart item={item} valuations={data.valuations} asOf={data.asOf} />
+              <ItemChart
+                item={item}
+                valuations={data.valuations}
+                asOf={data.asOf}
+                market={marketSeries(prices.history)}
+              />
             </div>
           </motion.div>
         )}
@@ -211,6 +221,20 @@ function Content({
           </div>
         </section>
       )}
+
+      <PriceCheck
+        wine={{
+          vintageId: item.vintageId,
+          producer: item.producer,
+          name: item.name || null,
+          vintage: item.vintage,
+        }}
+        history={prices.history}
+        onFound={prices.reload}
+        onUseValue={async (v) => {
+          if (await onSetValue(item.id, v)) tick("medium");
+        }}
+      />
 
       <section className="space-y-3">
         <Eyebrow>Aktuellen Wert eintragen</Eyebrow>
@@ -260,6 +284,15 @@ function Content({
             )}
           </ul>
         </section>
+      )}
+
+      {item.wineId && (
+        <Link
+          href={`/keller/weine/${item.wineId}`}
+          className="flex items-center justify-between rounded-control bg-surface-2/70 px-4 py-3 text-sm font-medium"
+        >
+          Bewerten & Bewertungen ansehen <span className="text-accent">→</span>
+        </Link>
       )}
 
       <Button variant="ghost" block onClick={onClose}>

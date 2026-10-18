@@ -17,6 +17,11 @@ export type CellarWine = {
   rackId: string | null;
   compartment: string | null;
   row: string | null;
+  /** Catalogue ids (missing in the sample cellar). */
+  vintageId?: string | null;
+  wineId?: string | null;
+  /** Photo of the real label, if someone scanned it. */
+  labelUrl?: string | null;
 };
 
 /** A named storage place ("Keller · Regal links", "Weinkühlschrank") with a grid. */
@@ -63,4 +68,9 @@ export type NewBottles = {
   row: string | null;
   classification: string | null;
   grape: string | null;
+  /** From the label scan: region/site from the catalogue and the cropped label photo. */
+  regionId?: string | null;
+  siteId?: string | null;
+  label?: Blob | null;
+  labelPreview?: string | null;
 };

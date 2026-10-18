@@ -455,6 +455,79 @@ await as(guestC, async (tx) => {
   check("a photo path must belong to the evening", error !== null, error ?? "succeeded");
 });
 
+// --- labels, reviews, prices, AI limit -------------------------------------------
+
+console.log("\nLabels, reviews & prices");
+const [someVintage] = (await db.query("select id, wine_id from public.wine_vintages order by vintage limit 1")).rows;
+await as(host, async (tx) => {
+  await tx.query("insert into storage.objects (bucket_id, name) values ('wine-labels', $1)", [`${host.id}/etikett.jpg`]);
+  await tx.query("select public.set_wine_label($1, $2)", [someVintage.id, `${host.id}/etikett.jpg`]);
+  const [wine] = await rows(tx, "select label_path from public.wines where id = $1", [someVintage.wine_id]);
+  check("a scanned label goes onto the wine", wine?.label_path === `${host.id}/etikett.jpg`);
+});
+await as(stranger, async (tx) => {
+  const error = await fails(
+    tx.query("insert into storage.objects (bucket_id, name) values ('wine-labels', $1)", [`${host.id}/fremd.jpg`]),
+  );
+  check("nobody uploads into someone else's label folder", error !== null, error ?? "succeeded");
+});
+await as(stranger, async (tx) => {
+  await tx.query("insert into storage.objects (bucket_id, name) values ('wine-labels', $1)", [`${stranger.id}/b.jpg`]);
+  await tx.query("select public.set_wine_label($1, $2)", [someVintage.id, `${stranger.id}/b.jpg`]);
+  const [wine] = await rows(tx, "select label_path from public.wines where id = $1", [someVintage.wine_id]);
+  check("an existing label is not overwritten by others", wine?.label_path === `${host.id}/etikett.jpg`);
+});
+
+await as(host, async (tx) => {
+  await tx.query(
+    "insert into public.tasting_notes (vintage_id, rating, note, aromas) values ($1, 93.5, 'Rauchig, lang', '{Feuerstein}')",
+    [someVintage.id],
+  );
+  await tx.query("insert into public.tasting_notes (vintage_id, rating, note, is_public) values ($1, 80, 'privat', false)", [
+    someVintage.id,
+  ]);
+});
+await as(stranger, async (tx) => {
+  const reviews = await rows(tx, "select * from public.wine_reviews($1)", [someVintage.wine_id]);
+  check(
+    "others see public ratings with name, not private ones",
+    reviews.length === 1 && reviews[0].author === "Tim" && Number(reviews[0].rating) === 93.5,
+    JSON.stringify(reviews.map((r) => [r.author, r.rating])),
+  );
+  const [summary] = await rows(tx, "select * from public.wine_rating_summary($1)", [[someVintage.wine_id]]);
+  check("the average counts only visible ratings", Number(summary?.avg_rating) === 93.5 && summary?.ratings === 1);
+  const profiles = await rows(tx, "select * from public.profiles");
+  check("… while profiles stay private", profiles.every((p) => p.id === stranger.id), `${profiles.length}`);
+});
+await as(guestD, async (tx) => {
+  const reviews = await rows(tx, "select * from public.wine_reviews($1)", [someVintage.wine_id]);
+  check("guests can read ratings too", reviews.length === 1, `${reviews.length}`);
+});
+
+await as(host, async (tx) => {
+  const [{ n }] = await rows(tx, "select public.record_price_offers($1, $2) as n", [
+    someVintage.id,
+    JSON.stringify([
+      { shop: "Weinhandel A", price: 34.9, url: "https://example.com/a" },
+      { shop: "Fake", price: 20, url: "javascript:alert(1)" },
+    ]),
+  ]);
+  check("price offers are stored, unsafe links dropped", n === 1, `${n}`);
+});
+await as(guestD, async (tx) => {
+  const error = await fails(tx.query("select public.record_price_offers($1, '[]')", [someVintage.id]));
+  check("guests cannot write prices", error !== null, error ?? "succeeded");
+});
+await as(host, async (tx) => {
+  let allowed = 0;
+  for (let i = 0; i < 27; i++) if ((await rows(tx, "select public.claim_ai_credit('scan') as ok"))[0].ok) allowed++;
+  check("the daily scan limit holds", allowed === 25, `${allowed}`);
+});
+await as(guestD, async (tx) => {
+  const [{ ok }] = await rows(tx, "select public.claim_ai_credit('scan') as ok");
+  check("guests get no AI requests", ok === false);
+});
+
 // --- upgrade ---------------------------------------------------------------
 
 console.log("\nGuest upgrade");

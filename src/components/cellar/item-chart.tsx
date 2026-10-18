@@ -23,10 +23,13 @@ export function ItemChart({
   item,
   valuations,
   asOf,
+  market = [],
 }: {
   item: CellarWine;
   valuations: Valuation[];
   asOf: number;
+  /** Cheapest shop price per lookup (Fundstellen). */
+  market?: { t: number; price: number }[];
 }) {
   const svg = useRef<SVGSVGElement>(null);
   const [hover, setHover] = useState<number | null>(null);
@@ -42,11 +45,16 @@ export function ItemChart({
       .filter((v) => v.itemId === item.id)
       .map((v) => ({ t: new Date(`${v.date}T12:00:00`).getTime(), value: v.value }))
       .filter((m) => m.t >= from && m.t <= to);
-    return { points, marks };
+    return { points, marks, from, to };
   }, [item, valuations, asOf]);
+  const shops = market.filter((m) => m.t >= points[0].t - DAY && m.t <= points[points.length - 1].t + DAY);
 
   const paid = item.purchasePrice;
-  const values = [...points.map((p) => p.value), ...(paid !== null ? [paid] : [])];
+  const values = [
+    ...points.map((p) => p.value),
+    ...shops.map((m) => m.price),
+    ...(paid !== null ? [paid] : []),
+  ];
   const max = Math.max(...values);
   const min = Math.min(...values);
   const lo = Math.max(0, min - (max - min || max * 0.1) * 0.3);
@@ -150,6 +158,28 @@ export function ItemChart({
             strokeWidth="1.5"
           />
         ))}
+        {shops.length > 1 && (
+          <path
+            d={shops.map((m, i) => `${i ? "L" : "M"}${x(m.t)} ${y(m.price)}`).join("")}
+            fill="none"
+            stroke="var(--series-2)"
+            strokeWidth="1.5"
+            strokeOpacity="0.8"
+          />
+        )}
+        {shops.map((m) => (
+          <rect
+            key={`shop-${m.t}`}
+            x={x(m.t) - 3.5}
+            y={y(m.price) - 3.5}
+            width="7"
+            height="7"
+            transform={`rotate(45 ${x(m.t)} ${y(m.price)})`}
+            fill="var(--series-2)"
+            stroke="var(--surface)"
+            strokeWidth="1.5"
+          />
+        ))}
         <line
           x1={x(point.t)}
           x2={x(point.t)}
@@ -185,6 +215,11 @@ export function ItemChart({
         {marks.length > 0 && (
           <span className="flex items-center gap-1.5">
             <span className="size-2 rounded-full border-[1.5px] border-series-1" aria-hidden /> eingetragen
+          </span>
+        )}
+        {shops.length > 0 && (
+          <span className="flex items-center gap-1.5">
+            <span className="size-2 rotate-45 bg-series-2" aria-hidden /> günstigster Händlerpreis
           </span>
         )}
       </p>

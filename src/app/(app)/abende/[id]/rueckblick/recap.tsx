@@ -144,6 +144,7 @@ export function RecapContent({
                       producer: favorite.secret.wine.producer,
                       name: favorite.secret.wine.name ?? "",
                       vintage: favorite.secret.wine.vintage ?? undefined,
+                      photo: favorite.secret.wine.labelUrl,
                     }
                   : null
               }

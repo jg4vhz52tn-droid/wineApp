@@ -49,6 +49,8 @@ export type WineInfo = {
   grapeId: string | null;
   regionId: string | null;
   siteId: string | null;
+  /** Photo of the real label, if someone scanned it. */
+  labelUrl: string | null;
 };
 
 export type Structure = Partial<Record<StructureKey, number>>;

@@ -1,6 +1,7 @@
 "use client";
 
 import { getSupabase } from "@/lib/supabase";
+import { labelUrl } from "@/lib/wine-ai";
 import type {
   Catalog,
   CostItem,
@@ -72,6 +73,7 @@ function toSecret(r: Row): Secret {
             grapeId: (w.grape_variety_id as string) ?? null,
             regionId: (w.region_id as string) ?? null,
             siteId: (w.site_id as string) ?? null,
+            labelUrl: labelUrl(w.label_path as string | null),
           }
         : null,
   };
@@ -97,7 +99,7 @@ function toGuess(r: Row): Guess {
 
 const SECRET_COLUMNS =
   "event_wine_id, vintage_id, is_pirate, price, brought_by, reference_structure, reference_aromas, " +
-  "wine_vintages(vintage, wines(id, producer, name, color, classification, grape_variety_id, region_id, site_id))";
+  "wine_vintages(vintage, wines(id, producer, name, color, classification, grape_variety_id, region_id, site_id, label_path))";
 
 export async function fetchEventData(eventId: string): Promise<EventData | null> {
   const supabase = getSupabase();

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "@/components/app/session-provider";
 import { getSupabase } from "@/lib/supabase";
+import { labelUrl, saveLabel } from "@/lib/wine-ai";
 import { demoCellar } from "./demo";
 import type { CellarData, CellarEvent, CellarWine, NewBottles, Valuation } from "./types";
 
@@ -59,9 +60,28 @@ export function useCellar() {
   async function addBottles(input: NewBottles) {
     if (mode !== "live") {
       const id = `local-${uid()}`;
+      const item: CellarWine = {
+        id,
+        producer: input.producer,
+        name: input.name,
+        vintage: input.vintage,
+        color: input.color,
+        grape: input.grape,
+        region: null,
+        classification: input.classification,
+        quantity: input.quantity,
+        purchasePrice: input.purchasePrice,
+        purchasedOn: input.purchasedOn,
+        drinkFrom: input.drinkFrom,
+        drinkUntil: input.drinkUntil,
+        rackId: input.rackId,
+        compartment: input.compartment,
+        row: input.row,
+        labelUrl: input.labelPreview ?? null,
+      };
       setDemoData((d) => ({
         ...d,
-        items: [...d.items, { id, ...input, region: null }],
+        items: [...d.items, item],
         events: [
           ...d.events,
           {
@@ -78,7 +98,20 @@ export function useCellar() {
     }
     const supabase = getSupabase();
     if (!supabase || !orgId) return false;
-    const { error } = await supabase.rpc("add_cellar_bottles", {
+    // Region and site from the label scan go into the catalogue first.
+    if (input.regionId || input.siteId) {
+      await supabase.rpc("ensure_wine_vintage", {
+        p_producer: input.producer,
+        p_name: input.name,
+        p_color: input.color,
+        p_vintage: input.vintage,
+        p_grape_name: input.grape,
+        p_region_id: input.regionId ?? null,
+        p_site_id: input.siteId ?? null,
+        p_classification: input.classification,
+      });
+    }
+    const { data: itemId, error } = await supabase.rpc("add_cellar_bottles", {
       p_org_id: orgId,
       p_producer: input.producer,
       p_name: input.name,
@@ -98,6 +131,14 @@ export function useCellar() {
     if (error) {
       setError("Die Flaschen konnten nicht gespeichert werden.");
       return false;
+    }
+    if (input.label && itemId) {
+      const { data: item } = await supabase
+        .from("cellar_items")
+        .select("vintage_id")
+        .eq("id", itemId)
+        .single();
+      if (item?.vintage_id) await saveLabel(item.vintage_id, input.label).catch(() => null);
     }
     await reload();
     return true;
@@ -231,7 +272,7 @@ async function loadCellar(userId: string): Promise<Loaded | null> {
     supabase
       .from("cellar_items")
       .select(
-        "id, quantity, purchase_price, purchased_on, drink_from, drink_until, rack_id, storage_compartment, storage_row, wine_vintages(vintage, wines(producer, name, color, classification, grape_varieties(name), regions(name)))",
+        "id, quantity, purchase_price, purchased_on, drink_from, drink_until, rack_id, storage_compartment, storage_row, vintage_id, wine_vintages(vintage, wine_id, wines(producer, name, color, classification, label_path, grape_varieties(name), regions(name)))",
       )
       .order("purchased_on"),
     supabase.from("cellar_events").select("id, cellar_item_id, kind, quantity, unit_price, happened_on"),
@@ -275,12 +316,15 @@ type Row = {
   rack_id: string | null;
   storage_compartment: string | null;
   storage_row: string | null;
+  vintage_id: string | null;
   wine_vintages: unknown;
 };
 
 type JoinedVintage = {
   vintage: number | null;
+  wine_id: string;
   wines: {
+    label_path: string | null;
     producer: string;
     name: string | null;
     color: CellarWine["color"];
@@ -310,6 +354,9 @@ function mapItem(row: Row): CellarWine {
     rackId: row.rack_id,
     compartment: row.storage_compartment,
     row: row.storage_row,
+    vintageId: row.vintage_id,
+    wineId: v?.wine_id ?? null,
+    labelUrl: labelUrl(w?.label_path),
   };
 }
 

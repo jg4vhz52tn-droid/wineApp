@@ -1,7 +1,13 @@
 import { useId } from "react";
 import type { BottleShape } from "@/config/bottles";
 
-export type BottleLabel = { producer: string; name: string; vintage?: string | number };
+export type BottleLabel = {
+  producer: string;
+  name: string;
+  vintage?: string | number;
+  /** Photo of the real label (from the label scan) - replaces the drawn one. */
+  photo?: string | null;
+};
 
 type Geometry = {
   outline: string;
@@ -115,7 +121,36 @@ export function BottleArt({ shape, label }: { shape: BottleShape; label?: Bottle
         fill={url("paper")}
       />
 
-      {label && (
+      {label?.photo && (
+        <g>
+          <defs>
+            <clipPath id={`${id}-label`}>
+              <rect x={l.x} y={l.y} width={l.width} height={l.height} rx="1.5" />
+            </clipPath>
+            {/* the label wraps around the round bottle: darker towards both edges */}
+            <linearGradient id={`${id}-wrap`} x1="0" x2="1">
+              <stop offset="0" stopColor="#000" stopOpacity="0.45" />
+              <stop offset="0.18" stopColor="#000" stopOpacity="0.05" />
+              <stop offset="0.35" stopColor="#fff" stopOpacity="0.12" />
+              <stop offset="0.7" stopColor="#000" stopOpacity="0" />
+              <stop offset="1" stopColor="#000" stopOpacity="0.5" />
+            </linearGradient>
+          </defs>
+          <rect x={l.x + 1} y={l.y + 2} width={l.width} height={l.height} fill="#000" opacity="0.25" />
+          <image
+            href={label.photo}
+            x={l.x}
+            y={l.y}
+            width={l.width}
+            height={l.height}
+            preserveAspectRatio="xMidYMid slice"
+            clipPath={url("label")}
+          />
+          <rect x={l.x} y={l.y} width={l.width} height={l.height} fill={url("wrap")} />
+        </g>
+      )}
+
+      {label && !label.photo && (
         <g>
           <rect x={l.x + 1} y={l.y + 2} width={l.width} height={l.height} fill="#000" opacity="0.25" />
           <rect x={l.x} y={l.y} width={l.width} height={l.height} fill={url("paper")} />

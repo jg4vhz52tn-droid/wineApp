@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Bottle } from "@/components/tasting/bottle";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { TextField } from "@/components/ui/field";
@@ -8,8 +9,11 @@ import { Sheet } from "@/components/ui/sheet";
 import { TickDial } from "@/components/ui/tick-dial";
 import { suggestDrinkWindow } from "@/lib/cellar/drink-window";
 import type { NewBottles, Rack, WineColor } from "@/lib/cellar/types";
+import { bottleShapeFor } from "@/config/bottles";
 import { cn } from "@/lib/cn";
+import { fetchCatalog } from "@/lib/events/api";
 import { tick } from "@/lib/haptics";
+import { scanLabel, type LabelScan } from "@/lib/wine-ai";
 import { RackEditor } from "./rack-editor";
 
 const YEAR = new Date().getFullYear();
@@ -68,6 +72,46 @@ export function AddBottlesSheet({
   const [compartment, setCompartment] = useState<string | null>(null);
   const [row, setRow] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [scanned, setScanned] = useState<{ scan: LabelScan; label: Blob; preview: string } | null>(null);
+  const [regionId, setRegionId] = useState<string | null>(null);
+  const [siteId, setSiteId] = useState<string | null>(null);
+  const camera = useRef<HTMLInputElement>(null);
+
+  async function scan(file: File | undefined) {
+    if (!file) return;
+    setScanning(true);
+    setScanError(null);
+    try {
+      const [result, catalog] = await Promise.all([scanLabel(file), fetchCatalog()]);
+      const s = result.scan;
+      if (!s.is_wine_label) {
+        setScanError("Das sieht nicht nach einem Weinetikett aus. Noch ein Versuch?");
+        return;
+      }
+      const same = (a: string | null | undefined, b: string | null | undefined) =>
+        Boolean(a && b && a.trim().toLowerCase() === b.trim().toLowerCase());
+      if (s.producer) setProducer(s.producer);
+      if (s.name) setName(s.name);
+      if (s.color && s.color !== "orange") setColor(s.color);
+      if (s.grape) setGrape(GRAPES.find((g) => same(g, s.grape)) ?? s.grape);
+      if (s.classification)
+        setClassification(CLASSES.find((c) => same(c, s.classification)) ?? s.classification);
+      if (s.vintage && s.vintage >= 1900 && s.vintage <= YEAR) setVintage(s.vintage);
+      const region = catalog.regions.find((r) => same(r.name, s.region));
+      const site = catalog.sites.find((x) => same(x.name, s.site) && (!region || x.regionId === region.id));
+      setRegionId(site?.regionId ?? region?.id ?? null);
+      setSiteId(site?.id ?? null);
+      setScanned(result);
+      tick("major");
+    } catch (e) {
+      setScanError(e instanceof Error ? e.message : "Das Etikett konnte nicht gelesen werden.");
+    } finally {
+      setScanning(false);
+      if (camera.current) camera.current.value = "";
+    }
+  }
 
   const suggestion = suggestDrinkWindow({ color, grape, classification, vintage });
   const chosen = windowChoice === -1 ? suggestion : PRESETS[windowChoice];
@@ -94,12 +138,19 @@ export function AddBottlesSheet({
       compartment: rack ? compartment : null,
       row: rack ? row : null,
       classification,
+      regionId,
+      siteId,
+      label: scanned?.label ?? null,
+      labelPreview: scanned?.preview ?? null,
     });
     setBusy(false);
     if (ok) {
       tick("major");
       setProducer("");
       setName("");
+      setScanned(null);
+      setRegionId(null);
+      setSiteId(null);
       setPrice("");
       setWindowChoice(-1);
       onClose();
@@ -109,6 +160,58 @@ export function AddBottlesSheet({
   return (
     <Sheet open={open} onClose={onClose} title="Flaschen hinzufügen">
       <div className="space-y-5 pb-4">
+        <input
+          ref={camera}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden
+          onChange={(e) => scan(e.target.files?.[0])}
+        />
+        {scanned ? (
+          <div className="flex items-center gap-4 rounded-[1.75rem] bg-surface-2/70 p-4">
+            <Bottle
+              shape={bottleShapeFor(color)}
+              label={{ producer, name: name || producer, vintage, photo: scanned.preview }}
+              className="h-36 w-20 shrink-0"
+            />
+            <div className="min-w-0 space-y-1.5">
+              <p className="text-xs font-medium tracking-[0.14em] text-accent uppercase">Etikett erkannt</p>
+              <p className="font-display text-xl leading-tight">{name || producer}</p>
+              <p className="text-sm text-muted">
+                {[producer, vintage, scanned.scan.region].filter(Boolean).join(" · ")}
+              </p>
+              <p className="text-xs text-muted">
+                {scanned.scan.confidence < 0.6
+                  ? "Nicht ganz sicher – bitte unten prüfen."
+                  : "Bitte kurz prüfen – du kannst unten alles ändern."}
+              </p>
+              <button
+                type="button"
+                className="text-xs font-medium text-accent"
+                onClick={() => camera.current?.click()}
+              >
+                Neu scannen
+              </button>
+            </div>
+          </div>
+        ) : (
+          <Button block size="lg" variant="wine" loading={scanning} onClick={() => camera.current?.click()}>
+            📷 Etikett scannen
+          </Button>
+        )}
+        {scanning && (
+          <p role="status" className="text-center text-sm text-muted">
+            Lese das Etikett …
+          </p>
+        )}
+        {scanError && (
+          <p role="alert" className="text-sm text-danger">
+            {scanError}
+          </p>
+        )}
         <TextField
           label="Weingut"
           value={producer}
@@ -131,6 +234,11 @@ export function AddBottlesSheet({
         </Group>
 
         <Group label="Rebsorte">
+          {grape && !GRAPES.includes(grape) && (
+            <Chip selected onClick={() => setGrape(null)}>
+              {grape}
+            </Chip>
+          )}
           {GRAPES.map((g) => (
             <Chip key={g} selected={grape === g} onClick={() => setGrape(grape === g ? null : g)}>
               {g}
@@ -139,6 +247,11 @@ export function AddBottlesSheet({
         </Group>
 
         <Group label="Qualitätsstufe (optional)">
+          {classification && !CLASSES.includes(classification) && (
+            <Chip selected onClick={() => setClassification(null)}>
+              {classification}
+            </Chip>
+          )}
           {CLASSES.map((c) => (
             <Chip
               key={c}
