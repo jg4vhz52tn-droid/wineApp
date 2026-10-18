@@ -76,6 +76,8 @@ export async function askGemini(body: {
   parts: Part[];
   schema?: Record<string, unknown>;
   googleSearch?: boolean;
+  /** Try only these models (for the self-test). */
+  models?: string[];
 }): Promise<string> {
   const request = (thinking: boolean) =>
     JSON.stringify({
@@ -90,7 +92,7 @@ export async function askGemini(body: {
     });
   let res: Response | null = null;
   // A retired or unknown model answers 404 - then the next one is tried.
-  for (const name of candidates()) {
+  for (const name of body.models ?? candidates()) {
     const call = (thinking: boolean) =>
       fetch(`${API}/models/${name}:generateContent`, {
         method: "POST",

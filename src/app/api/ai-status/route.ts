@@ -24,7 +24,25 @@ async function attempt(run: () => Promise<string>) {
 
 export async function GET(request: Request) {
   await connection();
-  const test = new URL(request.url).searchParams.has("test");
+  const params = new URL(request.url).searchParams;
+  const test = params.has("test");
+  const only = params.get("model");
+  // Compare one model's speed on the test label: ?model=gemini-flash-lite-latest
+  if (only && /^[a-z0-9.-]{3,60}$/.test(only)) {
+    return Response.json({
+      model: only,
+      scanTest: await attempt(() =>
+        askGemini({
+          models: [only],
+          schema: LABEL_SCHEMA,
+          parts: [
+            { inline_data: { mime_type: "image/jpeg", data: TEST_LABEL_JPEG } },
+            { text: "Lies dieses Weinetikett. Unbekanntes ist null." },
+          ],
+        }),
+      ),
+    });
+  }
   if (cache && Date.now() - cache.at < 2 * 60_000 && (!test || "scanTest" in cache.body))
     return Response.json(cache.body);
   let body: Record<string, unknown> = { provider: "Google Gemini", ...(await checkGemini()) };
