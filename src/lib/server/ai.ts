@@ -16,6 +16,7 @@ const MODELS = [
   "gemini-3.8-flash",
   "gemini-3-flash-preview",
   "gemini-flash-lite-latest",
+  "gemini-2.5-flash-lite",
 ];
 let working: string | null = null;
 
@@ -115,7 +116,10 @@ export async function askGemini(body: {
       reason = raw.slice(0, 200);
     }
     if (res.status === 429)
-      throw new HttpError(429, "Das Gratis-Kontingent ist gerade aufgebraucht. Bitte später noch einmal.");
+      throw new HttpError(
+        429,
+        `Das Gratis-Kontingent ist gerade aufgebraucht. Bitte später noch einmal. (${reason.slice(0, 160)})`,
+      );
     // Google's own reason helps to fix setup problems; it never contains the key.
     throw new HttpError(502, `Die KI hat die Anfrage abgelehnt (${res.status}): ${reason.slice(0, 220)}`);
   }
