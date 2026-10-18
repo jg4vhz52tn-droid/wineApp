@@ -7,15 +7,16 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const API = "https://generativelanguage.googleapis.com/v1beta";
 /**
- * Models to try, in order. "gemini-flash-latest" always points to Google's
- * current free Flash model; GEMINI_MODEL can put another one first.
- * (gemini-2.5-flash is closed for new accounts.)
+ * Models to try, in order; GEMINI_MODEL can put another one first.
+ * The "-latest" aliases follow Google's renames (gemini-2.5-* is closed for new accounts).
  */
 const MODELS = [
-  "gemini-flash-latest",
-  "gemini-3.8-flash",
-  "gemini-3-flash-preview",
+  // Fast and free: reads a label photo in ~1-2 s (measured 2026-10-18).
   "gemini-flash-lite-latest",
+  "gemini-3.5-flash-lite",
+  "gemini-3-flash-preview",
+  // Slow with photos (>50 s) - only as last resort.
+  "gemini-flash-latest",
 ];
 let working: string | null = null;
 
