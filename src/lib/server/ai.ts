@@ -76,11 +76,19 @@ export async function askGemini(body: {
       },
     }),
   });
-  if (res.status === 429)
-    throw new HttpError(429, "Das Gratis-Kontingent ist gerade aufgebraucht. Bitte später noch einmal.");
   if (!res.ok) {
-    console.error("Gemini API", res.status, await res.text());
-    throw new HttpError(502, "Die KI ist gerade nicht erreichbar. Bitte später noch einmal.");
+    const raw = await res.text();
+    console.error("Gemini API", res.status, raw);
+    let reason = "";
+    try {
+      reason = (JSON.parse(raw) as { error?: { message?: string } }).error?.message ?? "";
+    } catch {
+      reason = raw.slice(0, 200);
+    }
+    if (res.status === 429)
+      throw new HttpError(429, "Das Gratis-Kontingent ist gerade aufgebraucht. Bitte später noch einmal.");
+    // Google's own reason helps to fix setup problems; it never contains the key.
+    throw new HttpError(502, `Die KI hat die Anfrage abgelehnt (${res.status}): ${reason.slice(0, 220)}`);
   }
   const json = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
   return (json.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("");
