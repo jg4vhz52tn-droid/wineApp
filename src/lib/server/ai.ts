@@ -93,8 +93,13 @@ export async function askGemini(body: {
       headers: { "x-goog-api-key": apiKey(), "content-type": "application/json" },
       body: payload,
     });
+    // Search can be blocked for one model in the free tier but allowed for another.
+    if (res.status === 429 && body.googleSearch) {
+      console.warn("Gemini search quota exhausted for", name);
+      continue;
+    }
     if (res.status !== 404) {
-      if (res.ok) working = name;
+      if (res.ok && !body.googleSearch) working = name;
       break;
     }
     console.warn("Gemini model not available:", name);
