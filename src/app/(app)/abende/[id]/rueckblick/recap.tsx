@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NotConfigured } from "@/components/app/not-configured";
 import { useSession } from "@/components/app/session-provider";
 import { PatchCard } from "@/components/event/patch-card";
+import { NewBadges } from "@/components/senses/senses";
+import { awardBadges, type NewBadge } from "@/lib/senses";
 import { Leaderboard } from "@/components/live/leaderboard";
 import { Bottle } from "@/components/tasting/bottle";
 import { Avatar } from "@/components/ui/avatar";
@@ -35,6 +37,15 @@ export function Recap() {
   const { id } = useParams<{ id: string }>();
   const { configured, ready, session } = useSession();
   const { data, catalog, reload } = useEvent(session ? id : null);
+  const [fresh, setFresh] = useState<NewBadge[]>([]);
+  useEffect(() => {
+    if (!session || session.user.is_anonymous) return;
+    let active = true;
+    awardBadges().then((b) => active && setFresh(b));
+    return () => {
+      active = false;
+    };
+  }, [session]);
 
   if (!configured) return <NotConfigured />;
   if (!ready || (session && data === undefined))
@@ -48,12 +59,15 @@ export function Recap() {
     );
   }
   return (
-    <RecapContent
-      data={data}
-      catalog={catalog}
-      meId={data.participants.find((p) => p.userId === session.user.id)?.id}
-      onChange={reload}
-    />
+    <>
+      <NewBadges badges={fresh} />
+      <RecapContent
+        data={data}
+        catalog={catalog}
+        meId={data.participants.find((p) => p.userId === session.user.id)?.id}
+        onChange={reload}
+      />
+    </>
   );
 }
 

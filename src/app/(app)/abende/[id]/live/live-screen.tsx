@@ -29,6 +29,7 @@ import {
 } from "@/lib/events/derive";
 import type { Catalog, EventData, Glass } from "@/lib/events/types";
 import { useEvent } from "@/lib/events/use-event";
+import { useExperience } from "@/lib/experience";
 import { cn } from "@/lib/cn";
 import { tick } from "@/lib/haptics";
 
@@ -79,6 +80,17 @@ function Live({
   meId: string | undefined;
 }) {
   const router = useRouter();
+  const { experience } = useExperience();
+  // Guests have no profile - their choice is remembered on the phone.
+  const [beginnerChoice, setBeginnerChoice] = useState<boolean | null>(() => {
+    try {
+      const stored = localStorage.getItem("wa-beginner");
+      return stored === null ? null : stored === "1";
+    } catch {
+      return null;
+    }
+  });
+  const beginner = beginnerChoice ?? experience === "beginner";
   const glass = currentGlass(data.glasses);
   const secret = glass ? secretFor(data, glass.id) : undefined;
   const revealed = glass?.status === "revealed";
@@ -179,6 +191,15 @@ function Live({
           existing={ownGuess(data, glass.id, meId)}
           catalog={catalog}
           pirateMode={data.event.pirateMode}
+          beginner={beginner}
+          onBeginnerChange={(next) => {
+            setBeginnerChoice(next);
+            try {
+              localStorage.setItem("wa-beginner", next ? "1" : "0");
+            } catch {
+              // private mode - just for this evening then
+            }
+          }}
           onSubmitted={reload}
         />
       )}

@@ -13,7 +13,16 @@ import { GoogleIcon } from "@/components/ui/icons";
 import { Segmented } from "@/components/ui/segmented";
 import type { ThemePreference } from "@/lib/appearance";
 import { authErrorMessage, callbackUrl, sendMagicLink, signInWithGoogle } from "@/lib/auth";
+import { BadgeShelf, NewBadges, SensesCard } from "@/components/senses/senses";
 import { EXPERIENCE_LABEL, useExperience, type Experience } from "@/lib/experience";
+import {
+  awardBadges,
+  fetchProgress,
+  senses,
+  type Badge,
+  type NewBadge,
+  type ProgressStats,
+} from "@/lib/senses";
 import { tick } from "@/lib/haptics";
 import { getSupabase } from "@/lib/supabase";
 
@@ -80,6 +89,7 @@ export function Profile() {
         )}
 
         {ready && session && !isGuest && <ExperienceCard />}
+        {ready && session && !isGuest && <Progress userId={session.user.id} />}
 
         {ready && session && isGuest && <UpgradeCard />}
         {ready && session && !isGuest && <EmailCard current={session.user.email ?? ""} />}
@@ -372,5 +382,31 @@ function ExperienceCard() {
         🍷 Geführte Verkostung starten →
       </Link>
     </Card>
+  );
+}
+
+/** Senses and badges - new badges are handed out when you open the profile. */
+function Progress({ userId }: { userId: string }) {
+  const [data, setData] = useState<{ stats: ProgressStats; badges: Badge[] } | null>(null);
+  const [fresh, setFresh] = useState<NewBadge[]>([]);
+  useEffect(() => {
+    let active = true;
+    awardBadges()
+      .then((newOnes) => {
+        if (active) setFresh(newOnes);
+        return fetchProgress(userId);
+      })
+      .then((result) => active && setData(result));
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+  if (!data) return null;
+  return (
+    <>
+      <NewBadges badges={fresh} />
+      <SensesCard senses={senses(data.stats)} />
+      <BadgeShelf badges={data.badges} />
+    </>
   );
 }

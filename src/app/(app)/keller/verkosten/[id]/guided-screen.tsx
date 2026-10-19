@@ -7,6 +7,7 @@ import { useSession } from "@/components/app/session-provider";
 import { GuidedTasting } from "@/components/guided/guided-tasting";
 import { buttonClasses } from "@/components/ui/button";
 import { fetchGuideWine, loadExpected, type Expected, type GuideWine } from "@/lib/guided";
+import { awardBadges } from "@/lib/senses";
 import { saveReview } from "@/lib/wines";
 
 export function GuidedScreen() {
@@ -72,6 +73,7 @@ export function GuidedScreen() {
               guided: r.guided,
             });
             setSaved(true);
+            return awardBadges();
           }}
         />
       )}

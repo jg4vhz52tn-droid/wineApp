@@ -13,6 +13,8 @@ import { AROMA_TIPS, colorFamily, finishToScale, PALATE, SERVING, SHADES } from 
 import { describeRating, describeStructure, STRUCTURE_SCALES, type StructureKey } from "@/config/tasting";
 import { cn } from "@/lib/cn";
 import type { Expected, GuideWine } from "@/lib/guided";
+import type { NewBadge } from "@/lib/senses";
+import { NewBadges } from "@/components/senses/senses";
 import { tick } from "@/lib/haptics";
 
 export type GuidedResult = {
@@ -28,6 +30,9 @@ export type GuidedResult = {
     notFound: string[];
     ownExtra: string[];
     finishSeconds: number | null;
+    /** Your palate next to the typical value - for "Deine Sinne". */
+    palate: Partial<Record<StructureKey, { mine: number; expected: number }>>;
+    finishExpected: number | null;
   };
 };
 
@@ -55,7 +60,8 @@ export function GuidedTasting({
 }: {
   wine: GuideWine;
   expected: Expected;
-  onSave: (result: GuidedResult) => Promise<void>;
+  /** May return badges earned with this tasting. */
+  onSave: (result: GuidedResult) => Promise<NewBadge[] | void>;
 }) {
   const family = wine.color === "sparkling" ? "white" : colorFamily(wine.color);
   const shades = SHADES[family];
@@ -81,6 +87,7 @@ export function GuidedTasting({
   const [isPublic, setIsPublic] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [newBadges, setNewBadges] = useState<NewBadge[]>([]);
 
   const expectedAromas = expected.aromas.map((a) => a.aroma);
   const found = picked.filter((a) => expectedAromas.includes(a));
@@ -98,7 +105,7 @@ export function GuidedTasting({
     setBusy(true);
     setError(null);
     try {
-      await onSave({
+      const fresh = await onSave({
         rating,
         structure: {
           ...structure,
@@ -114,8 +121,15 @@ export function GuidedTasting({
           notFound,
           ownExtra,
           finishSeconds,
+          palate: Object.fromEntries(
+            (Object.keys(structure) as StructureKey[])
+              .filter((k) => expected.structure[k] !== undefined)
+              .map((k) => [k, { mine: structure[k]!, expected: expected.structure[k]! }]),
+          ),
+          finishExpected: expected.finishSeconds,
         },
       });
+      if (fresh) setNewBadges(fresh);
       tick("major");
       go("done");
     } catch {
@@ -467,6 +481,7 @@ export function GuidedTasting({
               rating={rating}
             />
           )}
+          {step === "done" && <NewBadges badges={newBadges} />}
         </motion.div>
       </AnimatePresence>
 

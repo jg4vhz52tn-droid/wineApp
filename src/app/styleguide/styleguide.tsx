@@ -9,6 +9,8 @@ import { CostsPanel } from "@/components/event/costs-panel";
 import { EventForm } from "@/components/event/event-form";
 import { DnaView } from "@/components/dna/dna-view";
 import { GuidedTasting } from "@/components/guided/guided-tasting";
+import { BadgeShelf, NewBadges, SensesCard } from "@/components/senses/senses";
+import { senses } from "@/lib/senses";
 import { EventPatch } from "@/components/event/event-patch";
 import { DEMO_DNA } from "@/lib/dna-demo";
 import { GlassList } from "@/components/event/glass-list";
@@ -94,6 +96,7 @@ const SAMPLE_GUESTS = ["Tim", "Jonas", "Matti", "Sophie", "Ben", "Lena", "Paul"]
 export function Styleguide() {
   const { theme, setTheme } = useAppearance();
   const [sheet, setSheet] = useState(false);
+  const [beginnerDemo, setBeginnerDemo] = useState(true);
   const [revealed, setRevealed] = useState(false);
   const [wine, setWine] = useState(SAMPLE_WINES[0]);
 
@@ -272,6 +275,93 @@ export function Styleguide() {
         </div>
       </div>
 
+      <h2 id="sinne" className="mt-16 mb-6 text-4xl">
+        Deine Sinne & Badges · Beispiel
+      </h2>
+      <div className="mx-auto mb-4 max-w-[390px] space-y-4">
+        <NewBadges
+          badges={[
+            {
+              code: "aromas_10",
+              title: "Spürnase",
+              description: "10 Aromen in geführten Verkostungen gefunden.",
+              icon: "nose",
+            },
+          ]}
+        />
+        <SensesCard
+          senses={senses({
+            guided: 6,
+            shade_matches: 3,
+            aromas_found: 14,
+            blind_grape_hits: 4,
+            palate_close: 9,
+            finish_measured: 4,
+            blind_structure_points: 22,
+          })}
+        />
+        <BadgeShelf
+          badges={[
+            {
+              code: "first_guided",
+              title: "Erster Schluck",
+              description: "Die erste geführte Verkostung gemacht.",
+              icon: "glass",
+              awardedAt: "2026-10-18T19:00:00Z",
+            },
+            {
+              code: "aromas_10",
+              title: "Spürnase",
+              description: "10 Aromen gefunden.",
+              icon: "nose",
+              awardedAt: "2026-10-19T19:00:00Z",
+            },
+            {
+              code: "first_event_hosted",
+              title: "Gastgeber",
+              description: "Ersten Lagenabend organisiert.",
+              icon: "host",
+              awardedAt: "2026-10-18T22:00:00Z",
+            },
+            {
+              code: "color_eye",
+              title: "Farbauge",
+              description: "5-mal die typische Farbe getroffen.",
+              icon: "eye",
+              awardedAt: null,
+            },
+            {
+              code: "acidity_pro",
+              title: "Säure-Profi",
+              description: "5-mal die Säure auf ±1 eingeschätzt.",
+              icon: "lemon",
+              awardedAt: null,
+            },
+            {
+              code: "long_finish",
+              title: "Langer Atem",
+              description: "5-mal den Abgang gemessen.",
+              icon: "timer",
+              awardedAt: null,
+            },
+            {
+              code: "pirate_hunter",
+              title: "Piratenjäger",
+              description: "Den Piraten entlarvt.",
+              icon: "pirate",
+              awardedAt: null,
+            },
+            {
+              code: "riesling_nose",
+              title: "Riesling-Nase",
+              description: "10 Rieslinge blind erkannt.",
+              icon: "nose",
+              awardedAt: null,
+            },
+          ]}
+        />
+      </div>
+
       <h2 id="gefuehrt" className="mt-16 mb-6 text-4xl">
         Geführte Verkostung · Beispiel
       </h2>
@@ -414,6 +504,8 @@ export function Styleguide() {
                 existing={undefined}
                 catalog={DEMO_CATALOG}
                 pirateMode
+                beginner={beginnerDemo}
+                onBeginnerChange={setBeginnerDemo}
                 onSubmitted={async () => {}}
               />
             </Phone>

@@ -597,6 +597,31 @@ await as(host, async (tx) => {
   check("guided results are stored and the profile has its own limit", ok === true);
 });
 
+// --- senses & badges ------------------------------------------------------------
+
+console.log("\nSenses & badges");
+await as(host, async (tx) => {
+  const [{ stats }] = await rows(tx, "select public.my_progress_stats() as stats");
+  check("progress counts guided tastings and found aromas", stats.guided === 1 && stats.aromas_found === 1, JSON.stringify(stats));
+  const [{ fresh }] = await rows(tx, "select public.award_badges() as fresh");
+  check("the first guided tasting earns a badge", fresh.some((b) => b.code === "first_guided"), JSON.stringify(fresh));
+  const [{ again }] = await rows(tx, "select public.award_badges() as again");
+  check("a badge is awarded only once", again.length === 0, JSON.stringify(again));
+  await tx.query("update public.events set status = 'finished' where id = $1", [live.id]);
+  const [{ host_badge }] = await rows(tx, "select public.award_badges() as host_badge");
+  check("hosting a finished evening earns „Gastgeber“", host_badge.some((b) => b.code === "first_event_hosted"));
+});
+await as(host, async (tx) => {
+  const error = await fails(
+    tx.query("insert into public.user_badges (user_id, badge_id) select $1, id from public.badges limit 1", [host.id]),
+  );
+  check("nobody can give themselves a badge", error !== null, error ?? "succeeded");
+});
+await as(guestC, async (tx) => {
+  const [{ fresh }] = await rows(tx, "select public.award_badges() as fresh");
+  check("guests collect badges only with an account", fresh.length === 0);
+});
+
 // --- upgrade ---------------------------------------------------------------
 
 console.log("\nGuest upgrade");

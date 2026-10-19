@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { SwitchRow } from "@/components/ui/switch";
 import { TickDial } from "@/components/ui/tick-dial";
-import { describeRating } from "@/config/tasting";
+import { AromaFamilyPicker } from "@/components/tasting/aroma-family-picker";
+import { PALATE } from "@/config/guided";
+import { describeRating, STRUCTURE_SCALES } from "@/config/tasting";
 import { submitGuess } from "@/lib/events/api";
 import { COUNTRIES } from "@/lib/events/derive";
 import type { Catalog, Glass, Guess, Structure } from "@/lib/events/types";
@@ -24,6 +26,8 @@ export function GuessForm({
   existing,
   catalog,
   pirateMode,
+  beginner = false,
+  onBeginnerChange,
   onSubmitted,
 }: {
   eventId: string;
@@ -32,6 +36,9 @@ export function GuessForm({
   existing: Guess | undefined;
   catalog: Catalog | null;
   pirateMode: boolean;
+  /** Einsteiger-Modus: fewer fields, families first, tips. Same scoring rules for everyone. */
+  beginner?: boolean;
+  onBeginnerChange?: (beginner: boolean) => void;
   onSubmitted: () => Promise<void>;
 }) {
   const [structure, setStructure] = useState<Structure>(existing?.structure ?? {});
@@ -48,6 +55,7 @@ export function GuessForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(Boolean(existing));
+  const [moreOrigin, setMoreOrigin] = useState(Boolean(existing?.regionId || existing?.siteId));
 
   const regionCountry = (id: string | null) => catalog?.regions.find((r) => r.id === id)?.countryCode ?? null;
   const countries = [...new Set([...MAIN_COUNTRIES, ...(catalog?.regions.map((r) => r.countryCode) ?? [])])];
@@ -84,28 +92,63 @@ export function GuessForm({
 
   return (
     <div className="space-y-7" onChangeCapture={dirty}>
+      {onBeginnerChange && (
+        <SwitchRow
+          label="Einfacher Bogen"
+          description={
+            beginner
+              ? "Weniger Felder, Tipps dazu – gezählt wird nach denselben Regeln."
+              : "Für Einsteiger: weniger Felder und kleine Tipps."
+          }
+          checked={beginner}
+          onChange={onBeginnerChange}
+        />
+      )}
+
       <section className="space-y-3">
         <h2 className="text-3xl">Was schmeckst du?</h2>
         <StructureDials
-          dimensions={["sweetness", "acidity", "body", "tannin", "finish"]}
+          dimensions={
+            beginner ? ["sweetness", "acidity", "body"] : ["sweetness", "acidity", "body", "tannin", "finish"]
+          }
           value={structure}
           onChange={(next) => {
             setStructure(next);
             dirty();
           }}
         />
-        <p className="text-xs text-muted">Tannin zählt nur bei Rotwein.</p>
+        {beginner ? (
+          <ul className="space-y-1 rounded-control bg-surface-2/60 px-4 py-3 text-xs leading-relaxed">
+            {(["sweetness", "acidity", "body"] as const).map((k) => (
+              <li key={k}>
+                💡 <b className="font-medium">{STRUCTURE_SCALES[k].label}:</b> {PALATE[k].tip}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-muted">Tannin zählt nur bei Rotwein.</p>
+        )}
       </section>
 
       <section className="space-y-3">
         <h3 className="text-2xl">Aromen</h3>
-        <AromaWheel
-          value={aromas}
-          onChange={(next) => {
-            setAromas(next);
-            dirty();
-          }}
-        />
+        {beginner ? (
+          <AromaFamilyPicker
+            value={aromas}
+            onChange={(next) => {
+              setAromas(next);
+              dirty();
+            }}
+          />
+        ) : (
+          <AromaWheel
+            value={aromas}
+            onChange={(next) => {
+              setAromas(next);
+              dirty();
+            }}
+          />
+        )}
       </section>
 
       <section className="space-y-4">
@@ -142,7 +185,16 @@ export function GuessForm({
             </Chip>
           ))}
         </Group>
-        {regions.length > 0 && (
+        {beginner && !moreOrigin && (
+          <button
+            type="button"
+            className="text-sm font-medium text-accent"
+            onClick={() => setMoreOrigin(true)}
+          >
+            + Region und Lage raten (für Mutige)
+          </button>
+        )}
+        {(!beginner || moreOrigin) && regions.length > 0 && (
           <Group label="Region">
             {regions.map((r) => (
               <Chip
@@ -160,7 +212,7 @@ export function GuessForm({
             ))}
           </Group>
         )}
-        {sites.length > 0 && (
+        {(!beginner || moreOrigin) && sites.length > 0 && (
           <Group label="Lage">
             {sites.map((s) => (
               <Chip
@@ -175,6 +227,12 @@ export function GuessForm({
               </Chip>
             ))}
           </Group>
+        )}
+        {beginner && (
+          <p className="text-xs text-muted">
+            💡 Jahrgang und Preis einfach schätzen – auch knapp daneben gibt es Punkte. Junge Weißweine sind
+            meist 1–3 Jahre alt.
+          </p>
         )}
         <TickDial
           label="Jahrgang"
@@ -209,6 +267,30 @@ export function GuessForm({
 
       <section className="space-y-3">
         <h3 className="text-2xl">Deine Bewertung</h3>
+        {beginner && (
+          <div className="grid grid-cols-3 gap-2">
+            {(
+              [
+                ["Sofort wieder", 93],
+                ["Gut", 88],
+                ["Eher nicht", 82],
+              ] as const
+            ).map(([label, value]) => (
+              <Chip
+                key={label}
+                selected={rated && rating === value}
+                className="justify-center"
+                onClick={() => {
+                  setRating(value);
+                  setRated(true);
+                  dirty();
+                }}
+              >
+                {label}
+              </Chip>
+            ))}
+          </div>
+        )}
         <TickDial
           label="Punkte"
           value={rating}
