@@ -783,7 +783,7 @@
     cancelAnimationFrame(anim);
     if (reduced) return set(target);
     let x = rot, vel = v;
-    const step = () => { const f = (target - x) * 0.06; vel = (vel + f) * 0.82; x += vel; set(x); if (Math.abs(target - x) > 0.3 || Math.abs(vel) > 0.3) anim = requestAnimationFrame(step); else set(target); };
+    const step = () => { const f = (target - x) * 0.1; vel = (vel + f) * 0.78; x += vel; set(x); if (Math.abs(target - x) > 0.3 || Math.abs(vel) > 0.3) anim = requestAnimationFrame(step); else set(target); };
     anim = requestAnimationFrame(step);
   }
   el.addEventListener("pointerdown", e => { drag = { x: e.clientX, start: rot, moved: false, last: e.clientX, v: 0 }; try { el.setPointerCapture(e.pointerId); } catch {} });
