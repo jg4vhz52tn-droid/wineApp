@@ -9,7 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TextField } from "@/components/ui/field";
-import { GoogleIcon } from "@/components/ui/icons";
+import { GlassIcon, GoogleIcon } from "@/components/ui/icons";
 import { Segmented } from "@/components/ui/segmented";
 import type { ThemePreference } from "@/lib/appearance";
 import { authErrorMessage, callbackUrl, sendMagicLink, signInWithGoogle } from "@/lib/auth";
@@ -379,7 +379,7 @@ function ExperienceCard() {
       />
       <p className="text-sm text-muted">{text[experience]}</p>
       <Link href="/keller/verkosten" className="text-sm font-medium text-accent">
-        🍷 Geführte Verkostung starten →
+        <GlassIcon className="inline size-4 align-[-3px]" /> Geführte Verkostung starten →
       </Link>
     </Card>
   );

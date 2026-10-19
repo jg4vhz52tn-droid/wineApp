@@ -1,5 +1,6 @@
 "use client";
 
+import { CameraIcon } from "@/components/ui/icons";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -89,7 +90,8 @@ export function PatchCard({
             loading={busy}
             onClick={() => input.current?.click()}
           >
-            {event.photoPath ? "Foto ändern" : "📷 Foto für den Patch"}
+            {!event.photoPath && <CameraIcon className="size-5" />}
+            {event.photoPath ? "Foto ändern" : "Foto für den Patch"}
           </Button>
           <p className="text-xs text-muted">Nur für Leute dieses Abends sichtbar.</p>
         </>

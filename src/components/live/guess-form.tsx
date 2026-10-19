@@ -1,5 +1,6 @@
 "use client";
 
+import { BulbIcon } from "@/components/ui/icons";
 import { useState } from "react";
 import { AromaWheel } from "@/components/tasting/aroma-wheel";
 import { StructureDials } from "@/components/tasting/structure-dials";
@@ -121,7 +122,8 @@ export function GuessForm({
           <ul className="space-y-1 rounded-control bg-surface-2/60 px-4 py-3 text-xs leading-relaxed">
             {(["sweetness", "acidity", "body"] as const).map((k) => (
               <li key={k}>
-                💡 <b className="font-medium">{STRUCTURE_SCALES[k].label}:</b> {PALATE[k].tip}
+                <BulbIcon className="inline size-3.5 align-[-2px] text-accent" />{" "}
+                <b className="font-medium">{STRUCTURE_SCALES[k].label}:</b> {PALATE[k].tip}
               </li>
             ))}
           </ul>
@@ -230,8 +232,8 @@ export function GuessForm({
         )}
         {beginner && (
           <p className="text-xs text-muted">
-            💡 Jahrgang und Preis einfach schätzen – auch knapp daneben gibt es Punkte. Junge Weißweine sind
-            meist 1–3 Jahre alt.
+            <BulbIcon className="inline size-3.5 align-[-2px] text-accent" /> Jahrgang und Preis einfach
+            schätzen – auch knapp daneben gibt es Punkte. Junge Weißweine sind meist 1–3 Jahre alt.
           </p>
         )}
         <TickDial

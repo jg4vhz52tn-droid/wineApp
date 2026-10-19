@@ -1,5 +1,6 @@
 "use client";
 
+import { CameraIcon } from "@/components/ui/icons";
 import { useRef, useState } from "react";
 import { Bottle } from "@/components/tasting/bottle";
 import { Button } from "@/components/ui/button";
@@ -199,7 +200,7 @@ export function AddBottlesSheet({
           </div>
         ) : (
           <Button block size="lg" variant="wine" loading={scanning} onClick={() => camera.current?.click()}>
-            📷 Etikett scannen
+            <CameraIcon className="size-5" /> Etikett scannen
           </Button>
         )}
         {scanning && (

@@ -1,5 +1,6 @@
 "use client";
 
+import { CameraIcon } from "@/components/ui/icons";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/app/page-header";
@@ -103,7 +104,11 @@ export function MyWines() {
                     <span className="mt-1 flex flex-wrap gap-x-3 text-xs text-muted">
                       {w.inCellar > 0 && <span>{w.inCellar} im Keller</span>}
                       {w.opened > 0 && <span>{w.opened} geöffnet</span>}
-                      {w.scanned && <span>📷 gescannt</span>}
+                      {w.scanned && (
+                        <span>
+                          <CameraIcon className="inline size-3.5 align-[-2px]" /> gescannt
+                        </span>
+                      )}
                       {matchScore(dna, w) !== null && (
                         <span className="font-medium text-accent">Passt zu dir {matchScore(dna, w)} %</span>
                       )}

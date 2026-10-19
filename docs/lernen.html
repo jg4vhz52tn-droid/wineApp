@@ -419,7 +419,7 @@
           const g = ["#9fbf6a", "#b7c46a", "#a3567a", "#5a1f3a", "#5a1f3a"][ripe];
           const lv = Array.from({ length: leaves * 2 }, (_, k) => `<ellipse cx="${110 + (k % 2 ? 50 : -10) + k * 6}" cy="${50 + (k % 3) * 14}" rx="16" ry="9" fill="#7fa06a" transform="rotate(${k % 2 ? 25 : -25} ${110 + k * 6} ${50 + (k % 3) * 14})"/>`).join("");
           const grapes = ripe || leaves >= 3 ? [[150, 78], [142, 90], [158, 90], [150, 102], [136, 102], [164, 102], [150, 114], [143, 126], [157, 126], [150, 138]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="${7 + Math.min(ripe, 3)}" fill="${g}"/>`).join("") : "";
-          r.querySelector("#vine").innerHTML = `<path d="M150 170 C148 130 156 100 150 60 M150 70 C120 60 100 64 80 60 M150 64 C180 54 200 58 222 50" stroke="#6b4b3a" stroke-width="5" fill="none" stroke-linecap="round"/>${lv}${grapes}${ripe === 4 ? '<text x="230" y="140" font-size="26">🍷</text>' : ""}`;
+          r.querySelector("#vine").innerHTML = `<path d="M150 170 C148 130 156 100 150 60 M150 70 C120 60 100 64 80 60 M150 64 C180 54 200 58 222 50" stroke="#6b4b3a" stroke-width="5" fill="none" stroke-linecap="round"/>${lv}${grapes}${ripe === 4 ? '<path d="M222 118h22l-1.5 12a9.5 9.5 0 0 1-19 0Z M233 140v12 M227 153h12" fill="none" stroke="#8c2547" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' : ""}`;
           if (+r.querySelector("#month").value === 7) done(0);
         };
         r.querySelector("#month").addEventListener("input", draw); Site.syncRange(r.querySelector("#month")); r.querySelector("#month").addEventListener("input", () => Site.syncRange(r.querySelector("#month"))); draw();
@@ -441,7 +441,7 @@
         const pick = i => {
           const [n, , , g, b, t] = R[i];
           $$("[data-r] .pin", svg).forEach((c, k) => c.setAttribute("r", k === i ? 9 : 6));
-          r.querySelector("#atlasInfo").innerHTML = `<b style="font-family:var(--serif);font-weight:400;font-size:1.4rem">${n}</b><p class="muted" style="font-size:.88rem">${t}</p><div class="chips" style="margin-top:8px"><span class="chip">🍇 ${g}</span><span class="chip">⛰ ${b}</span></div>`;
+          r.querySelector("#atlasInfo").innerHTML = `<b style="font-family:var(--serif);font-weight:400;font-size:1.4rem">${n}</b><p class="muted" style="font-size:.88rem">${t}</p><div class="chips" style="margin-top:8px"><span class="chip">Rebsorte: ${g}</span><span class="chip">Boden: ${b}</span></div>`;
           seen.add(i); if (seen.size === 3) done(4);
         };
         svg.addEventListener("click", e => { const g = e.target.closest("[data-r]"); if (g) pick(+g.dataset.r); });

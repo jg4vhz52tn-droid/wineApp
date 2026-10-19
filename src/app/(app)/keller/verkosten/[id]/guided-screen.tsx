@@ -1,5 +1,6 @@
 "use client";
 
+import { GlassIcon } from "@/components/ui/icons";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -55,7 +56,7 @@ export function GuidedScreen() {
       </Link>
       {!wine || !expected ? (
         <div className="space-y-2 pt-16 text-center">
-          <p className="text-4xl">🍷</p>
+          <GlassIcon className="mx-auto size-12 text-accent" />
           <p className="text-muted">Ich schaue nach, was Kenner in diesem Wein finden …</p>
         </div>
       ) : (

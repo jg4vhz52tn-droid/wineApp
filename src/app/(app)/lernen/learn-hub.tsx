@@ -1,5 +1,6 @@
 "use client";
 
+import { GlassIcon } from "@/components/ui/icons";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { CollectibleCard } from "@/components/learn/collectible-card";
@@ -44,8 +45,8 @@ export function LearnHub() {
         className="flex items-center gap-4 rounded-card border border-accent/40 p-4"
         style={{ background: "linear-gradient(150deg, var(--curtain), var(--surface) 75%)" }}
       >
-        <span className="flex size-12 shrink-0 items-center justify-center rounded-control bg-wine text-2xl">
-          🍷
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-control bg-wine text-[#d1ad72]">
+          <GlassIcon className="size-7" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-display text-xl leading-tight">Verkoste deine eigene Flasche</span>

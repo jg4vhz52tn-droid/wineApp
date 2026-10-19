@@ -5,14 +5,42 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/cn";
 import { tick } from "@/lib/haptics";
-import { BADGE_ICON, type Badge, type NewBadge, type Sense } from "@/lib/senses";
+import {
+  BlossomIcon,
+  BookIcon,
+  CitrusIcon,
+  EyeIcon,
+  FlagIcon,
+  GlassIcon,
+  GlobeIcon,
+  HouseIcon,
+  NoseIcon,
+  PalateIcon,
+  TimerIcon,
+} from "@/components/ui/icons";
+import type { Badge, NewBadge, Sense } from "@/lib/senses";
+
+type Icon = (p: React.SVGProps<SVGSVGElement>) => React.ReactNode;
+
+const BADGE_ICON: Record<string, Icon> = {
+  glass: GlassIcon,
+  book: BookIcon,
+  nose: NoseIcon,
+  flower: BlossomIcon,
+  eye: EyeIcon,
+  lemon: CitrusIcon,
+  timer: TimerIcon,
+  host: HouseIcon,
+  pirate: FlagIcon,
+  globe: GlobeIcon,
+};
 
 const RING_COLORS: Record<Sense["key"], string> = {
   eye: "var(--series-1)",
   nose: "var(--series-2)",
   palate: "var(--accent)",
 };
-const SENSE_ICON: Record<Sense["key"], string> = { eye: "👁️", nose: "👃", palate: "👅" };
+const SENSE_ICON: Record<Sense["key"], Icon> = { eye: EyeIcon, nose: NoseIcon, palate: PalateIcon };
 
 /** Three rings like Apple's activity rings - one per sense. */
 export function SensesCard({ senses }: { senses: Sense[] }) {
@@ -70,7 +98,7 @@ export function SensesCard({ senses }: { senses: Sense[] }) {
   );
 }
 
-function Ring({ progress, color, icon }: { progress: number; color: string; icon: string }) {
+function Ring({ progress, color, icon: Icon }: { progress: number; color: string; icon: Icon }) {
   const r = 30;
   const c = 2 * Math.PI * r;
   return (
@@ -91,7 +119,9 @@ function Ring({ progress, color, icon }: { progress: number; color: string; icon
           transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
         />
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-2xl">{icon}</span>
+      <span className="absolute inset-0 flex items-center justify-center text-fg">
+        <Icon className="size-8" />
+      </span>
     </span>
   );
 }
@@ -106,13 +136,14 @@ export function Medal({
   earned: boolean;
   className?: string;
 }) {
+  const Icon = BADGE_ICON[icon ?? ""] ?? GlassIcon;
   return (
     <span
       className={cn(
-        "relative inline-flex aspect-square items-center justify-center rounded-full text-2xl",
+        "relative inline-flex aspect-square items-center justify-center rounded-full",
         earned
-          ? "shadow-[inset_0_-3px_6px_rgb(0_0_0/0.25),0_4px_10px_-4px_rgb(0_0_0/0.4)]"
-          : "border-2 border-dashed border-border opacity-50 grayscale",
+          ? "text-[#4a2a10] shadow-[inset_0_-3px_6px_rgb(0_0_0/0.25),0_4px_10px_-4px_rgb(0_0_0/0.4)]"
+          : "border-2 border-dashed border-border text-muted opacity-60",
         className,
       )}
       style={
@@ -121,7 +152,8 @@ export function Medal({
           : undefined
       }
     >
-      <span className={earned ? "drop-shadow" : ""}>{BADGE_ICON[icon ?? ""] ?? "★"}</span>
+      {earned && <span aria-hidden className="absolute inset-[9%] rounded-full border border-[#fff3d0]/50" />}
+      <Icon className="size-[46%]" strokeWidth={1.8} />
     </span>
   );
 }

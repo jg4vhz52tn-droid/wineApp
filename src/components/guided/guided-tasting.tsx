@@ -1,5 +1,6 @@
 "use client";
 
+import { BulbIcon, GlassIcon } from "@/components/ui/icons";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { Bottle } from "@/components/tasting/bottle";
@@ -502,7 +503,9 @@ function StepTitle({ n, title }: { n: number; title: string }) {
 function Tip({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-[1.5rem] border border-accent/30 bg-accent/5 px-4 py-3 text-sm leading-relaxed">
-      <p className="mb-1 font-medium text-accent">💡 {title}</p>
+      <p className="mb-1 flex items-center gap-1.5 font-medium text-accent">
+        <BulbIcon className="size-4" /> {title}
+      </p>
       {children}
     </div>
   );
@@ -809,7 +812,7 @@ function Summary({
       className="space-y-5"
     >
       <div className="space-y-1 text-center">
-        <p className="text-4xl">🍷</p>
+        <GlassIcon className="mx-auto size-12 text-accent" />
         <h2 className="text-3xl">Toll verkostet!</h2>
         <p className="text-muted">{wine.name ?? wine.producer}</p>
       </div>

@@ -88,16 +88,3 @@ export async function awardBadges(): Promise<NewBadge[]> {
   const { data } = await supabase.rpc("award_badges");
   return (data ?? []) as NewBadge[];
 }
-
-export const BADGE_ICON: Record<string, string> = {
-  glass: "🍷",
-  book: "📖",
-  nose: "👃",
-  flower: "🌸",
-  eye: "👁️",
-  lemon: "🍋",
-  timer: "⏱️",
-  host: "🏡",
-  pirate: "🏴‍☠️",
-  globe: "🌍",
-};

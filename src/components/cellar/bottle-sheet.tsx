@@ -1,5 +1,6 @@
 "use client";
 
+import { GlassIcon } from "@/components/ui/icons";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
@@ -264,7 +265,7 @@ function Content({
               : `Getrunken – ${euro.format(-cheers)} unter Einkauf.`}
             {guidedHref && (
               <Link href={guidedHref} className="mt-3 block font-medium text-accent">
-                🍷{" "}
+                <GlassIcon className="inline size-4 align-[-3px]" />{" "}
                 {experience === "beginner"
                   ? "Jetzt geführt verkosten – Schritt für Schritt →"
                   : "Geführt verkosten →"}
@@ -366,7 +367,7 @@ function Content({
             variant: experience === "beginner" ? "wine" : "secondary",
           })}
         >
-          🍷 Geführt verkosten
+          <GlassIcon className="size-5" /> Geführt verkosten
         </Link>
       )}
 

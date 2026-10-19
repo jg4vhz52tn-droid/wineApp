@@ -1,5 +1,6 @@
 "use client";
 
+import { GlassIcon } from "@/components/ui/icons";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -144,7 +145,11 @@ export function WineScreen() {
           href={`/keller/verkosten/${vintageId}`}
           className="flex items-center justify-between rounded-control bg-surface-2/70 px-4 py-3 text-sm font-medium"
         >
-          🍷 Geführt verkosten – mit Tipps zu jedem Schritt <span className="text-accent">→</span>
+          <span>
+            <GlassIcon className="inline size-4 align-[-3px]" /> Geführt verkosten – mit Tipps zu jedem
+            Schritt
+          </span>{" "}
+          <span className="text-accent">→</span>
         </Link>
       )}
 

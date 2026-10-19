@@ -1,5 +1,6 @@
 "use client";
 
+import { BulbIcon } from "@/components/ui/icons";
 import { useState } from "react";
 import { Chip } from "@/components/ui/chip";
 import { AROMA_FAMILIES } from "@/config/aromas";
@@ -81,7 +82,8 @@ export function AromaFamilyPicker({
           </div>
           {hint && f.aromas.includes(hint) && (
             <p className="rounded-control bg-surface-2/60 px-3 py-2 text-xs">
-              💡 <b className="font-medium">{hint}:</b> {AROMA_TIPS[hint]}
+              <BulbIcon className="inline size-3.5 align-[-2px] text-accent" />{" "}
+              <b className="font-medium">{hint}:</b> {AROMA_TIPS[hint]}
             </p>
           )}
         </div>
