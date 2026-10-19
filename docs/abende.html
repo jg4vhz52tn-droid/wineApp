@@ -187,6 +187,16 @@
   .in .bars .track i { width: var(--w); }
   .costs li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: .86rem; }
   .costs li:last-child { border: 0; }
+
+  /* ----- Abend-Patch ----- */
+  .patch-wrap { display: grid; gap: 22px; }
+  @media (min-width: 900px) { .patch-wrap { grid-template-columns: .9fr 1.1fr; align-items: center; } }
+  .flip { perspective: 1100px; width: min(280px, 80vw); margin: 0 auto; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
+  .flip-inner { position: relative; aspect-ratio: 240 / 292; transform-style: preserve-3d; }
+  .flip-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; filter: drop-shadow(0 10px 14px rgb(0 0 0 / .35)); }
+  .flip-face.back { transform: rotateY(180deg); }
+  .flip-face svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .flip-hint { text-align: center; color: var(--muted); font-size: .82rem; margin-top: 14px; }
 </style>
 </head>
 <body>
@@ -200,7 +210,7 @@
         <h1 class="display">Ein Abend, sechs Gläser, <em>eine Lage.</em></h1>
         <p class="lead">Die App nimmt dem Organisator die Arbeit ab und macht aus der Verkostung ein Spiel: planen, einladen, raten, aufdecken, feiern. Auf dieser Seite kannst du jeden Schritt selbst ausprobieren.</p>
         <nav class="steps-nav" aria-label="Schritte">
-          <a href="#planen"><b>1</b>Planen</a><a href="#einladen"><b>2</b>Einladen</a><a href="#raten"><b>3</b>Raten &amp; Aufdecken</a><a href="#punkte"><b>4</b>Punkte</a><a href="#rueckblick"><b>5</b>Rückblick</a>
+          <a href="#planen"><b>1</b>Planen</a><a href="#einladen"><b>2</b>Einladen</a><a href="#raten"><b>3</b>Raten &amp; Aufdecken</a><a href="#punkte"><b>4</b>Punkte</a><a href="#rueckblick"><b>5</b>Rückblick</a><a href="#patch"><b>6</b>Patch</a>
         </nav>
       </div>
       <div class="hero-bottles" aria-hidden="true"></div>
@@ -333,7 +343,7 @@
       <div class="section-head fade">
         <span class="eyebrow">Schritt 3 · Raten &amp; Aufdecken</span>
         <h2 class="h2">Jetzt du: Was ist in Glas 3?</h2>
-        <p class="lead">Ein Riesling-Abend, Glas 3 ist eingeschenkt. Füll den Rate-Bogen aus und deck auf – die Punkte werden genau so berechnet wie in der App.</p>
+        <p class="lead">Ein Riesling-Abend, Glas 3 ist eingeschenkt. Füll den Rate-Bogen aus und deck auf – die Punkte werden genau so berechnet wie in der App. Wer neu dabei ist, schaltet in der App „Einfacher Bogen“ ein: nur Süße, Säure, Körper mit Tipps, Aromen erst nach Familie – gezählt wird nach denselben Regeln.</p>
       </div>
       <div class="card explain fade">
         <div class="vb" id="explainBottle" aria-hidden="true"></div>
@@ -441,6 +451,67 @@
             <li><span class="muted">Du schuldest Lena</span><span class="num up">25,75 €</span></li>
           </ul>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 6 Abend-Patch ===== -->
+  <section class="section" id="patch">
+    <div class="wrap patch-wrap">
+      <div class="fade">
+        <span class="eyebrow">Schritt 6 · Abend-Patch</span>
+        <h2 class="h2" style="margin:14px 0">Jeder Abend wird ein Abzeichen – zum Umdrehen.</h2>
+        <p class="lead">Ein Foto von der Runde oder der Flasche des Abends, und die App macht daraus einen gestickten Patch: vorne das Foto mit dem Siegertreppchen, Titel und Ort – hinten das Datum und alle, die dabei waren. Alle Patches sammelst du unter „Abende“. Fotos sehen nur Leute dieses Abends.</p>
+        <ol class="tick-list"><li><span><b>Ziehen oder antippen</b> – der Patch dreht sich wie eine Medaille.</span></li><li><span><b>Platz 1 bis 3</b> auf dem angedeuteten Treppchen.</span></li><li><span><b>Kachel „Deine Patches“</b> unter Abende, dazu die Seite „Alle Patches“.</span></li></ol>
+      </div>
+      <div class="fade d1">
+        <div class="flip" id="flip" role="button" tabindex="0" aria-label="Abend-Patch. Antippen oder zur Seite ziehen zum Umdrehen.">
+          <div class="flip-inner" id="flipInner">
+            <div class="flip-face"><svg viewBox="0 0 240 292" aria-hidden="true">
+  <defs>
+    <linearGradient id="pbg" x1="0" y1="0" x2=".3" y2="1"><stop offset="0" stop-color="#5e1832"/><stop offset="1" stop-color="#24091a"/></linearGradient>
+    <linearGradient id="pph" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c98a45"/><stop offset=".55" stop-color="#5a2a1c"/><stop offset="1" stop-color="#1a0b0a"/></linearGradient>
+    <clipPath id="pwin"><path d="M50 176V114A70 70 0 0 1 190 114V176Z"/></clipPath>
+  </defs>
+  <path d="M20 30Q20 14 36 14H204Q220 14 220 30V148C220 208 174 250 120 278C66 250 20 208 20 148Z" fill="url(#pbg)" stroke="#d1ad72" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M31 36Q31 25 42 25H198Q209 25 209 36V148C209 201 167 238 120 264C73 238 31 201 31 148Z" fill="none" stroke="#d1ad72" stroke-opacity=".8" stroke-width="1.4" stroke-dasharray="3 3.2"/>
+  <text x="120" y="40" text-anchor="middle" fill="#d1ad72" font-size="8" letter-spacing="3.5" font-weight="600" font-family="Inter, sans-serif">✦ LAGENABEND ✦</text>
+  <g clip-path="url(#pwin)">
+    <rect x="50" y="44" width="140" height="132" fill="url(#pph)"/>
+    <g fill="#ffd9a0" opacity=".35"><circle cx="160" cy="70" r="12"/><circle cx="180" cy="98" r="7"/><circle cx="72" cy="78" r="9"/></g>
+    <path d="M114 150V104c0-9 4-14 4-24V62h8v18c0 10 4 15 4 24v46Z" fill="#1d2a14"/><rect x="116" y="108" width="12" height="18" rx="1" fill="#efe3c8"/>
+    <rect x="72" y="156" width="32" height="22" fill="rgb(255 255 255 / .13)" stroke="#d1ad72" stroke-opacity=".55"/>
+    <rect x="104" y="146" width="32" height="32" fill="rgb(255 255 255 / .13)" stroke="#d1ad72" stroke-opacity=".55"/>
+    <rect x="136" y="163" width="32" height="15" fill="rgb(255 255 255 / .13)" stroke="#d1ad72" stroke-opacity=".55"/>
+    <g font-family="Inter, sans-serif" font-weight="600" text-anchor="middle" fill="#f4ede5" stroke="#14060c" stroke-width="2.4" stroke-opacity=".7" paint-order="stroke">
+      <text x="120" y="131" fill="#d1ad72" font-size="10">♛</text><text x="120" y="142" font-size="9" font-weight="700">Lena</text>
+      <text x="88" y="152" font-size="7.5">Paul</text><text x="152" y="159" font-size="7.5">Jonas</text>
+    </g>
+  </g>
+  <path d="M50 176V114A70 70 0 0 1 190 114V176Z" fill="none" stroke="#d1ad72" stroke-width="3"/>
+  <path d="M24 186H52V216H24L33 201Z M216 186H188V216H216L207 201Z" fill="#9c7c45"/>
+  <rect x="44" y="180" width="152" height="36" rx="2" fill="#d1ad72"/>
+  <text x="120" y="204" text-anchor="middle" fill="#2a0d18" font-size="17" font-family="Instrument Serif, Georgia, serif">Riesling vom Schiefer</text>
+  <text x="120" y="236" text-anchor="middle" fill="#f4ede5" fill-opacity=".85" font-size="9.5" font-family="Inter, sans-serif">bei Lena</text>
+  <text x="120" y="254" text-anchor="middle" fill="#d1ad72" fill-opacity=".7" font-size="9">↻</text>
+</svg></div>
+            <div class="flip-face back"><svg viewBox="0 0 240 292" aria-hidden="true">
+  <path d="M20 30Q20 14 36 14H204Q220 14 220 30V148C220 208 174 250 120 278C66 250 20 208 20 148Z" fill="#2c0b19" stroke="#d1ad72" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M31 36Q31 25 42 25H198Q209 25 209 36V148C209 201 167 238 120 264C73 238 31 201 31 148Z" fill="none" stroke="#d1ad72" stroke-opacity=".8" stroke-width="1.4" stroke-dasharray="3 3.2"/>
+  <text x="120" y="48" text-anchor="middle" fill="#d1ad72" font-size="8" letter-spacing="3.5" font-weight="600" font-family="Inter, sans-serif">✦ LAGENABEND ✦</text>
+  <text x="120" y="98" text-anchor="middle" fill="#f4ede5" font-size="46" font-family="Instrument Serif, Georgia, serif">14</text>
+  <text x="120" y="118" text-anchor="middle" fill="#f4ede5" font-size="13" letter-spacing="3" font-weight="600" font-family="Inter, sans-serif">NOVEMBER</text>
+  <text x="120" y="134" text-anchor="middle" fill="#d1ad72" font-size="10.5" letter-spacing="2" font-family="Inter, sans-serif">Samstag · 2026</text>
+  <text x="120" y="150" text-anchor="middle" fill="#f4ede5" fill-opacity=".75" font-size="9" font-family="Inter, sans-serif">bei Lena</text>
+  <path d="M66 162H108 M132 162H174" stroke="#d1ad72" stroke-opacity=".6"/><text x="120" y="166" text-anchor="middle" fill="#d1ad72" font-size="10">✦</text>
+  <text x="120" y="182" text-anchor="middle" fill="#d1ad72" font-size="7.5" letter-spacing="2.5" font-weight="600" font-family="Inter, sans-serif">DABEI WAREN</text>
+  <g fill="#f4ede5" font-size="10" font-family="Inter, sans-serif" text-anchor="middle">
+    <text x="86" y="197">Lena</text><text x="154" y="197">Paul</text><text x="86" y="210">Jonas</text><text x="154" y="210">Sophie</text><text x="86" y="223">Matti</text><text x="154" y="223">Ben</text><text x="120" y="236">Du</text>
+  </g>
+</svg></div>
+          </div>
+        </div>
+        <p class="flip-hint">Antippen oder zur Seite ziehen</p>
       </div>
     </div>
   </section>
@@ -700,6 +771,26 @@
   /* ---------- 5 Rückblick ---------- */
   const WR = [["Glas 3 · GG ’19", 93.5, true], ["Glas 5 · Spätlese ’17", 91], ["Glas 6 · Auslese ’11", 90.5], ["Glas 1 · trocken ’23", 86], ["Glas 2 · Kabinett ’21", 85.5], ["Glas 4 · Pirat", 83]];
   $("#wineBars").innerHTML = WR.map(([n, v, fav]) => `<li class="${fav ? "fav" : ""}"><span>${n}</span><span class="track"><i style="--w:${(v - 75) / 25 * 100}%"></i></span><span class="num">${comma(v)}</span></li>`).join("");
+})();
+</script>
+<script>
+(() => {
+  const el = document.getElementById("flip"), inner = document.getElementById("flipInner");
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let rot = 0, drag = null, anim = null;
+  const set = r => { rot = r; inner.style.transform = `rotateY(${r}deg)`; };
+  function settle(target, v = 0) {
+    cancelAnimationFrame(anim);
+    if (reduced) return set(target);
+    let x = rot, vel = v;
+    const step = () => { const f = (target - x) * 0.06; vel = (vel + f) * 0.82; x += vel; set(x); if (Math.abs(target - x) > 0.3 || Math.abs(vel) > 0.3) anim = requestAnimationFrame(step); else set(target); };
+    anim = requestAnimationFrame(step);
+  }
+  el.addEventListener("pointerdown", e => { drag = { x: e.clientX, start: rot, moved: false, last: e.clientX, v: 0 }; try { el.setPointerCapture(e.pointerId); } catch {} });
+  el.addEventListener("pointermove", e => { if (!drag) return; const dx = e.clientX - drag.x; if (!drag.moved && Math.abs(dx) < 6) return; drag.moved = true; drag.v = (e.clientX - drag.last) * 0.9; drag.last = e.clientX; cancelAnimationFrame(anim); set(drag.start + dx * 0.9); });
+  const up = () => { if (!drag) return; const d = drag; drag = null; if (!d.moved) return settle(Math.round(rot / 180) * 180 + 180); settle(Math.round((rot + d.v * 8) / 180) * 180, d.v); };
+  el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
+  el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") { e.preventDefault(); settle(Math.round(rot / 180) * 180 + 180); } });
 })();
 </script>
 </body>

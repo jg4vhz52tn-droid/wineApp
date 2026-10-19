@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wein-App – Geschmack</title>
+<meta name="description" content="Geführte Verkostung für Einsteiger, deine Geschmacks-DNA, Deine Sinne mit Abzeichen und die Bewertungen der ganzen Runde.">
+<script>try{var t=localStorage.getItem("weinapp-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .ic-line { width: 1em; height: 1em; vertical-align: -.15em; }
+
+  /* ----- Geführte Verkostung ----- */
+  .guide { display: grid; gap: 18px; }
+  @media (min-width: 900px) { .guide { grid-template-columns: 1.1fr .9fr; align-items: start; } }
+  .g-progress { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 16px; }
+  .g-progress span { display: block; font-size: .68rem; color: var(--muted); font-weight: 500; }
+  .g-progress span::before { content: ""; display: block; height: 4px; border-radius: 4px; background: var(--surface-2); margin-bottom: 5px; transition: background .3s; }
+  .g-progress span.on { color: var(--accent); }
+  .g-progress span.on::before, .g-progress span.done::before { background: var(--accent); }
+  .g-step h3 { font-family: var(--serif); font-weight: 400; font-size: 1.7rem; line-height: 1.1; margin: 4px 0 12px; }
+  .g-step .n { font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 500; }
+  .g-tip { border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); background: color-mix(in srgb, var(--accent) 6%, transparent); border-radius: 18px; padding: 12px 14px; font-size: .86rem; line-height: 1.5; margin-bottom: 14px; }
+  .g-tip b { color: var(--accent); font-weight: 500; display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+  .shades { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .shade { display: flex; gap: 10px; align-items: center; text-align: left; padding: 8px 10px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); font-size: .82rem; line-height: 1.2; color: var(--fg); }
+  .shade i { width: 32px; height: 32px; border-radius: 50%; flex: none; border: 1px solid rgb(0 0 0 / .1); }
+  .shade[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+  .shade.typ { box-shadow: 0 0 0 2px var(--success); }
+  .cmp { margin-top: 12px; padding: 12px 14px; border-radius: 18px; font-size: .86rem; line-height: 1.45; background: var(--surface-2); }
+  .cmp.good { background: color-mix(in srgb, var(--success) 12%, transparent); }
+  .cmp.hint { background: color-mix(in srgb, var(--warning) 12%, transparent); }
+  .cmp p { color: var(--muted); margin-top: 3px; }
+  .aroma { border-radius: 999px; border: 1px solid var(--border); background: var(--surface); padding: 0 14px; min-height: 40px; font-size: .84rem; color: var(--fg); }
+  .aroma[aria-pressed="true"] { border-color: transparent; color: #1a0f12; }
+  .arow { border: 1px solid var(--border); border-radius: 18px; padding: 10px 14px; margin-top: 8px; font-size: .86rem; line-height: 1.45; }
+  .arow.ok { border-color: color-mix(in srgb, var(--success) 45%, transparent); background: color-mix(in srgb, var(--success) 6%, transparent); }
+  .arow .h { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+  .arow .h small { margin-left: auto; color: var(--muted); font-weight: 400; font-size: .74rem; }
+  .arow .h i { width: 10px; height: 10px; border-radius: 50%; }
+  .arow .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .scale { position: relative; height: 12px; border-radius: 12px; background: var(--surface-2); margin: 18px 4px 6px; }
+  .scale span { position: absolute; top: -4px; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--surface); transform: translateX(-50%); transition: left .6s cubic-bezier(.16,1,.3,1); }
+  .scale-legend { display: flex; justify-content: space-between; font-size: .74rem; color: var(--muted); }
+  .watch { width: 170px; height: 170px; border-radius: 50%; margin: 6px auto 4px; display: grid; place-items: center; border: 4px solid var(--border); background: var(--surface-2); color: var(--fg); transition: border-color .2s; }
+  .watch.run { border-color: var(--accent); }
+  .watch b { font-family: var(--serif); font-weight: 400; font-size: 3.2rem; line-height: 1; display: block; }
+  .watch small { color: var(--accent); font-weight: 600; font-size: .82rem; }
+  .sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; margin: 10px 0; }
+  .sum div { background: var(--surface-2); border-radius: 14px; padding: 10px 4px; }
+  .sum small { display: block; font-size: .66rem; color: var(--muted); }
+  .sum b { font-family: var(--serif); font-weight: 400; font-size: 1.25rem; }
+
+  /* ----- DNA ----- */
+  .dna { display: grid; gap: 14px; }
+  @media (min-width: 900px) { .dna { grid-template-columns: repeat(2, 1fr); } .dna .wide { grid-column: span 2; } }
+  .dna-hero { background: linear-gradient(150deg, var(--curtain), var(--surface) 75%); }
+  .dna-hero p.quote { font-family: var(--serif); font-size: clamp(1.5rem, 4vw, 2.1rem); line-height: 1.2; margin: 8px 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .82rem; margin-bottom: 6px; }
+  .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+  .bars li { display: grid; grid-template-columns: 7rem 1fr auto; gap: 12px; align-items: center; font-size: .86rem; margin-top: 9px; }
+  .bars .t { height: 10px; border-radius: 10px; background: var(--surface-2); overflow: hidden; }
+  .bars .t i { display: block; height: 100%; border-radius: 10px; width: 0; transition: width 1s cubic-bezier(.16,1,.3,1); }
+  .rank li { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: .92rem; }
+  .rank li:last-child { border: 0; }
+  .rank .no { font-family: var(--serif); color: var(--accent); width: 18px; font-size: 1.2rem; }
+  .rank .sc { margin-left: auto; font-family: var(--serif); font-size: 1.35rem; }
+  .stat3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; margin-top: 10px; }
+  .stat3 div { background: var(--surface-2); border-radius: 14px; padding: 12px 6px; }
+  .stat3 small { display: block; font-size: .68rem; color: var(--muted); }
+  .stat3 b { display: block; font-family: var(--serif); font-weight: 400; font-size: 1.6rem; margin-top: 2px; }
+  .match { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; color: var(--accent); font-weight: 500; }
+
+  /* ----- Sinne & Abzeichen ----- */
+  .senses { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; }
+  .ring { position: relative; width: 92px; height: 92px; margin: 0 auto 8px; }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring .ico { position: absolute; inset: 0; display: grid; place-items: center; color: var(--fg); }
+  .ring .ico svg { width: 36px; height: 36px; transform: none; }
+  .ring circle.p { transition: stroke-dashoffset 1.4s cubic-bezier(.16,1,.3,1); }
+  .senses b { font-weight: 500; display: block; }
+  .senses small { color: var(--muted); font-size: .76rem; }
+  .medals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 10px; margin-top: 6px; }
+  @media (min-width: 700px) { .medals { grid-template-columns: repeat(6, 1fr); } }
+  .medal { text-align: center; font-size: .72rem; color: var(--muted); background: none; border: 0; padding: 0; }
+  .medal .m { aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; margin-bottom: 6px; position: relative; }
+  .medal .m svg { width: 46%; height: 46%; }
+  .medal.got { color: var(--fg); font-weight: 500; }
+  .medal.got .m { color: #4a2a10; background: radial-gradient(circle at 35% 30%, #f3dda4, #c99d55 55%, #8c6630); box-shadow: inset 0 -3px 6px rgb(0 0 0 / .25), 0 4px 10px -4px rgb(0 0 0 / .4); }
+  .medal.got .m::after { content: ""; position: absolute; inset: 9%; border-radius: 50%; border: 1px solid rgb(255 243 208 / .5); }
+  .medal:not(.got) .m { border: 2px dashed var(--border-strong); opacity: .6; }
+  .medal.pop .m { animation: pop .7s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes pop { 0% { transform: scale(.4) rotate(-12deg); } 100% { transform: none; } }
+
+  /* ----- Erfahrung ----- */
+  .levels { display: grid; gap: 14px; }
+  @media (min-width: 900px) { .levels { grid-template-columns: .9fr 1.1fr; align-items: center; } }
+  .lvl-list li { display: flex; gap: 10px; align-items: flex-start; margin-top: 10px; font-size: .9rem; }
+  .lvl-list li::before { content: "✓"; color: var(--accent); }
+
+  /* ----- Bewertungen ----- */
+  .reviews { display: grid; gap: 12px; }
+  @media (min-width: 900px) { .reviews { grid-template-columns: repeat(3, 1fr); } }
+  .review .who { display: flex; align-items: center; gap: 10px; }
+  .review .av { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--wine); color: var(--wine-fg); font-weight: 600; font-size: .85rem; }
+  .review .pts { margin-left: auto; font-family: var(--serif); font-size: 1.9rem; color: var(--accent); }
+  .review p { margin: 10px 0; line-height: 1.5; font-size: .92rem; }
+  .ach { border-radius: 999px; padding: 2px 10px; font-size: .74rem; color: #1a0f12; font-weight: 500; display: inline-block; margin: 0 4px 4px 0; }
+</style>
+</head>
+<body>
+<header id="site-header"></header>
+<main>
+  <section class="page-hero">
+    <div class="wrap">
+      <span class="eyebrow">Geschmack · lernen, verstehen, sammeln</span>
+      <h1 class="display">Finde heraus, was <em>du</em> wirklich magst.</h1>
+      <p class="lead">Die App führt dich Schritt für Schritt durch ein Glas, merkt sich, was dir schmeckt, und macht daraus deine Geschmacks-DNA. Mit jeder Verkostung werden Auge, Nase und Gaumen feiner – und es gibt Abzeichen.</p>
+      <div class="chips" style="margin-top:18px">
+        <a class="chip" href="#gefuehrt">Geführte Verkostung</a><a class="chip" href="#dna">Geschmacks-DNA</a><a class="chip" href="#sinne">Sinne &amp; Abzeichen</a><a class="chip" href="#bewertungen">Bewertungen der Runde</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Geführte Verkostung ===== -->
+  <section class="section" id="gefuehrt">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Geführte Verkostung · für Einsteiger</span>
+        <h2 class="h2">Ein Glas, Schritt für Schritt – mit Vergleich nach jedem Schritt.</h2>
+        <p class="lead">Du wählst eine Flasche aus deinem Keller. Die App fragt nach Farbe, Duft, Säure und Abgang – und zeigt danach, was Kenner in genau diesem Wein finden. Nie „falsch“, immer „schau mal, ob du das auch findest“. Probier es mit einem Riesling Großes Gewächs von der Nahe:</p>
+      </div>
+      <div class="guide">
+        <div class="card pad fade" id="guide" aria-live="polite"></div>
+        <div class="fade d1">
+          <ol class="tick-list">
+            <li><span><b>Woher weiß die App das?</b> Zuerst aus den Bewertungen eurer Runde zu genau diesem Wein. Gibt es die noch nicht, beschreibt eine KI einmal das typische Profil – gespeichert für alle. Sonst helfen unsere Rebsorten-Steckbriefe.</span></li>
+            <li><span><b>Riech-Tipps aus dem Alltag.</b> Zu allen 48 Aromen: Feuerstein „wie ein Streichholz kurz nach dem Anzünden“, Säure „wenn dir das Wasser in den Wangen zusammenläuft“.</span></li>
+            <li><span><b>Abgang mit Stoppuhr.</b> Schlucken, tippen, warten, tippen – „12 Sekunden, ein langer Abgang“.</span></li>
+            <li><span><b>Zählt für alles.</b> Die Verkostung wird deine Bewertung, macht die Geschmacks-DNA genauer und lässt deine Sinne wachsen.</span></li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Geschmacks-DNA ===== -->
+  <section class="section" id="dna">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Geschmacks-DNA</span>
+        <h2 class="h2">Dein Profil – aus allem, was du bewertest und rätst.</h2>
+        <p class="lead">Ab fünf Bewertungen weiß die App, was dir gefällt: welche Säure, welcher Körper, welche Aromen, welche Rebsorten. Nur für dich sichtbar. Ein Beispiel:</p>
+      </div>
+      <div class="dna">
+        <div class="card pad dna-hero wide fade">
+          <span class="k" style="color:var(--accent)">Deine Geschmacks-DNA</span>
+          <p class="quote">„Du liebst rassige, fast trockene Rieslinge mit Feuerstein und Pfirsich – am liebsten von der Nahe. Mehr als 30 € musst du dafür selten ausgeben.“</p>
+          <p class="muted" style="font-size:.8rem">Aus 14 Bewertungen · den Satz formuliert eine KI aus deinen Zahlen</p>
+        </div>
+        <div class="card pad fade">
+          <b style="font-weight:500;font-size:1.1rem">Dein Lieblingsprofil</b>
+          <p class="muted" style="font-size:.86rem;margin:2px 0 10px">So schmecken die Weine, die du am besten bewertest.</p>
+          <div class="legend"><span><i style="background:var(--series-1)"></i>Deine Lieblingsweine</span><span><i style="background:var(--series-2)"></i>Schnitt deiner Runde</span></div>
+          <svg viewBox="-20 -10 240 220" id="dnaRadar" role="img" aria-label="Radar: Süße 1,8, Säure 8,1, Körper 5,4, Tannin 3,2, Abgang 7,6 – Runde: 3,1, 6,7, 6,2, 4,4, 6,5" style="width:100%;max-width:330px;display:block;margin:0 auto;overflow:visible"></svg>
+        </div>
+        <div class="card pad fade d1">
+          <b style="font-weight:500;font-size:1.1rem">Deine Lieblingsaromen</b>
+          <ul class="bars" id="dnaAromas"></ul>
+          <b style="font-weight:500;font-size:1.1rem;display:block;margin-top:22px">Rebsorten</b>
+          <ol class="rank"><li><span class="no">1</span>Riesling<span class="muted" style="font-size:.78rem;margin-left:8px">9 Weine</span><span class="sc">92,4</span></li><li><span class="no">2</span>Spätburgunder<span class="muted" style="font-size:.78rem;margin-left:8px">3 Weine</span><span class="sc">89,5</span></li><li><span class="no">3</span>Silvaner<span class="muted" style="font-size:.78rem;margin-left:8px">2 Weine</span><span class="sc">86</span></li></ol>
+        </div>
+        <div class="card pad fade">
+          <b style="font-weight:500;font-size:1.1rem">Dein Preis-Sweetspot</b>
+          <p class="muted" style="font-size:.86rem;margin-top:2px">Ab <b style="color:var(--fg);font-weight:500">25–40 €</b> wird es für dich kaum noch besser.</p>
+          <ul class="bars" id="dnaPrices"></ul>
+          <p class="muted" style="font-size:.74rem;margin-top:10px"><span style="color:var(--series-2)">●</span> Sweetspot · Ø Bewertung, Skala 50–100</p>
+        </div>
+        <div class="card pad fade d1">
+          <b style="font-weight:500;font-size:1.1rem">Deine Nase</b>
+          <p class="muted" style="font-size:.86rem;margin-top:2px">Aus 16 blind verkosteten Gläsern am Lagenabend.</p>
+          <div class="stat3"><div><small>Rebsorte erkannt</small><b>73 %</b></div><div><small>Jahrgang ±1</small><b>43 %</b></div><div><small>Ø Punkte</small><b>58</b></div></div>
+          <p style="font-size:.88rem;margin-top:14px;padding:10px 12px;border-radius:14px;background:var(--surface-2)"><b style="font-weight:500">Grauburgunder</b> hältst du oft für <b style="font-weight:500">Chardonnay</b> – das Kapitel „Rebsorten“ hilft beim Üben.</p>
+          <p style="margin-top:14px"><span class="match">Passt zu dir 86 %</span> <span class="muted" style="font-size:.8rem">– steht dann bei passenden Weinen in „Meine Weine“ und „Was trinke ich heute?“.</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Sinne & Abzeichen ===== -->
+  <section class="section" id="sinne">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Deine Sinne &amp; Abzeichen</span>
+        <h2 class="h2">Auge, Nase, Gaumen – jeder Ring wächst mit.</h2>
+        <p class="lead">Wie Aktivitätsringe, nur für Wein: Jede geführte Verkostung und jeder Lagenabend bringt Punkte. Sechs Stufen von „Neugierig“ bis „Meister“. Dazu Abzeichen – vergeben nur von der App selbst, nicht selbst eintragbar.</p>
+      </div>
+      <div class="card pad fade" id="sensesCard">
+        <div class="senses" id="senses"></div>
+        <div class="k" style="margin:26px 0 10px">Abzeichen · tippe eins an</div>
+        <div class="medals" id="medals"></div>
+        <p class="muted" id="medalInfo" style="font-size:.86rem;margin-top:14px;min-height:1.4em" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Einsteiger bis Profi ===== -->
+  <section class="section">
+    <div class="wrap levels">
+      <div class="fade">
+        <span class="eyebrow">Deine Erfahrung</span>
+        <h2 class="h2" style="margin:14px 0">Einsteiger, Fortgeschritten oder Profi.</h2>
+        <p class="lead">Im Profil stellst du ein, wie viel Hilfe du möchtest. Gäste ohne Konto schalten am Abend einfach „Einfacher Bogen“ ein.</p>
+      </div>
+      <div class="card pad fade d1">
+        <div class="seg" id="lvlSeg" role="group" aria-label="Erfahrung"><button type="button" aria-pressed="true" data-l="0">Einsteiger</button><button type="button" aria-pressed="false" data-l="1">Fortgeschritten</button><button type="button" aria-pressed="false" data-l="2">Profi</button></div>
+        <ul class="lvl-list" id="lvlList" aria-live="polite"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Bewertungen ===== -->
+  <section class="section" id="bewertungen">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Meine Weine · Bewertungen der Runde</span>
+        <h2 class="h2">Was die anderen geschmeckt haben.</h2>
+        <p class="lead">Zu jedem Wein: deine Punkte, Aromen und Notiz – und die der anderen, mit Namen. Antippen öffnet die ganze Verkostung mit Süße, Säure, Körper als Skala. Wer mag, bewertet „nur für mich“.</p>
+      </div>
+      <div class="reviews">
+        <div class="card pad review fade"><div class="who"><span class="av">J</span><div><b style="font-weight:500">Jonas</b><div class="muted" style="font-size:.76rem">Jahrgang 2020 · vor 3 Tagen</div></div><span class="pts">94,5</span></div><p>Rauchig, enorm lang, die Säure trägt alles. Mit Luft kommt reifer Pfirsich.</p><span class="ach" style="background:#b5c0c8">Feuerstein</span><span class="ach" style="background:#efb98a">Pfirsich</span><span class="ach" style="background:#e6d27a">Zitrone</span></div>
+        <div class="card pad review fade d1"><div class="who"><span class="av" style="background:#5b3a6e">L</span><div><b style="font-weight:500">Lea</b><div class="muted" style="font-size:.76rem">Jahrgang 2020 · letzte Woche</div></div><span class="pts">92</span></div><p>Erst verschlossen, nach einer Stunde im Glas wunderbar. Zum Zander perfekt.</p><span class="ach" style="background:#efb98a">Aprikose</span><span class="ach" style="background:#b5c0c8">Schiefer</span></div>
+        <div class="card pad review fade d2"><div class="who"><span class="av" style="background:var(--accent);color:var(--accent-fg)">D</span><div><b style="font-weight:500">Du</b><div class="muted" style="font-size:.76rem">Geführte Verkostung · heute</div></div><span class="pts">93</span></div><p>Farbe getroffen, 3 von 4 Aromen gefunden, Abgang 14 Sekunden.</p><span class="ach" style="background:#efb98a">Pfirsich</span><span class="ach" style="background:#b5c0c8">Feuerstein</span><span class="ach" style="background:#e6d27a">Zitrone</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="wrap fade">
+      <span class="eyebrow">Weiter</span>
+      <h2>Vom Etikett zur DNA.</h2>
+      <p class="lead">Etikett scannen, einlagern, öffnen, geführt verkosten – und die DNA wird mit jeder Flasche genauer.</p>
+      <div class="actions"><a class="btn btn-primary" href="keller.html#scan">Etikett-Scan ansehen <span class="arrow">→</span></a><a class="btn btn-ghost" href="lernen.html">Zum Lernen</a></div>
+    </div>
+  </section>
+</main>
+<footer id="site-footer"></footer>
+<script src="assets/site.js"></script>
+<script>
+(() => {
+  const { $, $$, whenSeen, radar, reduced } = Site;
+  const svg = (d, extra = "") => `<svg class="ic-line" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${d}</svg>`;
+  const I = {
+    bulb: svg('<path d="M9 17.5h6M10 20.5h4"/><path d="M12 3.5a5.5 5.5 0 0 0-3.2 10c.7.5 1.2 1.3 1.2 2.2v1.8h4v-1.8c0-.9.5-1.7 1.2-2.2A5.5 5.5 0 0 0 12 3.5Z"/>'),
+    eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.2"/>',
+    nose: '<path d="M10 3.5c0 4.2-2.2 6.8-3.4 9.6-1 2.6.6 5.1 3.4 5.1h4c2.8 0 4.4-2.5 3.4-5.1C16.2 10.3 14 7.7 14 3.5"/><path d="M9.2 15.9c.7-1 1.8-1.1 2.8-.2 1-.9 2.1-.8 2.8.2"/>',
+    palate: '<path d="M3 13.5c2.2-2.6 4.3-3.6 6-3.1.9.3 1.9.9 3 .9s2.1-.6 3-.9c1.7-.5 3.8.5 6 3.1-2.6 3.3-5.6 5-9 5s-6.4-1.7-9-5Z"/><path d="M3 13.5c3 .8 6 1.2 9 1.2s6-.4 9-1.2"/><path d="M12 2.8c1.3 1.6 2 2.7 2 3.6a2 2 0 0 1-4 0c0-.9.7-2 2-3.6Z"/>',
+    glass: '<path d="M7 3h10l-.6 5.2a4.4 4.4 0 0 1-8.8 0z"/><path d="M12 12.6V20M8.5 20.5h7"/>',
+    book: '<path d="M12 6.5c-2-1.6-4.6-2-8-1.5v13c3.4-.5 6 0 8 1.5 2-1.5 4.6-2 8-1.5V5c-3.4-.5-6-.1-8 1.5Z"/><path d="M12 6.5v13"/>',
+    citrus: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="6"/><path d="M12 6v12M6 12h12M7.8 7.8l8.4 8.4M16.2 7.8l-8.4 8.4"/>',
+    timer: '<circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V9.5M10 3h4M18 7l1.5-1.5"/>',
+    house: '<path d="M4 11 12 4.5l8 6.5"/><path d="M6 9.5V19.5h12V9.5"/><path d="M10 19.5v-5h4v5"/>',
+    flag: '<path d="M5.5 21V3.5"/><path d="M5.5 4.5h12l-2.5 4 2.5 4h-12"/><path d="M10 7.5l2.5 2.5M12.5 7.5 10 10"/>',
+    globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.4 2.5 3.6 5.3 3.6 8.5s-1.2 6-3.6 8.5c-2.4-2.5-3.6-5.3-3.6-8.5s1.2-6 3.6-8.5Z"/>',
+    blossom: '<circle cx="12" cy="12" r="2.2"/><path d="M12 9.8c-1.6-2-1.6-4.3 0-6.3 1.6 2 1.6 4.3 0 6.3ZM14.1 11.3c1.3-2.2 3.4-3.2 5.8-2.9-.7 2.4-2.6 3.8-5.1 4ZM13.3 13.9c2.5.6 4 2.4 4.2 4.9-2.5.2-4.4-1.1-5.1-3.5ZM10.7 13.9c-.7 2.4-2.6 3.7-5.1 3.5.2-2.5 1.7-4.3 4.2-4.9ZM9.9 11.3c-2.5-.2-4.4-1.6-5.1-4 2.4-.3 4.5.7 5.8 2.9Z"/>',
+  };
+  const full = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const fmt = n => n.toLocaleString("de-DE", { maximumFractionDigits: 1 });
+
+  /* ================= Geführte Verkostung (Demo) ================= */
+  const SHADES = [
+    ["Blass, fast wasserhell", "#f1f0d2"], ["Hellgelb mit grünen Reflexen", "#ecebaa"], ["Zitronengelb", "#eadc7b"],
+    ["Strohgelb", "#e2c862"], ["Goldgelb", "#d4a840"], ["Bernstein", "#b47a28"],
+  ];
+  const TYPICAL_SHADE = 1;
+  const AROMAS = [["Pfirsich", "#efb98a"], ["Zitrone", "#e6d27a"], ["Grüner Apfel", "#bfd38a"], ["Feuerstein", "#b5c0c8"], ["Honig", "#dfbd7c"], ["Rose", "#e9b5cd"], ["Vanille", "#cdae8e"], ["Schiefer", "#b5c0c8"]];
+  const TYPICAL = { Pfirsich: "reife Steinobstfrucht der Nahe", Zitrone: "die frische Säure zeigt sich als Zitrus", Feuerstein: "typisch für das Vulkangestein der Lage", Schiefer: "der Boden schmeckt mit" };
+  const TIPS = { Zitrone: "Denk an frisch geriebene Zitronenschale – spitz, hell, ein bisschen bitter.", Feuerstein: "Wie ein Streichholz kurz nach dem Anzünden – rauchig und etwas schwefelig.", Schiefer: "Ein nasser dunkler Stein nach dem Regen – kühl und rauchig.", Pfirsich: "Ein reifer Pfirsich mit samtiger Haut – weich, süß, rund." };
+  const color = a => AROMAS.find(x => x[0] === a)?.[1] || "var(--surface-2)";
+  const PHASES = ["Sehen", "Riechen", "Schmecken", "Urteil"];
+  const st = { step: 0, shade: null, shown: false, aromas: [], hint: [], miss: [], acid: 5, acidShown: false, secs: null, run: null };
+  const box = $("#guide");
+
+  function progress(phase) {
+    return `<div class="g-progress">${PHASES.map((p, i) => `<span class="${i === phase ? "on" : i < phase ? "done" : ""}">${p}</span>`).join("")}</div>`;
+  }
+  function render() {
+    const s = st;
+    let h = "";
+    if (s.step === 0) {
+      h = progress(0) + `<div class="g-step"><span class="n">Schritt 1</span><h3>Welche Farbe siehst du?</h3>
+        <div class="g-tip"><b>${I.bulb} So geht’s</b>Halte das Glas schräg vor ein weißes Blatt Papier.</div>
+        <div class="shades">${SHADES.map(([l, c], i) => `<button type="button" class="shade${s.shown && i === TYPICAL_SHADE ? " typ" : ""}" aria-pressed="${s.shade === i}" data-shade="${i}" ${s.shown ? "disabled" : ""}><i style="background:${c}"></i>${l}</button>`).join("")}</div>
+        ${s.shown ? `<div class="cmp ${s.shade === TYPICAL_SHADE ? "good" : "hint"}"><b style="font-weight:500">${s.shade === TYPICAL_SHADE ? "✓ Genau so sehen das auch Kenner." : "→ Typisch wäre eher: Hellgelb mit grünen Reflexen"}</b><p>Junges Großes Gewächs: hell mit grünen Reflexen – erst mit den Jahren wird es golden.</p></div>
+          <button class="btn btn-primary" style="width:100%;margin-top:14px" data-go="1">Weiter zum Riechen</button>`
+        : `<button class="btn btn-primary" style="width:100%;margin-top:14px" data-cmp="shade" ${s.shade === null ? "disabled" : ""}>Vergleichen</button>`}</div>`;
+    } else if (s.step === 1) {
+      const typical = Object.keys(TYPICAL);
+      h = progress(1) + `<div class="g-step"><span class="n">Schritt 2</span><h3>Schwenken – was riechst du?</h3>`;
+      if (!s.shown) {
+        h += `<div class="g-tip"><b>${I.bulb} So geht’s</b>Glas am Stiel kreisen lassen, dann sofort mit kurzen Zügen riechen.</div>
+          <div class="chips">${AROMAS.map(([a, c]) => `<button type="button" class="aroma" aria-pressed="${s.aromas.includes(a)}" data-aroma="${a}" style="${s.aromas.includes(a) ? `background:${c}` : ""}">${a}</button>`).join("")}</div>
+          <button class="btn btn-primary" style="width:100%;margin-top:14px" data-cmp="nose">${s.aromas.length ? "Vergleichen" : "Ich rieche nichts Bestimmtes – hilf mir"}</button>`;
+      } else {
+        typical.forEach(a => {
+          const found = s.aromas.includes(a), hinted = s.hint.includes(a), missed = s.miss.includes(a);
+          h += `<div class="arow ${found || hinted ? "ok" : ""}"><div class="h"><i style="background:${color(a)}"></i>${a}<small>${found ? "✓ gefunden" : hinted ? "✓ mit Hilfe gefunden" : missed ? "diesmal nicht" : ""}</small></div>
+            ${found ? `<p class="muted" style="font-size:.8rem;margin-top:3px">Genau – ${TYPICAL[a]}.</p>` : ""}
+            ${!found && !hinted && !missed ? `<p style="margin-top:4px">Kenner finden hier oft <b style="font-weight:500">${a}</b>. ${TIPS[a]}</p><div class="btns"><button class="btn btn-ghost btn-sm" data-hint="${a}">✓ Rieche ich</button><button class="btn btn-ghost btn-sm" data-miss="${a}">Finde ich nicht</button></div>` : ""}
+            ${missed ? `<p class="muted" style="font-size:.8rem;margin-top:3px">Völlig okay – jede Nase ist anders.</p>` : ""}</div>`;
+        });
+        const extra = s.aromas.filter(a => !typical.includes(a));
+        if (extra.length) h += `<div class="cmp">Du riechst außerdem <b style="font-weight:500">${extra.join(", ")}</b> – spannend, das kommt in deine Notiz.</div>`;
+        h += `<button class="btn btn-primary" style="width:100%;margin-top:14px" data-go="2">Weiter zum Schmecken</button>`;
+      }
+      h += `</div>`;
+    } else if (s.step === 2) {
+      const typ = 8.5, diff = Math.abs(s.acid - typ);
+      h = progress(2) + `<div class="g-step"><span class="n">Schritt 3</span><h3>Wie viel Säure hat er?</h3>
+        <div class="g-tip"><b>${I.bulb} So merkst du es</b>Läuft dir nach dem Schlucken das Wasser in den Wangen zusammen? Je mehr, desto mehr Säure.</div>
+        <label class="field-lbl" for="acid"><span class="muted">mild ↔ messerscharf</span><b>${fmt(s.acid)}</b></label>
+        <input type="range" id="acid" min="0" max="10" step="0.1" value="${s.acid}" ${s.acidShown ? "disabled" : ""}>
+        ${s.acidShown ? `<div class="scale"><span style="left:${typ * 10}%;background:var(--series-2)"></span><span style="left:${s.acid * 10}%;background:var(--series-1)"></span></div>
+          <div class="scale-legend"><span><span style="color:var(--series-1)">●</span> du ${fmt(s.acid)}</span><span><span style="color:var(--series-2)">●</span> typisch 8,5</span></div>
+          <div class="cmp ${diff <= 1.5 ? "good" : "hint"}"><b style="font-weight:500">${diff <= 1.5 ? "✓ Sehr gut eingeschätzt!" : "→ Typisch wäre eher rassig (8,5)."}</b>${diff > 1.5 ? `<p>Riesling hat von Natur aus viel Säure – probier noch einen Schluck und achte auf die Wangen.</p>` : ""}</div>
+          <button class="btn btn-primary" style="width:100%;margin-top:14px" data-go="3">Weiter zum Abgang</button>`
+        : `<button class="btn btn-primary" style="width:100%;margin-top:14px" data-cmp="acid">Vergleichen</button>`}</div>`;
+    } else if (s.step === 3) {
+      const running = s.run !== null;
+      h = progress(2) + `<div class="g-step"><span class="n">Schritt 4</span><h3>Wie lange bleibt der Geschmack?</h3>
+        <div class="g-tip"><b>${I.bulb} So geht’s</b>Schlucken, auf Start tippen – und auf Stopp, sobald der Geschmack weg ist.</div>
+        <button type="button" class="watch${running ? " run" : ""}" id="watch" aria-label="${running ? "Stoppen" : "Starten"}"><span><b id="watchN">${s.secs ?? 0}</b><span class="muted" style="font-size:.8rem">Sekunden</span><br><small>${running ? "Stopp" : s.secs === null ? "Start" : "Nochmal"}</small></span></button>
+        ${s.secs !== null && !running ? `<div class="cmp ${Math.abs(s.secs - 14) <= 4 ? "good" : ""}"><b style="font-weight:500">${s.secs} Sekunden – ein ${s.secs < 5 ? "kurzer" : s.secs <= 10 ? "mittlerer" : "langer"} Abgang.</b><p>Typisch für diesen Wein sind etwa 14 Sekunden.</p></div>` : ""}
+        <button class="btn btn-primary" style="width:100%;margin-top:14px" data-go="4" ${running ? "disabled" : ""}>${s.secs === null ? "Überspringen" : "Zum Fazit"}</button></div>`;
+    } else {
+      const found = Object.keys(TYPICAL).filter(a => s.aromas.includes(a) || s.hint.includes(a)).length;
+      h = progress(3) + `<div class="g-step" style="text-align:center"><div style="color:var(--accent)">${full(I.glass).replace("<svg", '<svg style="width:46px;height:46px"')}</div><h3>Toll verkostet!</h3>
+        <div class="sum"><div><small>Farbe</small><b>${st.shade === TYPICAL_SHADE ? "✓ getroffen" : "fast"}</b></div><div><small>Aromen</small><b>${found} von 4</b></div><div><small>Säure</small><b>${Math.abs(s.acid - 8.5) <= 1.5 ? "✓ getroffen" : "notiert"}</b></div></div>
+        <p class="muted" style="font-size:.88rem">In der App wird das jetzt deine Bewertung – und deine Geschmacks-DNA ist wieder ein Stück genauer.</p>
+        <button class="btn btn-ghost" style="margin-top:14px" data-restart>Nochmal von vorn</button></div>`;
+    }
+    box.innerHTML = h;
+    $$("input[type=range]", box).forEach(Site.syncRange);
+  }
+  box.addEventListener("click", e => {
+    const t = e.target.closest("button"); if (!t) return;
+    if (t.dataset.shade) st.shade = +t.dataset.shade;
+    else if (t.dataset.aroma) { const a = t.dataset.aroma; st.aromas = st.aromas.includes(a) ? st.aromas.filter(x => x !== a) : [...st.aromas, a]; }
+    else if (t.dataset.cmp === "shade" || t.dataset.cmp === "nose") st.shown = true;
+    else if (t.dataset.cmp === "acid") st.acidShown = true;
+    else if (t.dataset.hint) st.hint.push(t.dataset.hint);
+    else if (t.dataset.miss) st.miss.push(t.dataset.miss);
+    else if (t.dataset.go) { st.step = +t.dataset.go; st.shown = false; }
+    else if ("restart" in t.dataset) Object.assign(st, { step: 0, shade: null, shown: false, aromas: [], hint: [], miss: [], acid: 5, acidShown: false, secs: null });
+    else if (t.id === "watch") {
+      if (st.run === null) { st.run = performance.now(); st.secs = 0; render(); const tick = () => { if (st.run === null) return; const n = $("#watchN"); if (n) n.textContent = Math.floor((performance.now() - st.run) / 1000); requestAnimationFrame(tick); }; requestAnimationFrame(tick); return; }
+      st.secs = Math.round((performance.now() - st.run) / 1000); st.run = null;
+    }
+    render();
+  });
+  box.addEventListener("input", e => { if (e.target.id === "acid") { st.acid = +e.target.value; e.target.previousElementSibling.querySelector("b").textContent = fmt(st.acid); Site.syncRange(e.target); } });
+  render();
+
+  /* ================= DNA ================= */
+  const rad = radar($("#dnaRadar"), ["Süße", "Säure", "Körper", "Tannin", "Abgang"], { r: 78 });
+  const group = rad.shape("var(--series-2)", .12), mine = rad.shape("var(--series-1)", .3);
+  const zero = [0, 0, 0, 0, 0];
+  group(zero); mine(zero);
+  whenSeen($("#dnaRadar"), () => setTimeout(() => { group([3.1, 6.7, 6.2, 4.4, 6.5]); mine([1.8, 8.1, 5.4, 3.2, 7.6]); }, 150));
+  const aromas = [["Feuerstein", 7, "#b5c0c8"], ["Pfirsich", 6, "#efb98a"], ["Zitrone", 5, "#e6d27a"], ["Grüner Apfel", 3, "#bfd38a"], ["Honig", 2, "#dfbd7c"]];
+  $("#dnaAromas").innerHTML = aromas.map(([a, n, c]) => `<li><span>${a}</span><span class="t"><i style="background:${c}" data-w="${n / 7 * 100}"></i></span><span class="muted">${n}×</span></li>`).join("");
+  const prices = [["unter 15 €", 84], ["15–25 €", 88.5], ["25–40 €", 92, true], ["40–70 €", 92.5]];
+  $("#dnaPrices").innerHTML = prices.map(([b, v, spot]) => `<li><span>${b}</span><span class="t"><i style="background:${spot ? "var(--series-2)" : "var(--series-1)"}" data-w="${(v - 50) / 50 * 100}"></i></span><b style="font-weight:500">Ø ${fmt(v)}</b></li>`).join("");
+  $$(".bars").forEach(list => whenSeen(list, () => $$("i[data-w]", list).forEach(i => (i.style.width = i.dataset.w + "%"))));
+
+  /* ================= Sinne & Abzeichen ================= */
+  const SENSES = [["Auge", I.eye, "var(--series-1)", .72, "Stufe 2 · Entdecker"], ["Nase", I.nose, "var(--series-2)", .45, "Stufe 3 · Geübt"], ["Gaumen", I.palate, "var(--accent)", .9, "Stufe 2 · Entdecker"]];
+  const C = 2 * Math.PI * 30;
+  $("#senses").innerHTML = SENSES.map(([l, ic, col, p, sub]) => `<div><div class="ring"><svg viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="30" fill="none" stroke="var(--surface-2)" stroke-width="8"/><circle class="p" cx="36" cy="36" r="30" fill="none" stroke="${col}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C}" data-p="${p}"/></svg><span class="ico">${full(ic)}</span></div><b>${l}</b><small>${sub}</small></div>`).join("");
+  whenSeen($("#senses"), () => $$("circle.p").forEach(c => (c.style.strokeDashoffset = C * (1 - c.dataset.p))));
+  const MEDALS = [
+    ["Erster Schluck", I.glass, true, "Die erste geführte Verkostung gemacht."],
+    ["Spürnase", I.nose, true, "10 Aromen in geführten Verkostungen gefunden."],
+    ["Gastgeber", I.house, true, "Den ersten Lagenabend organisiert."],
+    ["Farbauge", I.eye, false, "5-mal die typische Farbe getroffen."],
+    ["Säure-Profi", I.citrus, false, "5-mal die Säure auf ±1 eingeschätzt."],
+    ["Langer Atem", I.timer, false, "5-mal den Abgang mit der Stoppuhr gemessen."],
+    ["Weinschüler", I.book, false, "10 geführte Verkostungen."],
+    ["Aromajäger", I.blossom, false, "40 Aromen gefunden."],
+    ["Piratenjäger", I.flag, false, "Den Piraten eines Abends entlarvt."],
+    ["Riesling-Nase", I.nose, false, "10 Rieslinge blind richtig erkannt."],
+    ["Weltenbummler", I.globe, false, "10 Regionen in der Sammlung."],
+  ];
+  $("#medals").innerHTML = MEDALS.map(([t, ic, got], i) => `<button type="button" class="medal${got ? " got" : ""}" data-i="${i}"><span class="m">${full(ic)}</span>${t}</button>`).join("");
+  $("#medals").addEventListener("click", e => {
+    const b = e.target.closest(".medal"); if (!b) return;
+    const [t, , got, d] = MEDALS[+b.dataset.i];
+    $("#medalInfo").innerHTML = `<b style="font-weight:500;color:var(--fg)">${t}:</b> ${d} ${got ? "Erreicht." : "Noch nicht erreicht."}`;
+    if (got && !reduced) { b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
+  });
+
+  /* ================= Erfahrung ================= */
+  const LV = [
+    ["Beim Öffnen einer Flasche schlägt die App die geführte Verkostung vor.", "Am Lagenabend der einfache Rate-Bogen: nur Süße, Säure, Körper – mit Tipps.", "Aromen erst nach Familie („Steinobst?“), dann genauer, mit Riech-Tipp hinter jedem „?“.", "Region und Lage sind freiwillig – gezählt wird nach denselben Regeln wie bei allen."],
+    ["Die geführte Verkostung gibt es auf Wunsch in jeder Flasche.", "Bewerten geht direkt: Punkte, Struktur, Aromarad, Kommentar.", "Der volle Rate-Bogen am Abend – mit Tannin, Abgang, Region und Lage."],
+    ["Alles direkt, ohne Hilfen.", "Der volle Rate-Bogen mit allen 48 Aromen im Aromarad.", "Deine Nase in der DNA: Trefferquote und typische Verwechslungen."],
+  ];
+  const showLv = l => { $("#lvlList").innerHTML = LV[l].map(x => `<li><span>${x}</span></li>`).join(""); $$("#lvlSeg button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.l === l))); };
+  $("#lvlSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (b) showLv(+b.dataset.l); });
+  showLv(0);
+})();
+</script>
+</body>
+</html>

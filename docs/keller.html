@@ -209,6 +209,29 @@
   .year-bars { display: flex; gap: 6px; align-items: flex-end; height: 90px; margin-top: 12px; }
   .year-bars div { flex: 1; display: grid; gap: 4px; justify-items: center; font-size: .66rem; color: var(--muted); }
   .year-bars i { width: 100%; border-radius: 6px 6px 2px 2px; background: var(--series-1); min-height: 3px; }
+
+  /* ----- Etikett-Scan ----- */
+  .scan { display: grid; gap: 18px; }
+  @media (min-width: 900px) { .scan { grid-template-columns: 1fr 1fr; align-items: center; } }
+  .scan-stage { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: center; }
+  .scan-photo { position: relative; aspect-ratio: 4/5; border-radius: 22px; overflow: hidden; background: #3a4a2a; }
+  .scan-photo .lbl-art { position: absolute; inset: 18% 16%; border-radius: 4px; background: #f3ead6; border: 3px solid #a8823f; display: grid; place-content: center; text-align: center; color: #2a1520; padding: 8px; }
+  .scan-photo .lbl-art small { letter-spacing: .3em; font-size: .62rem; color: #3b2a20; }
+  .scan-photo .lbl-art b { font-family: var(--serif); font-weight: 400; font-size: clamp(1.1rem, 4vw, 1.6rem); line-height: 1.05; display: block; margin: 6px 0; }
+  .scan-photo .lbl-art i { font-style: normal; font-size: .7rem; color: #6c5660; letter-spacing: .08em; }
+  .scan-photo .beam { position: absolute; left: 0; right: 0; height: 3px; top: 0; background: var(--accent); box-shadow: 0 0 18px 4px var(--accent); opacity: 0; }
+  .scan-photo.run .beam { animation: beam 1.3s ease-in-out 2; opacity: 1; }
+  .scan-photo .frame { position: absolute; inset: 15% 13%; border: 2px solid var(--accent); border-radius: 8px; opacity: 0; transform: scale(1.06); transition: all .4s; }
+  .scan-photo.done .frame { opacity: 1; transform: none; }
+  @keyframes beam { 0% { top: 8%; } 50% { top: 90%; } 100% { top: 8%; } }
+  .scan-bottle { width: 92px; }
+  .scan-fields { display: grid; gap: 8px; margin-top: 14px; }
+  .scan-fields div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 14px; background: var(--surface-2); font-size: .9rem; }
+  .scan-fields span { color: var(--muted); }
+  .scan-fields b { font-weight: 500; opacity: 0; transform: translateX(8px); transition: all .35s; }
+  .scan-fields b.in { opacity: 1; transform: none; }
+  .shop { display: grid; gap: 14px; }
+  @media (min-width: 900px) { .shop { grid-template-columns: repeat(3, 1fr); } }
 </style>
 </head>
 <body>
@@ -230,13 +253,50 @@
     </div>
   </section>
 
+  <!-- ===== Etikett-Scan ===== -->
+  <section class="section" id="scan">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Etikett-Scan</span>
+        <h2 class="h2">Foto vom Etikett – und die Flasche ist angelegt.</h2>
+        <p class="lead">Im Keller auf „+“, dann „Etikett scannen“: Die KI liest Weingut, Wein, Jahrgang, Rebsorte, Region und Qualitätsstufe in rund einer Sekunde. Du prüfst nur noch, ergänzt Menge und Preis – fertig. Und statt einer gezeichneten Flasche siehst du ab jetzt überall dein echtes Etikett.</p>
+      </div>
+      <div class="scan">
+        <div class="card pad fade">
+          <div class="scan-stage">
+            <div class="scan-photo" id="scanPhoto" aria-hidden="true">
+              <div class="lbl-art"><small>DÖNNHOFF</small><b>Hermannshöhle<br>Riesling</b><i>GROSSES GEWÄCHS · 2020</i></div>
+              <div class="frame"></div><div class="beam"></div>
+            </div>
+            <svg class="scan-bottle" viewBox="0 0 120 330" aria-hidden="true" style="overflow:visible">
+              <use href="#schlegel" width="120" height="320"/>
+              <g id="scanLabel" style="opacity:0;transition:opacity .6s">
+                <rect x="34" y="222" width="52" height="64" rx="3" fill="#f3ead6" stroke="#a8823f" stroke-width="1.5"/>
+                <text x="60" y="238" text-anchor="middle" font-family="Inter" font-size="5" letter-spacing="1.4" fill="#3b2a20">DÖNNHOFF</text>
+                <text x="60" y="254" text-anchor="middle" font-family="Instrument Serif, Georgia, serif" font-size="9.5" fill="#2a1520">Hermannshöhle</text>
+                <text x="60" y="266" text-anchor="middle" font-family="Instrument Serif, Georgia, serif" font-size="9.5" fill="#2a1520">Riesling</text>
+                <text x="60" y="279" text-anchor="middle" font-family="Inter" font-size="5" fill="#6c5660">GG · 2020</text>
+              </g>
+            </svg>
+          </div>
+          <button class="btn btn-wine" id="scanBtn" type="button" style="width:100%;margin-top:16px">Etikett scannen</button>
+        </div>
+        <div class="fade d1">
+          <span class="k">Erkannt</span>
+          <div class="scan-fields" id="scanFields" aria-live="polite"></div>
+          <p class="muted" style="font-size:.82rem;margin-top:12px">Kostenlos über die KI von Google (Gratis-Stufe). Das Etikett-Foto gehört zum Wein – wer ihn später findet, sieht es auch. Ortsdaten im Foto werden vorher entfernt.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== Wert & Verteilung ===== -->
   <section class="section" id="wert">
     <div class="wrap">
       <div class="section-head fade">
         <span class="eyebrow">Wert &amp; Verteilung</span>
         <h2 class="h2">Wie sich dein Keller entwickelt.</h2>
-        <p class="lead">Die goldene Linie ist der geschätzte Wert aller Flaschen, die gestrichelte das, was du bezahlt hast. Die Punkte markieren deine Einkäufe – fahr mit dem Finger oder der Maus darüber.</p>
+        <p class="lead">Die goldene Linie ist der geschätzte Wert aller Flaschen, die gestrichelte das, was du bezahlt hast. Die Punkte markieren deine Einkäufe – fahr mit dem Finger oder der Maus darüber. In der App markierst du mit <b style="font-weight:500;color:var(--fg)">zwei Fingern einen Zeitraum</b> und siehst Wertänderung und Rendite – Zukäufe zählen dabei nicht als Gewinn.</p>
       </div>
       <div class="dash">
         <div class="card pad fade">
@@ -335,6 +395,32 @@
           <button class="btn btn-primary" id="todayBtn" type="button" style="width:100%;margin-top:12px">Flasche vorschlagen</button>
           <div class="k" style="margin-top:22px">Bald öffnen</div>
           <div class="mv-list" id="soon"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Im Handel & Meine Weine ===== -->
+  <section class="section" id="handel">
+    <div class="wrap">
+      <div class="section-head fade">
+        <span class="eyebrow">Im Handel · Meine Weine</span>
+        <h2 class="h2">Was die Flasche kostet – und was die anderen sagen.</h2>
+      </div>
+      <div class="shop">
+        <div class="card pad fade">
+          <span class="k">Kaufen</span>
+          <p style="margin:8px 0 12px">In jeder Flasche führen Such-Links direkt zum Wein bei den großen Preisvergleichen – ein Tipp, und du kannst nachkaufen.</p>
+          <div class="chips"><span class="chip">Google Shopping ↗</span><span class="chip">idealo ↗</span><span class="chip">Wine-Searcher ↗</span><span class="chip">Vivino ↗</span></div>
+        </div>
+        <div class="card pad fade d1">
+          <span class="k">Wertverlauf je Flasche</span>
+          <p style="margin:8px 0 0">Tippst du auf „Veränderung“, klappt der eigene Verlauf der Flasche auf – mit deinen eingetragenen Werten und gefundenen Händlerpreisen. Vergessen, was du bezahlt hast? „Bezahlt“ antippen und nachtragen.</p>
+        </div>
+        <div class="card pad fade d2">
+          <span class="k">Meine Weine</span>
+          <p style="margin:8px 0 12px">Alle Weine aus Keller und Verkostungen, filterbar nach Im Keller · Geöffnet · Gescannt · Bewertet · Noch nicht bewertet – mit „Passt zu dir 86 %“ aus deiner Geschmacks-DNA.</p>
+          <a class="go" href="geschmack.html#bewertungen" style="color:var(--accent);font-size:.9rem">Bewertungen der Runde ansehen →</a>
         </div>
       </div>
     </div>
@@ -976,6 +1062,26 @@
   renderKpis(true); renderAlloc(); renderMovers(); renderList(); renderTimeline(); renderSoon(); renderRack(); renderEvents(); renderJournal();
   drawChart();
   whenSeen($("#chart").closest(".card"), drawChart);
+})();
+</script>
+<script>
+(() => {
+  const { $, reduced } = Site;
+  const FIELDS = [["Weingut", "Dönnhoff"], ["Wein", "Hermannshöhle Riesling GG"], ["Jahrgang", "2020"], ["Rebsorte", "Riesling"], ["Region", "Nahe"], ["Qualitätsstufe", "GG"]];
+  const box = $("#scanFields");
+  box.innerHTML = FIELDS.map(([k]) => `<div><span>${k}</span><b>–</b></div>`).join("");
+  $("#scanBtn").addEventListener("click", () => {
+    const photo = $("#scanPhoto"), btn = $("#scanBtn");
+    btn.disabled = true; btn.textContent = "Lese das Etikett …";
+    photo.classList.remove("done"); photo.classList.add("run");
+    [...box.querySelectorAll("b")].forEach(b => { b.classList.remove("in"); b.textContent = "–"; });
+    $("#scanLabel").style.opacity = 0;
+    setTimeout(() => {
+      photo.classList.remove("run"); photo.classList.add("done");
+      [...box.querySelectorAll("b")].forEach((b, i) => setTimeout(() => { b.textContent = FIELDS[i][1]; b.classList.add("in"); }, reduced ? 0 : i * 140));
+      setTimeout(() => { $("#scanLabel").style.opacity = 1; btn.disabled = false; btn.textContent = "Nochmal scannen"; }, reduced ? 0 : 900);
+    }, reduced ? 0 : 2600);
+  });
 })();
 </script>
 </body>

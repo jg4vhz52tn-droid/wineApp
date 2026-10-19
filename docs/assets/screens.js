@@ -92,11 +92,11 @@ window.Screens = (() => {
       <div class="ap-row" data-call="3" style="gap:6px"><button class="ap-btn" style="flex:1;background:var(--success);color:#0e1a12">Kaufen</button><button class="ap-btn" style="flex:1;background:var(--surface-2);color:var(--fg);border:1px solid var(--border)">Verkaufen</button></div>`,
     profil: `
       <div class="ap-row"><div><div class="ap-sub">Seit Oktober 2026</div><div class="ap-h">Profil</div></div><span style="width:40px;height:40px;border-radius:50%;background:var(--wine);color:var(--wine-fg);display:grid;place-items:center;font-weight:600">T</span></div>
-      <div class="ap-card" data-call="1"><div class="ap-row"><span class="ap-k">Geschmacks-DNA</span><span class="ap-chip">bald</span></div>
+      <div class="ap-card" data-call="1"><div class="ap-row"><span class="ap-k">Geschmacks-DNA</span><span class="ap-chip on">14 Bewertungen</span></div>
         <svg viewBox="-20 -10 240 220" class="dna-radar" style="width:100%;max-width:170px;margin:4px auto 0;display:block;overflow:visible"></svg>
-        <div class="ap-sub" style="text-align:center">Du magst hohe Säure, mineralisch, wenig Holz.</div></div>
+        <div class="ap-sub" style="text-align:center">Du liebst rassige, fast trockene Rieslinge mit Feuerstein und Pfirsich.</div></div>
       <div class="ap-card" data-call="2"><div class="ap-k" style="margin-bottom:6px">Abzeichen</div>
-        <div style="display:flex;gap:8px">${["Riesling-Nase", "Gastgeber", "10 Regionen"].map((b, i) => `<div style="flex:1;text-align:center;font-size:9.5px;color:var(--muted)"><div style="width:40px;height:40px;margin:0 auto 4px;border-radius:50%;border:2px solid ${["var(--accent)", "var(--series-2)", "var(--success)"][i]};display:grid;place-items:center;font-family:var(--serif);font-size:17px;color:var(--fg)">${["R", "G", "10"][i]}</div>${b}</div>`).join("")}</div></div>`,
+        <div style="display:flex;gap:8px">${["Erster Schluck", "Spürnase", "Gastgeber"].map((b, i) => `<div style="flex:1;text-align:center;font-size:9.5px;color:var(--fg)"><div style="width:40px;height:40px;margin:0 auto 4px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f3dda4,#c99d55 55%,#8c6630);display:grid;place-items:center;color:#4a2a10"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${["<path d='M7 3h10l-.6 5.2a4.4 4.4 0 0 1-8.8 0z'/><path d='M12 12.6V20M8.5 20.5h7'/>", "<path d='M10 3.5c0 4.2-2.2 6.8-3.4 9.6-1 2.6.6 5.1 3.4 5.1h4c2.8 0 4.4-2.5 3.4-5.1C16.2 10.3 14 7.7 14 3.5'/><path d='M9.2 15.9c.7-1 1.8-1.1 2.8-.2 1-.9 2.1-.8 2.8.2'/>", "<path d='M4 11 12 4.5l8 6.5'/><path d='M6 9.5V19.5h12V9.5'/><path d='M10 19.5v-5h4v5'/>"][i]}</svg></div>${b}</div>`).join("")}</div></div>`,
   };
 
   function mount(el, { start = "abende", auto = false, interval = 3800, order = ["abende", "raten", "aufdecken", "keller", "lernen"] } = {}) {
@@ -113,7 +113,7 @@ window.Screens = (() => {
         </nav>
       </div>`;
     const dna = el.querySelector(".dna-radar");
-    if (dna) Site.radar(dna, ["Säure", "Frucht", "Körper", "Holz", "Süße", "Mineral"], { r: 70 }).shape("var(--series-2)")([8.5, 6.5, 4.5, 2.5, 3, 8]);
+    if (dna) Site.radar(dna, ["Süße", "Säure", "Körper", "Tannin", "Abgang"], { r: 70 }).shape("var(--series-1)")([1.8, 8.1, 5.4, 3.2, 7.6]);
 
     let current = null, timer = null;
     const listeners = [];
